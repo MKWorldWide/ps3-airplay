@@ -118,3 +118,12 @@ The standalone receiver `Makefile` and canonical Lima build/package scripts defa
 - Change: emit bounded RTP health checkpoints every 128 successfully parsed audio packets. Log received packet and payload deltas and queue depth; emit missing, reordered, duplicate, late, and queue-drop deltas only when nonzero. FLUSH resets the checkpoint baseline so old-stream errors are not reported as new-stream health.
 - Validation: full Lima ASan/UBSan suite and PPU component compilation pass. The receiver loopback verifies a 128-packet checkpoint, queue depth, a post-FLUSH sequence gap, and the resulting one-packet missing delta. Standalone ELF/PKG build pending.
 - RPCS3 remains inaccessible because desktop automation reports the Mac locked; no physical console or audible playback claim.
+
+## v0.1.24 package record
+
+- Source: commit `a59aa937401d432b5cc6f740eeda15bf0db091ba` on `main`.
+- Package: `AIRPLAY02`, version `0.1.24`, finalized NPDRM PKG, 3,231,152 bytes; SHA-256 `7638825e0c2f6eb26a19410ba56ffd52ed96a70dc274f691b6bf2d12cf615757`.
+- ELF: CellOS PPC64 executable, 2,780,120 bytes; SHA-256 `21b6ea799b18fd91f63b6d6dcb8d9f490e980f775c6bf3b96f84609b1dfdf9c2`.
+- Checks: Lima PS3DK v0.27.0 + PSL1GHT build; ELF validator; finalized package envelope, AIRPLAY02 identity, APP_VER, content ID, EBOOT and background asset validation pass. The full Lima ASan/UBSan host suite and PPU component compile passed in the source pass.
+- Runtime: RPCS3 install/launch is pending. The user reported unlocking the Mac, but the automation runtime still reports it locked. No fresh v0.1.24 app log, iPhone session, or audible playback is verified; physical PS3 was not changed.
+- Artifacts are preserved in ignored `work/builds/0.1.24/`. Next package version: 0.1.25.
