@@ -7,3 +7,4 @@ This directory contains project decisions and release evidence suitable for the 
 - [First PKG transfer](2026-11-07_0008_first_pkg_transfer.md)
 - [Correct standalone NPDRM package](2026-11-07_0012_fix_npdrm_package.md)
 - [Replace staged PKG](2026-11-07_0017_replace_staged_pkg.md)
+- [Visible diagnostic screen and clean app exit](2026-11-07_0035_visible_diagnostic_screen.md)

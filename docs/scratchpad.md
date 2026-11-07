@@ -1,5 +1,5 @@
 # Active work
 
-- **Current task:** Continue first standalone PS3 validation after launch failed with `80029530`.
-- **Verified:** First installed EBOOT matched its package; no receiver startup log exists. Corrected PKG uses `make_self_npdrm` with the package content ID, includes the PSL1GHT default icon, and was uploaded after approval; downloaded-back size and SHA-256 match.
-- **Next:** User reinstalls/updates `AIRPLAY02` from XMB using the corrected PKG, launches, checks responsiveness and tone audibility, and reports the TV result. Then retrieve and sanitize the new diagnostic log.
+- **Current task:** Fix the black display and provide a clean XMB exit after the user heard the diagnostic tone but had to force power off.
+- **Verified:** The previous app advertised `ps3-airplay-diagnostic`; iPhone selection failed to connect. Current-run log is not retrieved. New RSX background/START-exit build compiles in Lima and packages with the 1280x720 RGB image.
+- **Next:** Record hardware observations and build evidence; review public diff. Ask approval to replace staged package using the new digest. After user updates from XMB, test displayed image, controller START exit, and inspect the capped log before debugging RAOP.

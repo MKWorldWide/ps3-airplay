@@ -47,7 +47,7 @@ CFLAGS := -O2 -Wall -Wextra -Werror \
 	-DRAOP_USE_PSL1GHT -D__SELECT_H__ \
 	-include $(PS3DK)/ppu/include/sys/select.h \
 	-I$(MBEDTLS_INCLUDE) $(INCLUDE)
-LIBS := -laudio -lsysutil -lnetctl -lnet -lsysmodule -lrt -lm \
+LIBS := -laudio -lgcm_sys -lrsx -lio -lsysutil -lnetctl -lnet -lsysmodule -lrt -lm \
 	$(MBEDTLS_CRYPTO_LIBRARY)
 
 ifneq ($(BUILD),$(notdir $(CURDIR)))

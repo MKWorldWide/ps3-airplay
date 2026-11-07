@@ -3,8 +3,11 @@
 The repository contains a standalone low-volume PCM tone application and a
 standalone RAOP receiver application. The receiver connects mDNS, persistent
 RTSP/RTP, session crypto, ALAC decode, the bounded PCM ring, diagnostic logging,
-and the PSL1GHT GameOS audio port. Lima builds it as a PPU ELF; packaging and
-all console/iPhone playback tests remain open.
+and the PSL1GHT GameOS audio port. The current diagnostic-screen candidate adds
+an RSX image framebuffer and a controller START exit action. The preceding
+hardware build played its tone but displayed black; an iPhone found its service
+but could not connect. The new screen and exit behavior still need hardware
+validation.
 
 Current and planned directories:
 - `prototype/standalone/`: PSL1GHT app and audio tone; no RAOP listener yet.
@@ -17,8 +20,8 @@ Current and planned directories:
 - `src/platform/ps3/`: PS3 GameOS sockets, threads, audio and logger.
 - `experimental/resident/`: opt-in Cobra .sprx plugin experiment; NOT installed by default.
 
-Current gate: package the receiver ELF in Lima, then establish a verified
-console recovery route before a standalone app launch. Its service TXT remains
-diagnostic-only until iPhone discovery and audible output work.
+Current gate: stage the screen-enabled package after the new package digest is
+reviewed, then test visible rendering, controller exit, and diagnostic logs.
+Its service TXT remains diagnostic-only until an iPhone session succeeds.
 
 See [ROADMAP](../docs/ROADMAP.md).

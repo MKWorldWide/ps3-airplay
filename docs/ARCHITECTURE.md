@@ -12,6 +12,7 @@ iPhone / RAOP sender
         v
 DNS-SD/mDNS discovery -> RTSP session and SDP -> UDP RTP receive
         -> decrypt -> bounded ALAC decode -> PCM ring -> standalone GameOS audio
+                                                      -> RSX diagnostic screen
 ```
 
 The standalone receiver and resident PRX share portable protocol/codec components where practical, but have different lifecycle and output constraints.
@@ -24,7 +25,7 @@ The standalone receiver and resident PRX share portable protocol/codec component
 - `src/codec`: bounded ALAC decoder wrapper.
 - `src/audio`: bounded PCM ring, conversion, and resampling.
 - `src/observability`: capped diagnostic logging that avoids stream content and peer identifiers.
-- `prototype/standalone-receiver`: standalone app wiring for discovery, receive, decode, and audio output.
+- `prototype/standalone-receiver`: standalone app wiring for discovery, receive, decode, audio output, RSX diagnostic display, and controller-requested exit.
 - `experimental/resident`: diagnostic PRX candidate; decoded PCM is discarded.
 
 ## Constraints
@@ -37,7 +38,7 @@ The standalone receiver and resident PRX share portable protocol/codec component
 
 ## Validation status
 
-Portable host components have tests; cross-build and package structure checks have been completed. PS3 load/unload, iPhone discovery/session, audible output, and game audio coexistence remain unverified. The repository's [test matrix](TEST_MATRIX.md) is the source of validation status.
+Portable host components have tests; cross-build and package structure checks have been completed. The user reports audible diagnostic tone and iPhone discovery, but also a black screen and failed connection. The new RSX screen and controller exit path are build-checked only. Real RAOP playback and game audio coexistence remain unverified. The repository's [test matrix](TEST_MATRIX.md) is the source of validation status.
 
 ## References
 

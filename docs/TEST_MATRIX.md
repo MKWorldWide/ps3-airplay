@@ -17,7 +17,7 @@ This matrix distinguishes portable host evidence and cross-build evidence from r
 | Audio diagnostic | Bounded 440 Hz stereo tone, five-second duration, conservative peak and fades | Host unit test; PS3 audibility untested |
 | Discovery | RAOP response serialization and capability consistency | Host wire-format test passes; LAN/iPhone discovery untested |
 | PPU/PRX | Cross-build and PRX structural checks | Build checks pass; console compatibility untested |
-| Standalone package | Package inspection and extraction checks | Host packaging checks pass; console install/launch untested |
+| Standalone package | Package inspection and extraction checks | Screen-enabled 01.01 candidate includes background and extracts correctly; not transferred |
 | Resident PCM output | Plugin audio output | Not implemented; candidate discards decoded PCM |
 
 ## PS3 and iPhone gates
@@ -26,10 +26,11 @@ This matrix distinguishes portable host evidence and cross-build evidence from r
 |---|---|---|
 | DEPLOY-01 | FTP preflight, package staging, and downloaded-back hash verification | PASS; first 2,560,368-byte package staged and verified |
 | DEPLOY-02 | Replace staged package with corrected NPDRM PKG and verify downloaded-back hash | PASS; 416,240 bytes, exact SHA-256 match |
+| BUILD-03 | Cross-build visible diagnostic screen and controller START exit; inspect packaged image | PASS in Lima; hardware behavior untested |
 | HW-01 | Confirm tested recovery procedure and record a privacy-safe baseline | NOT RUN |
-| HW-02 | Install/launch standalone app and exit cleanly | FAIL on first package (`80029530`); corrected PKG staged, XMB reinstall/launch pending |
-| HW-03 | Audible test audio at the system menu | NOT RUN |
-| HW-04 | iPhone discovers receiver and completes AirPlay session | NOT RUN |
+| HW-02 | Install/launch standalone app and exit cleanly | Partial: user reports tone and app activity, but black screen and forced shutdown; latest screen/exit candidate build-checked only |
+| HW-03 | Audible test audio at the system menu | Partial PASS; user heard the five-second diagnostic tone; normal AirPlay music not tested |
+| HW-04 | iPhone discovers receiver and completes AirPlay session | Partial: iPhone lists `ps3-airplay-diagnostic`; selecting it fails to connect; session not established |
 | HW-05 | Verify audible AirPlay playback and controls | NOT RUN |
 | HW-06 | Reconnect after sender/network interruption | NOT RUN |
 | HW-07 | Sustained standalone playback and resource stability | NOT RUN |

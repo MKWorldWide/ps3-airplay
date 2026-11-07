@@ -1,5 +1,12 @@
 # Lessons learned
 
+## Blank foreground screen and no clean app exit
+
+- **Problem:** The receiver played its five-second tone, but the PS3 screen stayed black and the user needed a long power-button press to return to XMB. The iPhone listed the receiver but could not connect.
+- **Root Cause:** Source inspection showed the standalone app had no RSX/video initialization and did not poll controller input. This explains why the app had no implemented screen or START-button exit; it does not prove the exact hardware cause of the black output or the separate RAOP connection failure.
+- **Fix:** Add a bounded-size RSX background framebuffer, a visible START exit prompt, controller polling with ordered cleanup, and screen-stage log codes. Keep the in-game plugin and game mixing questions separate.
+- **Prevention Rule:** Hardware readiness requires visible foreground UI, a documented controller exit, startup/shutdown log events, and a tested recovery path before extended network testing.
+
 ## Bind the EBOOT NPDRM content ID to the package
 
 - **Problem:** The first standalone package installed but failed to launch with PS3 error `80029530`; no application startup log was created.

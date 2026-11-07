@@ -6,7 +6,7 @@ An open source AirPlay 1 (RAOP) receiver project for PlayStation 3 homebrew, dev
 
 ## Project status
 
-This is experimental software. The host-side protocol and codec components have automated coverage, and the project builds a standalone PS3 ELF/PKG and an experimental PRX candidate. These artifacts have **not** been validated on PS3 hardware. iPhone discovery, a real AirPlay session, installation, and audible playback remain unverified.
+This is experimental software. The host-side protocol and codec components have automated coverage, and the project builds a standalone PS3 ELF/PKG and an experimental PRX candidate. A standalone build has run on the demonstration PS3 and produced its five-second diagnostic tone, but the display stayed black and an iPhone could discover the receiver without connecting. AirPlay playback and reliable XMB exit remain unverified.
 
 The resident PRX currently receives and decodes supported audio packets for diagnostics; it does not output PCM. Game audio coexistence is a separate feasibility question. No universal in-game mixing capability is claimed.
 
@@ -16,6 +16,7 @@ The resident PRX currently receives and decodes supported audio packets for diag
 
 - Bounded RAOP discovery, RTSP session, RTP transport, crypto, ALAC decoding, PCM buffering, and diagnostic logging components.
 - A standalone receiver prototype and an experimental resident PRX candidate.
+- A maintainer-provided diagnostic background image in `assets/`, used by the standalone screen experiment.
 - Host tests and build scripts, plus a test matrix that distinguishes host evidence from hardware validation.
 
 ## Documentation

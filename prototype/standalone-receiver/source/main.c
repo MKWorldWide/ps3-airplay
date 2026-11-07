@@ -7,8 +7,10 @@
 #include "pcm_ring.h"
 #include "diagnostic_tone.h"
 #include "raop_receiver.h"
+#include "diagnostic_screen.h"
 
 #include <audio/audio.h>
+#include <io/pad.h>
 #include <lv2/system.h>
 #include <lv2/systime.h>
 #include <net/net.h>
@@ -34,6 +36,7 @@ mbedtls_ms_time_t mbedtls_ms_time(void)
 #endif
 
 #define RECEIVER_LOG_PATH "/dev_hdd0/tmp/ps3-airplay.log"
+#define BACKGROUND_RGB_PATH "/dev_hdd0/game/AIRPLAY02/USRDIR/background.rgb"
 #define RTSP_PORT 5000
 #define RTP_BASE_PORT 6000
 #define AUDIO_PORT_LEVEL 0.25f
@@ -46,6 +49,7 @@ static receiver_log_file diagnostic_log;
 static raop_alac_decoder *decoder;
 static raop_pcm_ring pcm_ring;
 static raop_diagnostic_tone diagnostic_tone;
+static diagnostic_screen screen;
 static int diagnostic_tone_logged;
 static uint8_t decoded_pcm[RAOP_ALAC_PCM_MAX];
 static uint64_t decoded_packet_count;
@@ -146,6 +150,7 @@ int main(void)
 	int crypto_started = 0, receiver_opened = 0, mdns_opened = 0;
 	int audio_initialized = 0, audio_queue_created = 0, audio_notify_set = 0;
 	int audio_port_opened = 0, audio_port_started = 0, callback_registered = 0;
+	int pad_initialized = 0;
 	u32 audio_port = 0;
 	sys_event_queue_t audio_queue;
 	sys_ipc_key_t audio_key;
@@ -155,6 +160,7 @@ int main(void)
 	uint8_t ip[4];
 	char instance[64], host[64];
 	u64 next_log_us = 0;
+	int screen_result;
 	uint64_t reported_underflows = 0;
 	uint64_t reported_drops = 0;
 
@@ -165,6 +171,17 @@ int main(void)
 		goto cleanup;
 	}
 	(void)log_event("APP_START", 0, 0);
+	screen_result = diagnostic_screen_open(&screen, BACKGROUND_RGB_PATH);
+	if (screen_result == DIAGNOSTIC_SCREEN_OK)
+		(void)log_event("SCREEN_READY", 1, 0);
+	else
+		(void)log_event("SCREEN_INIT_FAILED", screen_result, 0);
+	if (ioPadInit(7) == 0) {
+		pad_initialized = 1;
+		(void)log_event("CONTROLLER_READY", 1, 0);
+	} else {
+		(void)log_event("CONTROLLER_INIT_FAILED", -1, 0);
+	}
 	if (netInitialize() != 0) {
 		(void)log_event("NET_INIT_FAILED", -1, 0);
 		goto cleanup;
@@ -276,6 +293,21 @@ int main(void)
 			raop_mdns_service_close(&mdns_service);
 			mdns_opened = 0;
 		}
+		if (pad_initialized) {
+			padInfo info;
+			padData data;
+			int pad;
+			if (ioPadGetInfo(&info) == 0) {
+				for (pad = 0; pad < MAX_PADS; ++pad) {
+					if (info.status[pad] && ioPadGetData((u32)pad, &data) == 0 &&
+						data.BTN_START) {
+						(void)log_event("USER_EXIT_START", pad, 0);
+						exit_requested = 1;
+						break;
+					}
+				}
+			}
+		}
 		if (receiver.session.state == RAOP_SESSION_RECORDING && decoder == NULL) {
 			if (receiver.session.offer.has_alac &&
 				receiver.session.offer.has_fmtp)
@@ -357,6 +389,9 @@ int main(void)
 	result = 0;
 
 cleanup:
+	if (pad_initialized)
+		(void)ioPadEnd();
+	diagnostic_screen_close(&screen);
 	if (decoder != NULL)
 		raop_alac_destroy(decoder);
 	memset(decoded_pcm, 0, sizeof(decoded_pcm));
