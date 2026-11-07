@@ -19,10 +19,10 @@ Compiler byte-order selection replaces constant zero. Foreground loop polls cont
 Correct PCM byte order on PS3. Regular display flips for VSH overlay composition; result is unverified on real hardware. No blocking display wait in the service loop. START skips further stream work once detected.
 
 ## Validation performed
-Live HTTP log retrieval; normal webMAN quit produced complete cleanup and APP_STOP 0. Target build caught signed-clock versus unsigned-deadline comparisons; explicit casts fix the warning under -Werror. Endian fixture and emulator smoke follow committed source. Privacy review before commit.
+Live HTTP log retrieval; normal webMAN quit produced complete cleanup and APP_STOP 0. Target build caught signed-clock versus unsigned-deadline comparisons; explicit casts fix the warning under -Werror. Host sanitizer fixture and big-endian PPU fixture comparison PASS. Full-app paced RPCS3 test records 256 decrypts and 90,368 PCM frames queued/consumed; heartbeat/pad API active and no presentation failure. Package and installed payload checks PASS. Privacy review before commit.
 
 ## Immediate results
-Endian defect identified; entire app was not frozen according to live log. Current session recovered through normal quit without reboot.
+Target byte-order correction verified against golden PCM; candidate installed with exact payload match. Earlier app recovered through normal quit without reboot. Physical overlay/audio outcome awaits maintainer.
 
 ## Known limitations / follow-ups
 System-menu behavior and audible music require physical observation. Prior session logs were overwritten, preventing packet/decode attribution for the crackling.
@@ -37,4 +37,6 @@ Nonblocking display cadence changes RSX command timing. On RSX timeout allocatio
 - Decision: normal remote quit once. Context: live log preserved and HTTP reachable. Options: forced reboot or documented quit. Chosen: normal quit. Tradeoff: only log completion is verified; visible XMB return awaits observation.
 
 ## Next recommended step
-Validate target PCM fixture and new loop, install candidate, then ask maintainer to test START and PS menu before short audio streaming.
+Maintainer tests installed v0.1.32 PS/held-PS menu and START before short streaming; collect logs without relaunch.
+
+Artifact evidence: docs/reports/2026-11-07_v0132_controls_and_pcm.md; docs/VERSIONING.md; docs/TEST_MATRIX.md; docs/ROADMAP.md; docs/RISKS.md. Raw logs stay local.

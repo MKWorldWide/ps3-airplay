@@ -185,3 +185,7 @@ The historical 0.30 build starts and plays its tone on the PS3; START exits whil
 ## v0.1.31 / SFO 00.31
 
 Disables incompatible Mbed TLS PPC64 assembly on the PS3 ABI and adds challenge/RNG/handler/cleanup checkpoints. Source 224f15d. Package 3,233,584 bytes, SHA-256 354dc5f33ef19c9342fee12efe21b70d2a7818d26660bc7ee439327675b4d60d. Installed payload verified. RPCS3 challenge and encrypted RTSP session complete; physical music/exit result pending.
+
+## v0.1.32 / SFO 00.32
+
+Installed from source e34cbce. Corrects ALAC host byte order; adds regular nonblocking presentation, input-first polling, bounded graphics cleanup and rate-limited diagnostics. PKG 3,234,544 bytes; SHA-256 fca5547fda865f22faff7099834d0c3a8e77e6658f955b5c3a4a941cfd7ac7b3. PPU golden PCM comparison and full-app paced RPCS3 RTP/decrypt/decode/PCM buffering pass. Physical XMB overlay, exit after disconnect and audible music await maintainer testing.

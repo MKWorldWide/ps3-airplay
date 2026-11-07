@@ -187,3 +187,18 @@ Recovered log hash and provenance are recorded in memory and the hardware follow
 | PS3 audible music / controller exit during sender session | PENDING maintainer observation |
 
 See the v0.1.31 report for precise host-versus-target evidence boundaries.
+
+## v0.1.32 controls and byte order
+
+| Check | Result |
+|---|---|
+| Old live-app recovery | Normal remote quit logs all cleanup completions and APP_STOP 0; no reboot |
+| Big-endian PPU golden PCM | PASS in RPCS3: bytes match FFmpeg fixture (353 samples) |
+| Host ALAC regression | PASS under ASan/UBSan |
+| RPCS3 paced stream | PASS: 256 decrypted packets, 90,368 PCM frames queued and consumed |
+| RPCS3 display/input polling | Active heartbeat/pad health; no flip failure during run |
+| PS3 installation | PASS: installed SFO/EBOOT match validated 0.1.32 package |
+| Real PS/held-PS menu, idle/stream/disconnect START | PENDING maintainer |
+| Real music and crackling resolution | PENDING maintainer |
+
+The emitter used a paced diagnostic fixture; target output submission is not proof of audible playback.
