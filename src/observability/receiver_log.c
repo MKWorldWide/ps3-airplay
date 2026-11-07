@@ -21,7 +21,7 @@ int receiver_log_event(FILE *stream, const char *timestamp,
 	const char *event, int value, size_t byte_count)
 {
 	if (stream == NULL || !safe_field(timestamp, 40) ||
-		!safe_field(event, 24))
+		!safe_field(event, RECEIVER_LOG_EVENT_MAX))
 		return 0;
 	return fprintf(stream, "%s event=%s value=%d bytes=%lu\n", timestamp,
 		event, value, (unsigned long)byte_count) >= 0;
@@ -54,10 +54,11 @@ void receiver_log_file_close(receiver_log_file *log)
 int receiver_log_file_event(receiver_log_file *log, const char *timestamp,
 	const char *event, int value, size_t byte_count)
 {
-	char line[128];
+	char line[160];
 	int length;
 	if (log == NULL || log->stream == NULL ||
-		!safe_field(timestamp, 40) || !safe_field(event, 24))
+		!safe_field(timestamp, 40) ||
+		!safe_field(event, RECEIVER_LOG_EVENT_MAX))
 		return 0;
 	length = snprintf(line, sizeof(line), "%s event=%s value=%d bytes=%lu\n",
 		timestamp, event, value, (unsigned long)byte_count);

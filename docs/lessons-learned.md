@@ -390,7 +390,7 @@
 ## Treat parser completion and response completion as separate boundaries
 
 - **Problem:** The v0.1.26 RPCS3 log showed SDP parsing completed successfully, but the remote synthetic sender still received no ANNOUNCE response.
-- **Root Cause:** The first phase instrumentation stopped at SDP parsing and RSA key unwrap; it did not expose validation branches or response construction. The RSA unwrap event was absent, so observed evidence does not identify that operation as the stall.
+- **Root Cause:** The first phase instrumentation stopped at SDP parsing and RSA key unwrap; it did not expose validation branches or response construction. The RSA unwrap event was absent, but later inspection found its 25-character name exceeded the logger’s 24-character limit; absence did not identify the stall.
 - **Fix:** Add bounded allowlisted events for ANNOUNCE field classification, validation completion, and response construction, then replay the same sender fixture.
 - **Prevention Rule:** Instrument entry and completion around synchronous protocol boundaries before changing protocol or crypto behavior based on an emulator timeout.
 
@@ -401,3 +401,11 @@
 - **Root Cause:** The validation path used `strlen` on a fixed-size parsed Content-Type buffer. Its terminator should be written by the parser, but the RPCS3 evidence did not show whether this expression was the cause.
 - **Fix:** Replace the unbounded scan with a capacity-bounded length helper and log the check boundary/result.
 - **Prevention Rule:** Use bounded string lengths for fixed-capacity protocol fields, even when the parser is expected to NUL-terminate them; retain phase events to validate the runtime hypothesis.
+
+
+## Keep diagnostic event limits in sync with event names
+
+- **Problem:** RPCS3 v0.1.28 logs stopped after offer fields, while newly added Content-Type, RSA-start, crypto-input, and response event names were missing.
+- **Root Cause:** `receiver_log` silently rejected event names longer than 24 characters, although several new names were 25–33 characters. The session callback ignored the logger's failure result.
+- **Fix:** Raise the explicit event-name bound to 48 characters, enlarge the formatted-line buffer, and assert that a 33-character event is actually written and retrievable.
+- **Prevention Rule:** Add a logger persistence test whenever diagnostic event vocabulary changes; verify the maximum event length is compatible with the storage filter and line buffer. Never use absence of an event as evidence until logger acceptance is verified.

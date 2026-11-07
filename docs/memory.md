@@ -226,7 +226,7 @@ Demonstration target: PS3 with Evilnat 4.93 CFW and Cobra 8.5 observed; the cons
 ## v0.1.26 RPCS3 replay and v0.1.27 diagnostics (2026-11-07)
 
 - v0.1.26 was built from pushed source `6f8d6cb6f75e331d989419aaf51bd1d147704cad` with RPCS3-only RTSP port 5001. The 2,780,208-byte CellOS PPC64 ELF SHA-256 is `eda789f1a6a7c3ab9ad3629c1d7acd0af14066f34e1cc3dac5bb198482d9210c`; the 3,231,408-byte AIRPLAY02 package SHA-256 is `82e1407b92a1218ec3085f57bd8f6c35e97255569b92a44249e14239108fc246`.
-- Fresh RPCS3 log verifies startup, route, RTSP/RTP listeners, OPTIONS 200, and SDP parse success on synthetic ANNOUNCE. It produced no response by the three-second client receive deadline. RSA unwrap start was absent, so the exact stall is unknown and RSA is not implicated by this evidence. SETUP/RECORD/RTP were not reached. RPCS3 was stopped by the harness without APP_STOP; display, audible tone, iPhone, and physical console remain unverified.
+- Fresh RPCS3 log verifies startup, route, RTSP/RTP listeners, OPTIONS 200, and SDP parse success on synthetic ANNOUNCE. It produced no response by the three-second client receive deadline. The RSA-start event name exceeded the logger’s 24-character limit, so its absence is inconclusive; the exact stall is unknown. SETUP/RECORD/RTP were not reached. RPCS3 was stopped by the harness without APP_STOP; display, audible tone, iPhone, and physical console remain unverified.
 - Full Lima host/ASan/UBSan tests, fixture callback assertions, and PPU object compilation pass from the committed source. The package was validated and copied into local RPCS3 title data after a local rollback copy; the desktop remains locked and no physical PS3 files/settings were changed.
 - v0.1.27 adds ANNOUNCE offer-field, validation completion, and response-construction checkpoints to distinguish the remaining boundary. Production RTSP port stays 5000; game audio mixing remains a separate Cobra feasibility gate.
 
@@ -234,6 +234,14 @@ Demonstration target: PS3 with Evilnat 4.93 CFW and Cobra 8.5 observed; the cons
 ## v0.1.27 RPCS3 boundary and v0.1.28 bounded header check (2026-11-07)
 
 - AIRPLAY02 v0.1.27 was built from source `eebd588f4d4e7baa8da95d5f4127b9155d90b858` with emulator-only RTSP 5001. ELF SHA-256 `e053dac6dfb801dd3f19d1ceef45d12e10d590052313f9ee0b27d5433e22c440` (2,780,208 bytes); PKG SHA-256 `0a3d1c409fb1044231256090cc3693da3e1aaa5abddd5bc6e00f29a9aa407b6c` (3,231,920 bytes).
-- Fresh RPCS3 log confirms app startup, route, listeners, mDNS failure stage 6/error 125, OPTIONS 200, successful SDP parse, and offer fields including encryption type 1, RSA key, and IV. Log stops before Content-Type-check, validation completion, RSA unwrap, or response. Synthetic sender did not reach RTP. The exact stall remains unknown.
-- v0.1.28 replaces an unbounded `strlen` over the fixed-size Content-Type field with a bounded length scan and logs the check start/result. This is a defensive code improvement and test hypothesis, not yet a proven runtime fix.
-- No display/audibility/iPhone/physical-console success is claimed; desktop is locked, PS3 and boot plugins unchanged. Next is v0.1.28 build and exact RPCS3 replay.
+- Fresh RPCS3 log confirms app startup, route, listeners, mDNS failure stage 6/error 125, OPTIONS 200, successful SDP parse, and offer fields including encryption type 1, RSA key, and IV. Log stops before the short validation-completion event. The longer Content-Type/RSA/response event names were filtered by the 24-character logger limit, so their absence is inconclusive. Synthetic sender did not reach RTP; exact stall unknown.
+- v0.1.28 replaces an unbounded `strlen` over the fixed-size Content-Type field, but its longer diagnostic names were silently rejected by the logger. v0.1.29 increases the supported event-name length and adds a regression test. The exact runtime stall remains unknown.
+- No display/audibility/iPhone/physical-console success is claimed; desktop is locked, PS3 and boot plugins unchanged. Next is v0.1.29 build and exact RPCS3 replay.
+
+
+## v0.1.28 RPCS3 replay and logger event-name defect (2026-11-07)
+
+- AIRPLAY02 v0.1.28 source `4308bb120d0b86e065481a1175990de47acb4a24`; ELF 2,780,208 bytes, SHA-256 `0a6fd755b1150d42b0be5b5b11b34b59b426c85476b5847d4d8fc3ce957bbc6d`; package 3,231,984 bytes, SHA-256 `0e3201647bb83b85c0df4e08dacc780c9daf1468c9d261e321c10be0f8fa9cef`.
+- RPCS3 starts, gets route/listeners, answers OPTIONS 200, parses ANNOUNCE SDP, and logs validation start plus offer flags. No response arrives; `ANNOUNCE_VALIDATE_DONE` is absent. The Content-Type/RSA/response event names were silently rejected because receiver_log limited event names to 24 characters. Their absence is inconclusive and does not prove RSA was skipped. The sender did not reach RTP.
+- v0.1.29 raises the event-name limit to 48, expands the line buffer, and tests a 33-character event through persistent logging. Host/ASan/UBSan and PPU tests pass. Package and RPCS3 replay are next.
+- Desktop is locked; no visible/audio/hardware result. Physical console and boot plugin configuration unchanged.

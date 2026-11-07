@@ -8,7 +8,7 @@ Replayed AIRPLAY02 v0.1.26 in RPCS3 using the synthetic cross-host RAOP sender, 
 
 ## Why this pass was needed
 
-The previous phase events established that SDP parsing returned success, but the client still received no ANNOUNCE response. The RSA key-unwrapping start event was absent, so evidence did not support attributing the stall to RSA.
+The previous phase events established that SDP parsing returned success, but the client still received no ANNOUNCE response. The RSA key-unwrapping start event was absent, but later inspection showed its 25-character name exceeded the logger’s 24-character limit. That absence was not evidence about RSA.
 
 ## Files changed
 
@@ -35,7 +35,7 @@ The optional session diagnostic callback now marks ANNOUNCE field classification
 
 ## Runtime behavior changes
 
-v0.1.26 RPCS3 evidence now separates the path into successful app/network/listener startup, OPTIONS 200, successful SDP parse, and a stall before response. RSA unwrap did not start. No SETUP/RECORD/RTP occurred. v0.1.27 has not yet been built or run.
+v0.1.26 RPCS3 evidence now separates the path into successful app/network/listener startup, OPTIONS 200, successful SDP parse, and a stall before response. The RSA-start event was not observable because its name exceeded the logger limit. No SETUP/RECORD/RTP occurred. v0.1.27 has not yet been built or run.
 
 ## Validation performed
 
@@ -67,7 +67,7 @@ Additional bounded log events consume a small portion of the existing 16 KiB cap
 ### Decision: Add checkpoints rather than alter protocol behavior
 
 - **Decision:** Instrument ANNOUNCE validation and response construction before attempting a behavior fix.
-- **Context:** v0.1.26 confirms successful SDP parsing but has no response; RSA unwrap did not start.
+- **Context:** v0.1.26 confirms successful SDP parsing but has no response; the over-limit RSA-start event makes unwrap status inconclusive.
 - **Options considered:** Change RAOP compatibility responses; alter crypto; add more stage logging.
 - **Why this option was chosen:** The first two are speculative without locating the last completed operation. More phase evidence can distinguish the validation branch from response formatting.
 - **Tradeoffs accepted:** One additional package/replay cycle is required before a corrective behavior change.

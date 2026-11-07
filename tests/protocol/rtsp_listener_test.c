@@ -139,6 +139,8 @@ int main(void)
 	assert(temporary_fd >= 0);
 	close(temporary_fd);
 	assert(receiver_log_file_open(&log, path));
+	assert(receiver_log_file_event(&log, "2026-11-06T18:00:00Z",
+		"ANNOUNCE_CONTENT_TYPE_CHECK_START", 0, 64));
 	assert(rtsp_listener_open(&listener, 0, &log));
 	assert(rtsp_listener_port(&listener) != 0);
 	args.listener = &listener;
@@ -171,6 +173,7 @@ int main(void)
 	assert(strstr(log_contents, "very-secret-value") == NULL);
 	assert(strstr(log_contents, "RTSP_OPTIONS") != NULL);
 	assert(strstr(log_contents, "RTSP_UNSUPPORTED") != NULL);
+	assert(strstr(log_contents, "ANNOUNCE_CONTENT_TYPE_CHECK_START") != NULL);
 
 	assert(receiver_log_file_open(&log, path));
 	for (i = 0; i < 400; ++i) {

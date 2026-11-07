@@ -6,6 +6,7 @@
 
 #define RECEIVER_LOG_MAX_BYTES 16384
 #define RECEIVER_LOG_PATH_MAX 256
+#define RECEIVER_LOG_EVENT_MAX 48
 
 typedef struct {
 	FILE *stream;

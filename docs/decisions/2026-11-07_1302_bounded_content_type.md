@@ -8,7 +8,7 @@ Recorded v0.1.27 RPCS3 validation evidence and changed ANNOUNCE Content-Type len
 
 ## Why this pass was needed
 
-v0.1.27 RPCS3 logs showed ANNOUNCE SDP parsing succeeded and the offer contained encryption type 1, an RSA key, and an AES IV. No validation-completion, RSA-unwrapping, or response event followed. The exact stopped expression was unknown.
+v0.1.27 RPCS3 logs showed ANNOUNCE SDP parsing and offer classification succeeded. The short validation-completion event was absent. v0.1.28’s longer Content-Type/RSA/response labels were silently rejected by the logger’s 24-character limit, so their absence was inconclusive.
 
 ## Files changed
 
@@ -35,7 +35,7 @@ ANNOUNCE now computes Content-Type length with a capacity-bounded helper and com
 
 ## Runtime behavior changes
 
-No wire response or successful session behavior is intentionally changed. v0.1.27 currently starts under RPCS3, answers OPTIONS, parses SDP and encrypted offer fields, then does not complete ANNOUNCE. v0.1.28 has not yet been built or run.
+No wire response or successful session behavior is intentionally changed. v0.1.28 starts under RPCS3 and answers OPTIONS, but the ANNOUNCE replay still times out. Its new phase labels were not stored because they exceeded the existing 24-character event-name limit. v0.1.29 addresses that logger defect.
 
 ## Validation performed
 
@@ -52,7 +52,7 @@ No wire response or successful session behavior is intentionally changed. v0.1.2
 
 ## Known limitations / follow-ups
 
-- Commit/push this pass, build v0.1.28 from that exact revision with emulator RTSP port 5001, and replay the synthetic sender.
+- Commit/push the logger-limit fix, build v0.1.29 from that exact revision with emulator RTSP port 5001, and replay the synthetic sender.
 - Inspect Content-Type check start/result, validation completion, RSA unwrap, and response build events.
 - If the client proceeds, inspect SETUP, RECORD, RTP/decrypt, ALAC, and PCM telemetry.
 - Retry visual/controller checks only when RPCS3 desktop is accessible.
@@ -66,7 +66,7 @@ The bounded helper and extra log events add a small amount of code and capped-lo
 ### Decision: Bound the fixed-capacity Content-Type scan
 
 - **Decision:** Replace the `strlen` use with an explicit capacity-bounded scan and log its result.
-- **Context:** v0.1.27 logs stopped after offer fields and before validation completion; the exact expression was not established.
+- **Context:** v0.1.27 short validation-completion logging was absent; v0.1.28’s longer diagnostic event names were rejected by the logger limit, so the exact expression remains unknown.
 - **Options considered:** Change protocol semantics, alter RSA behavior, or add a bounded check with diagnostics.
 - **Why this option was chosen:** It improves memory-safety defensively and directly tests one expression on the observed path without speculating about RAOP interoperability or crypto.
 - **Tradeoffs accepted:** Another patch build/replay is required; the suspected relationship to the emulator stall may prove coincidental.

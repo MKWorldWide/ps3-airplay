@@ -112,7 +112,7 @@ Review reports and logs for console/account identifiers, network addresses, Wi-F
 | Test | Result | Evidence and boundary |
 |---|---|---|
 | Synthetic RTSP ANNOUNCE | BLOCKED | v0.1.25 log records OPTIONS 200 and then `RTSP_ANNOUNCE`; the sender timed out waiting for the ANNOUNCE response after three seconds. No later status or error event appeared before the emulator was stopped. The exact blocked operation is not yet proven. |
-| v0.1.26 phase diagnostics | HOST PASS / RPCS3 PARTIAL | Host assertions pass. RPCS3 confirms SDP parse start/completion but receives no response; RSA key unwrap did not start. Detailed replay is below. |
+| v0.1.26 phase diagnostics | HOST PASS / RPCS3 PARTIAL | Host assertions pass. RPCS3 confirms SDP parse start/completion and offer fields but receives no response. Event names over 24 characters were silently filtered, so RSA-start absence is inconclusive. Detailed replay is below. |
 | Sender probe | READY | The host utility can perform OPTIONS, ANNOUNCE, SETUP, RECORD, send 128 encrypted RTP fixture packets to UDP 6000, then TEARDOWN. This is synthetic test traffic, not iPhone interoperability. |
 
 
@@ -124,7 +124,7 @@ Review reports and logs for console/account identifiers, network addresses, Wi-F
 | RPCS3 startup and listeners | PASS | Fresh app log records APP_START, NetCtl route, RTSP 5001, and UDP 6000–6002 readiness. |
 | OPTIONS | PASS | Synthetic sender received 200; the app recorded `RTSP_STATUS=200`. |
 | ANNOUNCE SDP | PASS | App recorded `ANNOUNCE_SDP_PARSE_START` and `ANNOUNCE_SDP_PARSE_DONE value=1`. |
-| ANNOUNCE response | BLOCKED | Sender timed out waiting for the response. No key-unwrapping-start or subsequent RTSP status event appeared. The app was stopped by the test harness; no APP_STOP event was recorded. Exact blocked operation remains unknown. |
+| ANNOUNCE response | BLOCKED | Sender timed out waiting for the response. No short validation-completion or RTSP status event appeared. Longer Content-Type, RSA, and response event names were rejected by the 24-character logger limit, so those absences are inconclusive. The app was stopped by the harness without APP_STOP. Exact blocked operation remains unknown. |
 | SETUP/RECORD/RTP | NOT REACHED | Sender stopped at ANNOUNCE; no audio fixture packets were sent. |
 | Display/audio/hardware | NOT VERIFIED | Desktop remained locked; this replay cannot establish visible pixels, audible tone, iPhone compatibility, or physical PS3 behavior. |
 
@@ -140,3 +140,15 @@ Review reports and logs for console/account identifiers, network addresses, Wi-F
 | ANNOUNCE validation / response | BLOCKED | No Content-Type-check, RSA-unwrapping, validation-complete, or RTSP-status event followed the offer summary. Sender timed out; exact stalled operation remains unknown. |
 | RTP / audio | NOT REACHED | Sender aborted before SETUP/RECORD; no media packets were sent. |
 | Display / physical PS3 | NOT VERIFIED | Desktop remained locked; physical PS3 and boot plugin configuration were not changed. |
+
+
+## RPCS3 v0.1.28 replay and logger diagnosis (2026-11-07)
+
+| Test | Result | Evidence and boundary |
+|---|---|---|
+| v0.1.28 package validation | PASS | AIRPLAY02 PKG 3,231,984 bytes, SHA-256 `0e3201647bb83b85c0df4e08dacc780c9daf1468c9d261e321c10be0f8fa9cef`; ELF, SFO, content ID, assets, extraction, and NPDRM checks pass. |
+| RPCS3 startup/listeners | PASS | Fresh app log records startup, route, RTSP 5001, and RTP 6000–6002. |
+| OPTIONS | PASS | Synthetic client receives 200. |
+| ANNOUNCE | BLOCKED | SDP parse, validation start, and offer fields log. The client gets no response; short validation-completion event is absent. Newly added Content-Type/RSA/response names exceed the logger’s 24-character limit and are silently dropped. Their absence is inconclusive. |
+| SETUP/RECORD/RTP | NOT REACHED | Probe aborts at ANNOUNCE timeout. |
+| v0.1.29 logger fix | HOST PASS / RPCS3 PENDING | Event-name limit raised and a 33-character event persistence assertion passes in the full Lima suite; package/runtime replay pending. |

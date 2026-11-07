@@ -42,7 +42,7 @@ The standalone receiver and resident PRX share portable protocol/codec component
 
 ## Validation status
 
-Portable host/sanitizer tests and PPU component compilation pass. v0.1.27 runs in RPCS3, opens RTSP/RTP sockets, answers OPTIONS, parses a synthetic ANNOUNCE SDP and its encrypted offer fields, then stops before validation completes; RSA key unwrap did not start and no response was sent. v0.1.28 adds a bounded Content-Type length check and focused events. mDNS setup fails at the emulated multicast interface. RPCS3 display pixels/controller exit, physical HDMI output, iPhone interoperability, and audible AirPlay music remain unverified. The repository's [test matrix](TEST_MATRIX.md) and [ANNOUNCE reports](reports/) hold current evidence.
+Portable host/sanitizer tests and PPU component compilation pass. v0.1.27 runs in RPCS3, opens RTSP/RTP sockets, answers OPTIONS, parses a synthetic ANNOUNCE SDP and its encrypted offer fields, then stops before validation completes and no response is sent. v0.1.28’s attempted Content-Type/RSA phase events were filtered by a 24-character event-name limit, so their absence is inconclusive. v0.1.29 raises the supported event-name limit and adds a long-name logging regression test. mDNS setup fails at the emulated multicast interface. RPCS3 display pixels/controller exit, physical HDMI output, iPhone interoperability, and audible AirPlay music remain unverified. The repository's [test matrix](TEST_MATRIX.md) and [ANNOUNCE reports](reports/) hold current evidence.
 
 ## References
 

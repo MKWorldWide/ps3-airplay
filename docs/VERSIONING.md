@@ -152,7 +152,7 @@ The standalone receiver `Makefile` and canonical Lima build/package scripts defa
 - Source revision: `6f8d6cb6f75e331d989419aaf51bd1d147704cad`; emulator-only RTSP port 5001.
 - CellOS PPC64 ELF: 2,780,208 bytes, SHA-256 `eda789f1a6a7c3ab9ad3629c1d7acd0af14066f34e1cc3dac5bb198482d9210c`.
 - AIRPLAY02 PKG: 3,231,408 bytes, SHA-256 `82e1407b92a1218ec3085f57bd8f6c35e97255569b92a44249e14239108fc246`. Package and payload validation passed. Local artifact is retained under ignored `work/builds/0.1.26/`.
-- RPCS3 fresh log confirms startup, route, sockets, OPTIONS 200, and successful SDP parse for ANNOUNCE, followed by no response. RSA unwrap did not start; SETUP/RECORD/RTP were not reached. mDNS still fails in the emulator. No screen, audible tone, iPhone, or physical-console result is claimed.
+- RPCS3 fresh log confirms startup, route, sockets, OPTIONS 200, and successful SDP parse for ANNOUNCE, followed by no response. Event names over 24 characters were rejected by the logger, so RSA unwrap status is inconclusive; SETUP/RECORD/RTP were not reached. mDNS still fails in the emulator. No screen, audible tone, iPhone, or physical-console result is claimed.
 - Full Lima host/sanitizer and PPU component checks pass. The direct local title-payload update preserved prior app data for rollback. The GUI desktop remains locked.
 - Next package version: 0.1.27.
 
@@ -162,5 +162,14 @@ The standalone receiver `Makefile` and canonical Lima build/package scripts defa
 - Source revision: `eebd588f4d4e7baa8da95d5f4127b9155d90b858`; emulator-only RTSP port 5001.
 - CellOS PPC64 ELF: 2,780,208 bytes, SHA-256 `e053dac6dfb801dd3f19d1ceef45d12e10d590052313f9ee0b27d5433e22c440`. AIRPLAY02 PKG: 3,231,920 bytes, SHA-256 `0a3d1c409fb1044231256090cc3693da3e1aaa5abddd5bc6e00f29a9aa407b6c`.
 - Package, SFO, content ID, extraction, assets, and finalized NPDRM validation passed. Local artifact is under ignored `work/builds/0.1.27/`.
-- RPCS3 confirms startup, route, sockets, OPTIONS 200, and SDP/offer parsing. Its last session events identify encryption type 1 plus key and IV fields; validation completion, RSA start, and response were not observed. SETUP/RECORD/RTP, display, audible sound, iPhone, and physical console remain unverified. mDNS setup fails in RPCS3.
-- v0.1.28 adds bounded Content-Type scanning and diagnostics. Next package version: 0.1.28.
+- RPCS3 confirms startup, route, sockets, OPTIONS 200, and SDP/offer parsing. Its last accepted session event identifies encryption type 1 plus key and IV fields. The event-name limit filtered longer validation/RSA/response events; only the missing short validation-completion event is informative. SETUP/RECORD/RTP, display, audible sound, iPhone, and physical console remain unverified. mDNS setup fails in RPCS3.
+- v0.1.28 adds bounded Content-Type scanning, but its new long diagnostic event names were rejected by the log field limit. Next package version: 0.1.29.
+
+
+## v0.1.28 package and RPCS3 replay
+
+- Source: `4308bb120d0b86e065481a1175990de47acb4a24`; emulator-only RTSP port 5001.
+- CellOS PPC64 ELF: 2,780,208 bytes, SHA-256 `0a6fd755b1150d42b0be5b5b11b34b59b426c85476b5847d4d8fc3ce957bbc6d`. AIRPLAY02 PKG: 3,231,984 bytes, SHA-256 `0e3201647bb83b85c0df4e08dacc780c9daf1468c9d261e321c10be0f8fa9cef`.
+- Package validation, Lima ASan/UBSan suite, and PPU component compilation passed. RPCS3 starts and answers OPTIONS 200; ANNOUNCE SDP and fields parse, but no response arrives. New Content-Type/RSA/response event names were filtered by the 24-character logger limit, so their absence is inconclusive. The short validation-completion event is absent. No SETUP/RECORD/RTP or audio evidence.
+- Local title payload was staged after preserving v0.1.27 data. Desktop remains locked; physical PS3 and boot plugins unchanged.
+- v0.1.29 fixes the logger event-name limit and adds a regression test.
