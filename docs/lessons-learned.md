@@ -7,6 +7,13 @@
 - **Fix:** No implementation fix yet. Record direct execution as unresolved and do not count the trace-assisted run as a normal passing test.
 - **Prevention Rule:** Repeat timing-sensitive network tests without instrumentation; add an explicit test deadline and collect narrowly scoped diagnostics before claiming a pass.
 
+## A stop event does not identify the tested build or exit path
+
+- **Problem:** The current PS3 log records `APP_STOP`, but it lacks a package-version marker and `USER_EXIT_START`.
+- **Root Cause:** The earlier build did not write a unique version marker on every run, and the generic stop event is emitted by cleanup regardless of which exit path reached it.
+- **Fix:** Preserve the original log, report only allowlisted event summaries, and leave package identity and clean user exit unconfirmed.
+- **Prevention Rule:** Include a build/version marker in every startup log and treat `APP_STOP` as cleanup evidence only; require `USER_EXIT_START` plus a user-confirmed XMB return for clean-exit PASS.
+
 ## Discovery does not prove the advertised address is reachable
 
 - **Problem:** The iPhone listed the receiver but reported that it could not connect; the available old log contained no RTSP accept event and may not match that attempt.

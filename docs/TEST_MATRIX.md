@@ -25,12 +25,12 @@ This matrix distinguishes portable host evidence and cross-build evidence from r
 
 | ID | Scenario | Status |
 |---|---|---|
-| DEPLOY-01 | FTP preflight, package staging, and downloaded-back hash verification | Historical package stage was verified; current console preflight is BLOCKED because the last known console endpoint does not respond to ping or FTP. No transfer attempted. |
+| DEPLOY-01 | FTP preflight, package staging, and downloaded-back hash verification | Read-only preflight PASS. Console is reachable, status reports 9.2 GB free, current staged PKG is 3,222,640 bytes / SHA-256 `7824a4b15e4757afad3213a3f55cd3bea816b33795403da12bfd7ede29f93db4`, and a local rollback copy was verified. v0.1.2 has not been transferred. |
 | DEPLOY-02 | Replace staged package with corrected NPDRM PKG and verify downloaded-back hash | PASS; 416,240 bytes, exact SHA-256 match |
 | DEPLOY-03 | Replace staged package with screen-enabled 01.01 candidate and verify downloaded-back hash | PASS; 3,222,640 bytes, byte-identical to approved artifact |
 | BUILD-03 | Cross-build visible diagnostic screen and controller START exit; inspect packaged image | PASS in Lima for 0.1.2; hardware behavior untested |
-| HW-01 | Confirm tested recovery procedure and record a privacy-safe baseline | BLOCKED; console unreachable, recovery status and current installed title cannot be checked |
-| HW-02 | Install/launch standalone app and exit cleanly | Unresolved: user reports tone, black screen, and forced shutdown; a log reports `SCREEN_READY` but visible output and exact build identity are unconfirmed; 0.1.2 awaits exact transfer approval |
+| HW-01 | Confirm tested recovery procedure and record a privacy-safe baseline | Partial: console is currently at XMB and reachable after a prior forced power-off/reboot; standalone app does not alter boot plugins. A clean in-app exit and recovery from a new freeze are not yet proven. |
+| HW-02 | Install/launch standalone app and exit cleanly | Unresolved: current installed SFO is 01.01. Retrieved 1,817-byte log records `SCREEN_READY`, tone completion, and `APP_STOP`, but no version marker, `USER_EXIT_START`, or RTSP event; visible output and clean XMB return are unconfirmed. v0.1.2 awaits exact transfer approval. |
 | HW-03 | Audible test audio at the system menu | Partial PASS; user heard the five-second diagnostic tone; normal AirPlay music not tested |
 | HW-04 | iPhone discovers receiver and completes AirPlay session | Partial: iPhone lists `ps3-airplay-diagnostic`; selecting it fails to connect; session not established |
 | HW-05 | Verify audible AirPlay playback and controls | NOT RUN |
