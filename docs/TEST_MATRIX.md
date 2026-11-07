@@ -202,3 +202,14 @@ See the v0.1.31 report for precise host-versus-target evidence boundaries.
 | Real music and crackling resolution | PENDING maintainer |
 
 The emitter used a paced diagnostic fixture; target output submission is not proof of audible playback.
+
+
+## Latest hardware result: v0.1.33
+
+| ID | Scenario | Status |
+|---|---|---|
+| HW-033-01 | Launch, background, diagnostic tone and XMB exit | Launch/background and clean exit observed by maintainer; background flickers after XMB resume. One short tone was heard; v0.1.33 source contains one five-second 440 Hz tone only. |
+| HW-033-02 | Real iPhone AirPlay music | PASS for audible music, multiple songs by maintainer report. Playback is crackly/unstable and low fidelity; this is not an MVP quality pass. |
+| HW-033-03 | Receive/decrypt/decode/output pipeline | Log segment confirms encrypted 44.1 kHz stereo RTP, ALAC frame decode and PCM submissions. It shows at least 1,792 packets in the visible receive batches, 106 RTP sequence gaps, and zero ALAC failures in sampled totals. Log wrapped; initial RTSP/SDP context and exact whole-session counts are missing. |
+| HW-033-04 | PS menu resume | FAIL/inconsistent: earlier resume stuck at a loading view; subsequent resume returned to app but the background flickered. |
+| BUILD-034 | Bounded resend queue and delayed recovery | Host/Lima validation PASS: preserves gaps queued during the send throttle, tracks multiple outstanding ranges, and accepts delayed retransmission packets. Full PPU app/package and physical behavior pending. |

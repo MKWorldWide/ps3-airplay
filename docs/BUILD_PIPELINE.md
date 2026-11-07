@@ -132,3 +132,8 @@ Maintainer reports PS-button menu now opens, but resuming freezes its loading vi
 Concrete protocol gap: key setup previously required a=et:1, although classic RAOP infers encryption from paired rsaaeskey/aesiv without et (also the maintained Shairport Sync behavior). Infer encryption only for a complete pair when et is absent; respect explicit et and reject incomplete pairs. Regression checks missing-et key recovery and correct plaintext, plus partial-pair rejection.
 
 Display candidate restores the standard GPU-side wait-flip command ordering after flushing each flip. Retain the bounded RGB image to refresh both framebuffer images following MENU_CLOSE; reset the flip deadline after the compositor releases control. Do not apply a normal-frame timeout while the system menu owns presentation. Controller/event handling remains input-first. Rate-limit failure and decode-attempt logs; repeat stream-rate/encryption/error totals every five seconds to preserve negotiation context. Version 0.1.33 / SFO 00.33. Hardware resume/flicker/music result remains pending.
+
+
+## v0.1.34: bounded RTP gap recovery
+
+The v0.1.33 hardware log shows repeated RTP sequence gaps while ALAC decode and PCM generation remain active. v0.1.34 keeps up to 16 pending resend ranges so the 50 ms request interval cannot discard a gap, and tracks 16 outstanding ranges for one second so delayed responses remain eligible for insertion. FLUSH, TEARDOWN, and disconnect clear pending and outstanding state. Packet/decode checkpoints are reduced to every 512 packets; five-second totals report sequence gaps and resend outcomes. This is a targeted recovery hypothesis, not a confirmed audio-quality fix. Version 0.1.34 / SFO 00.34.

@@ -453,3 +453,18 @@ The v0.1.31 fresh RPCS3 replay verifies the portable-arithmetic correction: the 
 - **Root Cause:** Receiver incorrectly made RSA/AES setup depend on the optional et SDP attribute. Existing fixtures always supplied it and masked the gap. Separately, periodic presentation omitted the reference GPU wait-flip command and reused buffers after compositor activity without restoring their image. Logs show menu-close callbacks but do not isolate the exact resume cause.
 - **Fix:** Infer encryption from complete key/IV pair when et is absent; reject partial pairs; test the missing-et path. Queue standard GPU wait ordering and refresh background buffers on menu close. Limit repeated decode failures and periodically repeat negotiated format/encryption status.
 - **Prevention Rule:** Cover sender variants rather than a single synthetic SDP. A selected route and AES-call success do not prove decoded audio. Emulator presentation does not establish real XMB resume behavior. Preserve diagnostic context by aggregating repeated errors.
+
+
+## Retain packet gaps during resend throttling
+
+- **Problem:** The first real AirPlay music was audible but crackled. The retained v0.1.33 log reports repeated RTP sequence gaps alongside successful decrypt, ALAC decode and PCM generation.
+- **Root Cause:** The resend handler acted on only the most recent gap, ignored it when the 50 ms pacing interval had not elapsed, and replaced the sole accepted resend range with later requests. This can lose recovery opportunities; the wrapped hardware log does not prove it caused every audible artifact.
+- **Fix:** v0.1.34 queues a bounded number of missing ranges, retains up to 16 outstanding ranges for one second, and accepts delayed responses against any matching range. The host loopback sends two gaps close enough to hit the throttle and returns both retransmissions later.
+- **Prevention Rule:** Keep rate-limited work in an explicit bounded pending queue, and track asynchronous replies by request/range rather than one mutable current slot. Verify real-time recovery counts and user-audible improvement on hardware.
+
+## A hardware audio milestone can coexist with a quality failure
+
+- **Problem:** The maintainer heard multiple real Spotify songs through AirPlay, yet audio was still crackly and low fidelity, while the screen flickered after XMB resume.
+- **Root Cause:** Not fully established. The log proves encrypted RTP, successful ALAC frames and PCM submissions, and also shows sequence gaps; it does not include enough history for exact loss/recovery accounting. The display callbacks and no-error log do not prove stable scanout.
+- **Fix:** Record this as first audible playback, not stable playback. Target the measured resend weakness independently and retain frequent aggregate counters; keep XMB resume as its own hardware gate.
+- **Prevention Rule:** Report success by layer and quality separately. A decoded PCM path and a human-heard song do not imply clean audio, accurate timing, stable display, or a passing soak test.

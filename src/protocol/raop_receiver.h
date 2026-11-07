@@ -10,6 +10,16 @@
 #include "raop_session.h"
 #include "../observability/receiver_log.h"
 
+#define RAOP_RESEND_TRACKED_RANGES 16U
+
+typedef struct {
+	uint16_t first_sequence;
+	uint16_t packet_count;
+	uint16_t received_mask;
+	uint64_t expires_ms;
+	uint8_t valid;
+} raop_resend_range;
+
 typedef struct {
 	int tcp_fd;
 	int client_fd;
@@ -48,14 +58,17 @@ typedef struct {
 	uint16_t timing_max_rtt_ms;
 	uint8_t timing_outstanding;
 	uint16_t resend_sequence;
-	uint16_t resend_first_sequence;
-	uint16_t resend_packet_count;
-	uint16_t resend_received_mask;
-	uint8_t resend_range_valid;
+	raop_resend_range pending_resend[RAOP_RESEND_TRACKED_RANGES];
+	raop_resend_range outstanding_resend[RAOP_RESEND_TRACKED_RANGES];
+	uint8_t pending_resend_read;
+	uint8_t pending_resend_write;
+	uint8_t pending_resend_count;
 	uint64_t resend_requests;
 	uint64_t resend_failures;
 	uint64_t resend_recovered;
 	uint64_t resend_rejected;
+	uint64_t resend_pending_drops;
+	uint64_t resend_tracking_full;
 	uint64_t resend_last_send_ms;
 	uint64_t last_audio_log_packets;
 	uint64_t last_audio_log_payload_bytes;

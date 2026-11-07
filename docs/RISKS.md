@@ -53,3 +53,10 @@ The historical 0.30 build starts and plays its tone on the PS3; START exits whil
 ## v0.1.32 checkpoint
 
 Big-endian PCM bytes and paced target packet/decode/PCM path now validate in RPCS3. Candidate is installed. Regular scanout and input-first loop target the reported PS/START issue; hardware overlay/exit confirmation remains required. Graphics waits are bounded and idle logging no longer destroys connection history as quickly. No extended soak until physical controls and clean exit pass.
+
+
+## Current observed playback risks (v0.1.33)
+
+- Audible music is confirmed, but crackling and low fidelity remain. The wrapped log shows 106 sequence gaps in 1,792 visible received packets; these are an observed risk signal, not a proven one-to-one cause of audible artifacts. v0.1.34 now queues throttled gaps and keeps 16 outstanding response ranges for up to one second. Validate loss/recovery on hardware before concluding the fix worked.
+- XMB resume produces inconsistent image presentation/flicker. The retained log shows menu callbacks and no screen-present error but cannot verify displayed pixels or prove the cause. Keep video work separate from RTP recovery.
+- The current 16 KiB log wrapped during the test and discarded startup/negotiation context. v0.1.34 reduces verbose packet/decode checkpoints to every 512 packets and adds five-second loss/recovery totals; retain the cap and confirm a fresh log still contains sufficient diagnostics.

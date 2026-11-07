@@ -1,6 +1,6 @@
 # Roadmap
 
-**Current status (2026-11-07):** AIRPLAY02 v0.1.27 runs in RPCS3 with emulator-only RTSP 5001. It starts, obtains a route, opens RTSP/RTP sockets, and answers OPTIONS 200. Synthetic ANNOUNCE SDP and its encrypted offer fields parse (encryption type 1, RSA key and IV present), but validation does not complete and the client gets no response. v0.1.28’s Content-Type/RSA events were silently rejected by the logger’s 24-character event-name limit, so absence does not show which operation ran. v0.1.29 raises that limit and adds regression coverage. Full Lima host/ASan/UBSan and PPU component checks pass. RPCS3 mDNS interface setup still fails. No iPhone, visible display, audible tone/music, controller exit, or physical PS3 test is established. Desktop CUA remains locked; console and boot plugins unchanged. See [build pipeline](BUILD_PIPELINE.md), [test matrix](TEST_MATRIX.md), and [versioning policy](VERSIONING.md).
+**Current status (2026-11-07):** AIRPLAY02 v0.1.33 / SFO 00.33 is installed on the demonstration PS3. The maintainer confirms AirPlay music from multiple Spotify tracks is audible for the first time, but crackles and sounds unstable/low fidelity. The screen flickers, especially after XMB resume. The retrieved log confirms encrypted 44.1 kHz stereo RTP, successful ALAC decode and PCM generation; its retained segment also reports repeated RTP sequence gaps and zero ALAC failures. v0.1.34 adds bounded resend queuing/tracking and less chatty checkpoints; the full Lima host suite passes. The new PKG and hardware retest are pending. First playback is a breakthrough, not stable AirPlay. See the [hardware report](reports/2026-11-07_v0133_first_airplay_playback.md), [test matrix](TEST_MATRIX.md), and [versioning policy](VERSIONING.md).
 
 ## Milestones
 
@@ -18,18 +18,16 @@
 
 ## Current implementation
 
-Portable components cover bounded DNS-SD/mDNS, RTSP/SDP session handling, UDP RTP, timing probes, retransmission requests and validation, RAOP crypto, ALAC decoding, PCM buffering, and capped diagnostics. The standalone app plays a five-second, low-level 440 Hz startup diagnostic through its GameOS audio blocks before normal PCM rendering. The local screen candidate primes scanout with PSL1GHT's sample sequence and shows the background with a white START-to-exit prompt. v0.1.11 visibly rendered this in RPCS3; physical output remains unverified. It polls controller START for orderly return to XMB. The screen code cross-builds in Lima; hardware rendering and exit behavior are unverified. The resident candidate decodes supported packets for diagnostics and discards PCM.
+Portable components cover bounded DNS-SD/mDNS, RTSP/SDP session handling, UDP RTP, timing probes, retransmission requests and validation, RAOP crypto, ALAC decoding, PCM buffering, and capped diagnostics. The standalone app plays one five-second, low-level 440 Hz startup diagnostic through GameOS audio blocks before normal PCM rendering. v0.1.33 music playback is confirmed by the maintainer; the static background flickers after XMB resume. It polls controller START for orderly return to XMB; the latest observed run exited with clean cleanup. The resident candidate decodes supported packets for diagnostics and discards PCM.
 
 ## Next steps
 
-1. Keep AIRTEST01 parked; do not use it as a substitute for the receiver.
-2. RPCS3 networking needs to be Connected for NetCtl to obtain a route. Keep production builds on TCP 5000; use `RTSP_PORT=5001` only for emulator probes when host port 5000 is occupied. Do not stop or alter the host mDNS responder. Run v0.1.29 and follow Content-Type, validation, RSA, and response events before attempting RTP again.
-3. Before hardware deployment, bound the display's unbounded RSX waits and make sure controller exit remains available if graphics setup stalls.
-4. Once a receiver build is safe to test, the maintainer's standing authorization allows package staging/installation without another approval request. First verify one launch, visible output, tone, and START-to-XMB; stop if launch or clean exit fails.
-5. Retry the synthetic ANNOUNCE probe against v0.1.29 and inspect Content-Type validation, field classification, RSA, and response construction. Retry RPCS3 with the desktop unlocked for visible-screen and controller-exit evidence. Then test mDNS on real PS3 hardware; for the emulator, investigate its multicast-interface failure without changing host-wide services. Attempt one iPhone connection only when discovery is advertised.
-6. Continue toward audible AirPlay only after fresh hardware evidence establishes the working boundary; keep protocol, decrypt, ALAC, PCM, and GameOS output claims separate.
-7. Repeat the latest uninstrumented receiver loopback/timing pass to confirm the earlier intermittent timing-probe hang is no longer reproducible.
-8. Evaluate resident PRX lifecycle and per-title game audio only after standalone playback works; keep boot plugin configuration unchanged.
+1. Finish and validate v0.1.34's bounded RTP retransmission queue and delayed-response tracking, then build a new package with SFO 00.34.
+2. Install and run a short controlled stream. Compare missing, requested, recovered, late and dropped packets with the v0.1.33 baseline; ask the maintainer whether crackling improves.
+3. Test the screen separately: launch, open PS menu, resume twice, verify stable background, then START-to-XMB. The captured log shows no presentation error but cannot prove a stable HDMI image.
+4. Preserve a fresh log immediately after the controlled stream and before relaunch; the 16 KiB log wraps and startup/session negotiation can be lost.
+5. If audio remains poor despite low RTP loss, measure audio underflows, sender-clock drift and output sample handling before attempting a decoder rewrite. Do not change the conservative output gain without a measured need.
+6. Keep soak testing, resident PRX work, and per-title game audio mixing deferred until short playback, XMB resume and clean exit are stable.
 
 ### Current protocol hardening (2026-11-07)
 

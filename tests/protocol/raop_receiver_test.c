@@ -461,7 +461,7 @@ int main(void)
 		assert(frame.packet.sequence == 1);
 	}
 	pthread_mutex_unlock(&args.receiver_lock);
-	for (sequence = 2; sequence <= 129; ++sequence) {
+	for (sequence = 2; sequence <= 513; ++sequence) {
 		if (sequence == 3)
 			continue;
 		previous_packets = atomic_load_explicit(&args.audio_packets_seen,
@@ -478,6 +478,63 @@ int main(void)
 			raop_rtp_frame frame;
 			assert(raop_receiver_pop_audio(&receiver, &frame));
 			assert(frame.packet.sequence == sequence);
+		}
+		pthread_mutex_unlock(&args.receiver_lock);
+	}
+	{
+		uint64_t before_requests, before_recovered;
+		previous_packets = atomic_load_explicit(&args.audio_packets_seen,
+			memory_order_acquire);
+		pthread_mutex_lock(&args.receiver_lock);
+		before_requests = receiver.resend_requests;
+		before_recovered = receiver.resend_recovered;
+		pthread_mutex_unlock(&args.receiver_lock);
+		send_rtp(raop_receiver_audio_port(&receiver), 515);
+		for (wait = 0; wait < 50 &&
+			atomic_load_explicit(&args.audio_packets_seen,
+			memory_order_acquire) == previous_packets; ++wait)
+			(void)nanosleep(&(struct timespec){0, 10000000L}, NULL);
+		assert(atomic_load_explicit(&args.audio_packets_seen,
+			memory_order_acquire) == previous_packets + 1);
+		previous_packets++;
+		send_rtp(raop_receiver_audio_port(&receiver), 517);
+		for (wait = 0; wait < 50 &&
+			atomic_load_explicit(&args.audio_packets_seen,
+			memory_order_acquire) == previous_packets; ++wait)
+			(void)nanosleep(&(struct timespec){0, 10000000L}, NULL);
+		assert(atomic_load_explicit(&args.audio_packets_seen,
+			memory_order_acquire) == previous_packets + 1);
+		for (wait = 0; wait < 100; ++wait) {
+			int requests_ready;
+			pthread_mutex_lock(&args.receiver_lock);
+			requests_ready = receiver.resend_requests >= before_requests + 2;
+			pthread_mutex_unlock(&args.receiver_lock);
+			if (requests_ready) break;
+			(void)nanosleep(&(struct timespec){0, 10000000L}, NULL);
+		}
+		pthread_mutex_lock(&args.receiver_lock);
+		assert(receiver.resend_requests >= before_requests + 2);
+		assert(receiver.pending_resend_count == 0);
+		pthread_mutex_unlock(&args.receiver_lock);
+		send_resend(peer_udp_fd, receiver.control_port, 514, 1);
+		send_resend(peer_udp_fd, receiver.control_port, 516, 1);
+		for (wait = 0; wait < 100; ++wait) {
+			int recovered;
+			pthread_mutex_lock(&args.receiver_lock);
+			recovered = receiver.resend_recovered >= before_recovered + 2;
+			pthread_mutex_unlock(&args.receiver_lock);
+			if (recovered) break;
+			(void)nanosleep(&(struct timespec){0, 10000000L}, NULL);
+		}
+		pthread_mutex_lock(&args.receiver_lock);
+		assert(receiver.resend_recovered >= before_recovered + 2);
+		assert(receiver.audio_queue.count == 4);
+		{
+			raop_rtp_frame frame;
+			for (sequence = 514; sequence <= 517; ++sequence) {
+				assert(raop_receiver_pop_audio(&receiver, &frame));
+				assert(frame.packet.sequence == sequence);
+			}
 		}
 		pthread_mutex_unlock(&args.receiver_lock);
 	}
@@ -512,7 +569,7 @@ int main(void)
 	assert(strstr(log_contents,
 		"event=RTP_SOCKET_FLUSH value=2 bytes=0") != NULL);
 	assert(strstr(log_contents, "event=RTSP_SEND_TIMEOUT") != NULL);
-	assert(strstr(log_contents, "event=RTP_RX_BATCH value=128") != NULL);
+	assert(strstr(log_contents, "event=RTP_RX_BATCH value=512") != NULL);
 	assert(strstr(log_contents, "event=RTP_QUEUE_DEPTH value=1 bytes=0") != NULL);
 	assert(strstr(log_contents,
 		"event=RTP_MISSING_BATCH value=1 bytes=0") != NULL);

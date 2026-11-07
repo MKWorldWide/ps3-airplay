@@ -278,6 +278,11 @@ int main(void)
 	uint64_t reported_pcm_frames_written = 0;
 	uint64_t reported_pcm_frames_read = 0;
 	uint64_t reported_audio_port_frames = 0;
+	uint64_t reported_resend_requests = 0;
+	uint64_t reported_resend_recovered = 0;
+	uint64_t reported_missing_packets = 0;
+	uint64_t reported_resend_pending_drops = 0;
+	uint64_t reported_resend_tracking_full = 0;
 	uint64_t handled_flush_generation = 0;
 
 	mdns_service.socket_fd = -1;
@@ -452,6 +457,9 @@ int main(void)
 			reported_pcm_frames_written = 0;
 			reported_pcm_frames_read = 0;
 			reported_audio_port_frames = 0;
+			reported_resend_requests = receiver.resend_requests;
+			reported_resend_recovered = receiver.resend_recovered;
+			reported_missing_packets = receiver.audio_queue.stats.missing_packets;
 			(void)log_event(decoder != NULL ? "ALAC_READY" : "ALAC_UNSUPPORTED",
 				(int)receiver.session.offer.fmtp[2],
 				(int)receiver.session.offer.fmtp[6]);
@@ -498,7 +506,7 @@ int main(void)
 				if (decoder != NULL) {
 					size_t pcm_length = 0;
 					uint32_t samples = 0;
-					if (++decode_attempts == 1 || (decode_attempts % 128U) == 0)
+					if (++decode_attempts == 1 || (decode_attempts % 512U) == 0)
 						(void)log_event("ALAC_DECODE_START", 0, frame.packet.payload_length);
 					if (raop_alac_decode(decoder, frame.payload,
 						frame.packet.payload_length, decoded_pcm,
@@ -507,7 +515,7 @@ int main(void)
 							pcm_length);
 						++decoded_packet_count;
 						if (decoded_packet_count == 1 ||
-							(decoded_packet_count % 128U) == 0)
+							(decoded_packet_count % 512U) == 0)
 							(void)log_event("ALAC_FRAME", (int)samples,
 								pcm_length);
 					} else {
@@ -554,6 +562,20 @@ int main(void)
     (void)log_event("STREAM_ENCRYPTED", receiver.session.has_audio_key,
      receiver.session.offer.has_encryption_type);
     (void)log_event("ALAC_FAIL_TOTAL", bounded_counter_delta(decode_failures, 0), 0);
+				(void)log_event("RTP_MISSING_TOTAL",
+					bounded_counter_delta(receiver.audio_queue.stats.missing_packets,
+						reported_missing_packets), receiver.audio_queue.count);
+				(void)log_event("RTP_RECOVERY_TOTAL",
+					bounded_counter_delta(receiver.resend_recovered,
+						reported_resend_recovered),
+					(size_t)bounded_counter_delta(receiver.resend_requests,
+						reported_resend_requests));
+				(void)log_event("RTP_PENDING_DROPS",
+					bounded_counter_delta(receiver.resend_pending_drops,
+						reported_resend_pending_drops), receiver.pending_resend_count);
+				(void)log_event("RTP_TRACK_FULL",
+					bounded_counter_delta(receiver.resend_tracking_full,
+						reported_resend_tracking_full), 0);
 				(void)log_event("PCM_BUFFER_FRAMES", (int)pcm_ring.count, 0);
 				(void)log_event("PCM_QUEUED_FRAMES",
 					bounded_counter_delta(pcm_ring.frames_written,
@@ -567,6 +589,11 @@ int main(void)
 				reported_pcm_frames_written = pcm_ring.frames_written;
 				reported_pcm_frames_read = pcm_ring.frames_read;
 				reported_audio_port_frames = audio_port_frames_submitted;
+				reported_resend_requests = receiver.resend_requests;
+				reported_resend_recovered = receiver.resend_recovered;
+				reported_missing_packets = receiver.audio_queue.stats.missing_packets;
+				reported_resend_pending_drops = receiver.resend_pending_drops;
+				reported_resend_tracking_full = receiver.resend_tracking_full;
 			}
 			next_audio_stats_us = sysGetSystemTime() + 5000000U;
 		}

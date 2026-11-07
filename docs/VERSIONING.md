@@ -189,3 +189,10 @@ Disables incompatible Mbed TLS PPC64 assembly on the PS3 ABI and adds challenge/
 ## v0.1.32 / SFO 00.32
 
 Installed from source e34cbce. Corrects ALAC host byte order; adds regular nonblocking presentation, input-first polling, bounded graphics cleanup and rate-limited diagnostics. PKG 3,234,544 bytes; SHA-256 fca5547fda865f22faff7099834d0c3a8e77e6658f955b5c3a4a941cfd7ac7b3. PPU golden PCM comparison and full-app paced RPCS3 RTP/decrypt/decode/PCM buffering pass. Physical XMB overlay, exit after disconnect and audible music await maintainer testing.
+
+
+## v0.1.33 / SFO 00.33 hardware playback result
+
+- Source `7352a77cbaa7d13d57ad93a2788bdc0ba26e4fd2`; AIRPLAY02 PKG 3,235,056 bytes, SHA-256 `aa3b456caa983b85b26fa63a43289b2a301a262a2d9d5f8748783897ddea79f5`. Installed EBOOT/SFO matched the candidate.
+- Maintainer confirms multiple AirPlay Spotify songs were audible. Audio crackled and remained unstable/low fidelity; the display flickered after XMB resume. The retained hardware log confirms RTP/decrypt/ALAC/PCM activity, with 106 sequence gaps in the visible 1,792-packet window and zero sampled ALAC failures. The log wrapped and exact session-wide counts are unavailable.
+- v0.1.34 / SFO 00.34 adds bounded pending/outstanding RTP resend state and less noisy aggregate logging. Full Lima host suite and PPU component checks pass; the full ELF/package and hardware results remain pending.
