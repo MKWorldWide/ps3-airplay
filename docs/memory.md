@@ -154,4 +154,10 @@ Demonstration target: PS3 with Evilnat 4.93 CFW and Cobra 8.5 observed; the cons
 
 - During an active decoder session, the standalone loop now logs numeric PCM ring occupancy, accepted ring frames, input frames consumed by the resampler, and output frames submitted to GameOS blocks every five seconds.
 - `PCM_PORT_SUBMITTED` counts generated GameOS audio frames and is not a hardware-rendered or audible-output metric. Existing underflow/drop events remain distinct.
-- Full Lima host tests and a working-tree PPU application link/CellOS PPC64 ELF validation pass. Canonical package generation from a committed revision and RPCS3 runtime event verification are pending. v0.1.18 remains the next package version.
+- At the end of the source pass, full Lima host tests and a working-tree PPU application link/CellOS PPC64 ELF validation passed; the canonical package and RPCS3 event check were still pending. The finalized v0.1.18 artifact is recorded in the following section.
+
+## AIRPLAY02 v0.1.18 PCM telemetry package (2026-11-07)
+
+- Canonical Lima build from commit `8769324` passes: full host suite, PPU app, CellOS PPC64 ELF validation, and finalized NPDRM package validation.
+- ELF: 2,780,120 bytes, SHA-256 `ba7450441a8e2def2a1f55e17d523630d3d5af256520f6769154a347b09d3759`. PKG: 3,230,448 bytes, SHA-256 `5548fde98bc08949e4f3a6739a95d5b3dce7dea0458131ec693c01be97766ae0`.
+- The package has not been installed or run in RPCS3; telemetry events, screen, controller exit, and audio remain unverified at runtime. Next package version: 0.1.19.

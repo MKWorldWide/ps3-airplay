@@ -37,4 +37,15 @@ AIRPLAY02 follows conservative pre-1.0 versioning. Increment the patch number fo
 - Build: Existing Lima VM; PS3DK v0.27.0 PPU compiler 16.1.0, GNU ld 2.42, PSL1GHT revision `dd4e8c9be744e3273d665c393fa6d97a87402e2e`.
 - Checks: full Lima host suite, PPU object compilation, standalone link/ELF validation, extracted SFO/title/content ID/assets, EBOOT equality, and finalized package envelope PASS.
 - RPCS3 install/launch/display and physical PS3 tests: pending. Do not infer screen pixels, clean exit, discovery, or playback from the build.
-- The next unused package version is 0.1.18.
+- At the time of this v0.1.17 record, the next package version was 0.1.18; that version is recorded below.
+
+## v0.1.18 package record
+
+- Source: `8769324` on `main` (bounded periodic PCM pipeline counters).
+- Artifact: `ps3-airplay-receiver-0.1.18.pkg`, AIRPLAY02, APP_VER `0.1.18`.
+- Size / SHA-256: 3,230,448 bytes / `5548fde98bc08949e4f3a6739a95d5b3dce7dea0458131ec693c01be97766ae0`.
+- ELF: 2,780,120 bytes, CellOS PPC64, five PT_LOAD segments; SHA-256 `ba7450441a8e2def2a1f55e17d523630d3d5af256520f6769154a347b09d3759`.
+- Build: Existing Lima VM; PS3DK v0.27.0 PPU compiler 16.1.0, GNU ld 2.42, PSL1GHT revision `dd4e8c9be744e3273d665c393fa6d97a87402e2e`.
+- Checks: full Lima host suite, PPU object compilation, standalone link/ELF validation, extracted SFO/title/content ID/assets, EBOOT equality, and finalized NPDRM envelope PASS.
+- RPCS3 install/launch and emitted telemetry verification: pending. No physical hardware or audible playback evidence.
+- The next unused package version is 0.1.19.
