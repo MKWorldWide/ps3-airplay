@@ -85,6 +85,13 @@ Demonstration target: PS3 with Evilnat 4.93 CFW and Cobra 8.5 observed; the cons
 - During the Connected run, a wildcard host TCP listener occupied port 5000; the candidate's UDP ports 6000-6002 had no host listeners. This suggests a port collision worth testing but does not yet prove that it produced the logged guest errno. The RPCS3 Network tab also showed PSN Disconnected and UPnP disabled. The prior Internet-disabled setting is backed up under ignored local `work/private/` and should be restored after emulator tests.
 - Add a build-time RTSP port input defaulting to 5000. Use a distinct v0.1.10 RPCS3 test package on port 5001, keeping the normal PS3 build default at 5000. RAOP mDNS service publication already receives the listener's actual bound port.
 
+## RPCS3 v0.1.10 listener and screen polish (2026-11-07)
+
+- v0.1.10 was built from source revision `751d7c2` with `RTSP_PORT=5001` for RPCS3; the normal build default remains TCP 5000. The 3,225,904-byte finalized package hash is recorded in the v0.1.10 test report.
+- RPCS3 installed and ran v0.1.10. The fresh log reached route readiness, crypto readiness, RTSP listen on 5001, RTP audio/control/timing ports 6000/6001/6002, then `MDNS_FAILED`, `AUDIO_READY`, and diagnostic tone start/completion. PCM underflows followed because no stream was connected. This is not AirPlay discovery or playback.
+- The user reports that the app opens and the background is visible, but the exact hardware/package attribution for that observation is not yet captured. Remove the blue screen bands and `DISPLAY ACTIVE` overlay; retain the user-provided background and white START-to-exit prompt.
+- The next package candidate is v0.1.11. Diagnose mDNS startup failure by logging a bounded failure-stage enum and numeric errno without addresses, labels, or other private data.
+
 ## Invariants
 
 - Keep protocol inputs, sessions, queues, and logs bounded.

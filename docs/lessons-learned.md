@@ -1,5 +1,12 @@
 # Lessons learned
 
+## Keep a working background image unobstructed
+
+- **Problem:** The diagnostic screen's blue bands, color stripes, and `DISPLAY ACTIVE` label obscured the background after the maintainer reported that the application now opens and the image is visible.
+- **Root Cause:** The overlay was retained from the earlier black-screen diagnosis even after visibility became sufficient for the user.
+- **Fix:** Remove the bands and active label, keep the background image, and retain a small white START-to-exit instruction.
+- **Prevention Rule:** Diagnostic overlays should have a clear removal gate; once the user confirms visible output, reduce the screen to the requested product UI.
+
 ## Separate emulator host-port conflicts from receiver failures
 
 - **Problem:** v0.1.9 reached a usable emulated route but still failed the RTSP bind in RPCS3.

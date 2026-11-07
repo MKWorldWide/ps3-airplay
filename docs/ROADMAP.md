@@ -1,6 +1,6 @@
 # Roadmap
 
-**Status: experimental; the maintainer reports one earlier AIRPLAY02 startup and five-second tone, but the exact package identity is unknown. AIRPLAY02 v0.1.2 and v0.1.3 later returned XMB error `80028F21`; AIRTEST01 v0.1.0 is parked. RPCS3 rejected v0.1.4–v0.1.6 before app startup. PS3DK-built v0.1.7–v0.1.9 installed and reached APP_START in RPCS3. v0.1.7/v0.1.8 failed RTSP bind with error 112 while emulator network status was disconnected. v0.1.9 then logged a bounded IP timeout while disconnected, and a bind error after route readiness when connected. The host had a wildcard listener on TCP 5000; a port collision remains a hypothesis. v0.1.10 tests port 5001 with default production port unchanged.** See [build pipeline](BUILD_PIPELINE.md) and [versioning policy](VERSIONING.md).
+**Status: experimental; the maintainer reports one earlier AIRPLAY02 startup and five-second tone, but the exact package identity is unknown. AIRPLAY02 v0.1.2 and v0.1.3 later returned XMB error `80028F21`; AIRTEST01 v0.1.0 is parked. RPCS3 rejected v0.1.4–v0.1.6 before app startup. PS3DK-built v0.1.7–v0.1.9 installed and reached APP_START in RPCS3. v0.1.7/v0.1.8 failed RTSP bind with error 112 while emulator network status was disconnected. v0.1.9 then logged a bounded IP timeout while disconnected, and a bind error after route readiness when connected. v0.1.10 bound TCP 5001 and UDP 6000–6002, but mDNS startup failed. Host port 5000 remains occupied and is not the remaining listener blocker.** See [build pipeline](BUILD_PIPELINE.md) and [versioning policy](VERSIONING.md).
 
 ## Milestones
 
@@ -23,7 +23,7 @@ Portable components cover bounded DNS-SD/mDNS, RTSP/SDP session handling, UDP RT
 ## Next steps
 
 1. Keep AIRTEST01 parked; do not use it as a substitute for the receiver.
-2. Build and validate v0.1.10 on port 5001 in RPCS3 to isolate the occupied host port 5000; check whether listener, mDNS, and UDP sockets reach ready. The normal receiver build default remains port 5000.
+2. Add stage-specific mDNS failure logging and diagnose why v0.1.10's socket bind/multicast setup fails after receiver ports are ready. Keep testing on RPCS3 port 5001 until the mDNS path is understood.
 3. Before hardware deployment, bound the display's unbounded RSX waits and make sure controller exit remains available if graphics setup stalls.
 4. Once a receiver build is safe to test, the maintainer's standing authorization allows package staging/installation without another approval request. First verify one launch, visible output, tone, and START-to-XMB; stop if launch or clean exit fails.
 5. Retrieve a fresh log tied to the exact package. Attempt one iPhone connection and follow accept, RTSP method/status, session, SDP, and RTP stages.
