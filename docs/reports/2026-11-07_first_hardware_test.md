@@ -1,4 +1,4 @@
-# First PS3 hardware test — first launch failure
+# First PS3 hardware test — NPDRM failure and corrected staging
 
 **Date:** 2026-11-07 (America/New_York)
 
@@ -20,6 +20,7 @@
 | iPhone discovery / RTSP / RTP / ALAC | NOT TESTED | No sender connection attempted |
 | Audible AirPlay or Spotify playback | NOT TESTED | No playback attempted |
 | Crash or instability | NOT CONFIRMED | User reported a start error; no additional console behavior has been reported |
+| Corrected PKG replacement (DEPLOY-02) | PASS | Remote size 416,240 bytes; downloaded-back file matches the new SHA-256 |
 
 ## Package details
 
@@ -31,7 +32,7 @@
 
 The first staged PKG was downloaded back from the console and compared against the local artifact. The transfer was byte-identical. The installed `EBOOT.BIN` was also downloaded and matched the EBOOT inside that package, so the FTP transfer and installation preserved the original payload. The FTP server did not provide a remote SHA-256 command; local hashing of the downloaded-back files supplied the integrity check.
 
-## Corrected package candidate (not yet transferred)
+## Corrected package (staged; not yet installed)
 
 - Filename: `ps3-airplay-receiver.pkg`
 - SHA-256: `f1b17d07a05679030143e607c74b545592e92ad521135b860bc2aca677160cf2`
@@ -39,7 +40,7 @@ The first staged PKG was downloaded back from the console and compared against t
 - Content ID: `UP0001-AIRPLAY02_00-0000000000000000`
 - Package listing includes `ICON0.PNG`, `PARAM.SFO`, and an NPDRM SELF `USRDIR/EBOOT.BIN`.
 - The EBOOT was generated with PSL1GHT's `make_self_npdrm` using the same content ID supplied to the PKG tool. Package extraction, SFO title ID `AIRPLAY02`, title `PS3 AirPlay`, and the default icon comparison passed in Lima.
-- This candidate is local only. The old package remains staged and installed; replacement has not been approved or transferred.
+- Replacement was approved and transferred to the same staging path. The downloaded-back file is byte-identical and its local SHA-256 matches. The installed title still contains the first package and has not been updated.
 
 ## Launch failure investigation
 
@@ -55,12 +56,12 @@ Only the standalone PKG was uploaded and installed. No SPRX was transferred, no 
 
 ## Install and remove
 
-The first package is installed as `AIRPLAY02`, but its launch failed. A corrected package is being prepared; do not reinstall or overwrite the staged PKG until its new digest has been reviewed and transfer is authorized. After that checkpoint, use **Game → Package Manager → Install Package Files → Standard**, choose `PS3 AirPlay`, and launch. The first successful app launch should start the five-second low-level tone automatically.
+The first package is installed as `AIRPLAY02`, but its launch failed. The corrected package is now staged and verified. Use **Game → Package Manager → Install Package Files → Standard**, choose `PS3 AirPlay`, and update/reinstall. If the package manager asks whether to replace the existing title, accept; if it refuses, stop and report the exact message. The first successful app launch should start the five-second low-level tone automatically.
 
 To remove an installed copy, highlight `PS3 AirPlay` in XMB, open its options, and choose **Delete**. If the app has created `/dev_hdd0/tmp/ps3-airplay.log`, that single log can be removed separately through FTP. Do not reboot without user approval; stop and report serious failures first.
 
 ## Next checks
 
-1. Build and validate the corrected content-ID-bound NPDRM package and provide its digest for replacement approval.
-2. After replacement and XMB launch, retrieve `/dev_hdd0/tmp/ps3-airplay.log`; inspect locally and redact before sharing.
-3. Continue with tone audibility and iPhone discovery only after the app launches without the NPDRM error.
+1. User updates/reinstalls the corrected package and reports XMB display, clean launch/exit, and whether the tone is audible.
+2. Retrieve `/dev_hdd0/tmp/ps3-airplay.log` after launch; inspect locally and redact before sharing.
+3. Continue with iPhone discovery and RAOP only after the app launches without the NPDRM error.
