@@ -26,6 +26,12 @@ The current `main` source already removes the blue diagnostic bands and `DISPLAY
 
 This observation does not establish current-source behavior, physical PS3 display reliability, controller exit, or AirPlay operation.
 
+## Local runtime snapshot checked afterward
+
+The local RPCS3 installation has AIRPLAY02 version 0.1.12; the v0.1.14 candidate is not installed there. Its available app log records RTSP port 5001 and RTP ports 6000–6002 ready, mDNS bind failure at stage 4 with numeric error 112, diagnostic tone completion, repeated PCM underflows with no RTP receive event, and APP_STOP. A bounded local RAOP browse found no service instance matching the expected project label. The previously used physical-console FTP and webMAN endpoints did not respond. These observations cannot be attributed to the user's visible-app report.
+
+RPCS3 v0.1.14 remains the next runtime test. Its PKG was already built and hash-verified; do not rebuild until the exact candidate is installed and tested or a code defect is identified.
+
 ## Next action
 
-Check the version shown in the app/log or package metadata for the copy that was just opened. Compare against v0.1.14 and current screen source. The current RPCS3 test requires an unlocked interactive desktop; do not use this report as a substitute for that test.
+Check the version shown in the app/log or package metadata for the copy that was just opened. Compare against v0.1.14 and current screen source. RPCS3 runtime validation requires its interactive package/install flow; do not use this report as a substitute for that test.
