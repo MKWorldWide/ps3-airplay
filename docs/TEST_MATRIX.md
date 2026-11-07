@@ -245,14 +245,18 @@ The emitter used a paced diagnostic fixture; target output submission is not pro
 | v0.1.36 package/RPCS3/PS3 | PENDING. |
 
 
-## v0.1.35 hardware audio/display baseline and v0.1.37 candidate (2026-11-07)
+## v0.1.35 hardware baseline and v0.1.37 emulator follow-up (2026-11-07)
 
 | Test | Result | Evidence |
 |---|---|---|
-| Installed package identity | PASS: v0.1.35 / SFO 00.35 | Read-only FTP PARAM.SFO validation. PS3 package staging directory is now empty. |
-| AirPlay receive/decode | PASS through sampled ALAC frames | Wrapped 34-second log shows encrypted 44.1 kHz session, 2,560 received RTP packets, sampled successful 352-sample ALAC frames, and zero ALAC failures. |
-| RTP continuity | DEGRADED | 195 sequence gaps and 214 late-packet observations; zero recovered packets in the three retained recovery checkpoints. |
-| PCM output | DEGRADED | 86,106 active-stream output-underflow frames (~1.79 seconds at 48 kHz); ring snapshots reached 0–11,234 source frames. |
-| Display flip cadence | OBSERVED IN LOG | `SCREEN_FRAMES` advanced by 565–566 over ten-second heartbeat intervals (~56.5 Hz). No presentation failure was logged; this does not prove the visible flicker cause. |
-| User-reported output | FAIL: dropouts and flicker persist | Current symptom report; no fresh subjective test was performed by the agent. |
-| v0.1.37 source | IN PROGRESS | Includes bounded late-resend recovery and a one-shot static-image resume refresh. Build, sanitizer, RPCS3, and hardware checks are pending. |
+| Physical baseline identity | PASS: v0.1.35 / SFO 00.35 | Prior read-only FTP PARAM.SFO validation. |
+| Physical AirPlay continuity | DEGRADED | 34-second wrapped log: encrypted 44.1 kHz session, 2,560 received packets, 195 missing, 214 late, zero recoveries in retained checkpoints, and zero ALAC failures. |
+| Physical PCM output | DEGRADED | 86,106 active-stream underflow frames (~1.79 seconds at 48 kHz); occupancy snapshots reached 0–11,234 frames. |
+| v0.1.37 Lima host/sanitizer/PPU/package validation | PASS | Full source suite, sanitizer checks, PPC64 build and finalized production PKG validation completed in Lima. |
+| v0.1.37 package identity | PASS | Production AIRPLAY02 package, SFO `00.37`, 3,236,528 bytes, SHA-256 `9ee7f1a419fea99a1fcbf40306159db100a665ae7c482f12376b1f18bd9104a3`. |
+| RPCS3 installation and launch | PASS | Emulator-only package installed as SFO `00.37`; running window showed the background. |
+| RPCS3 RTSP/RTP/decrypt/ALAC | PASS, bounded | Synthetic encrypted session returned 200 for OPTIONS/ANNOUNCE/SETUP/RECORD; key unwrap and an ALAC frame decode succeeded; TEARDOWN completed. Existing 128-packet RTP-to-PCM fixture passed. |
+| RPCS3 discovery | NOT ESTABLISHED | RPCS3 logged an mDNS initialization failure; direct sender was used. |
+| Static-screen flip behavior | PASS in emulator log; hardware pending | Repeated `SCREEN_FLIPS value=0` heartbeats after initial presentation; one screenshot showed the background. PS3 HDMI and resume behavior remain unverified. |
+| Sustained playback and audible quality | NOT ESTABLISHED | The bounded emulator run is not a sustained or acoustic test. No new hardware listening result. |
+| Physical v0.1.37 deployment | BLOCKED | Direct FTP and webMAN endpoint were unreachable at preflight; installed app and staged package directory were left untouched. |

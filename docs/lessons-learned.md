@@ -511,3 +511,11 @@ The v0.1.31 fresh RPCS3 replay verifies the portable-arithmetic correction: the 
 - **Root Cause:** The renderer continuously flips two identical framebuffers to support the system overlay. The log does not establish that this alone causes visible flicker.
 - **Fix:** v0.1.37 submits a flip only for a menu-resume redraw, then refreshes the inactive framebuffer without repeated scanout changes.
 - **Prevention Rule:** Keep a static standalone screen static. Test menu resume separately from steady-state scanout and require repeated physical display confirmation.
+
+
+## Separate bounded emulator evidence from PS3 acceptance
+
+- **Problem:** RPCS3 can launch and process a synthetic encrypted stream, but user-visible flicker and real audio dropout occur on physical hardware.
+- **Root Cause:** Emulator validation establishes executable protocol stages only. It lacks the PS3 display compositor, HDMI chain, physical network path, and acoustic output conditions. mDNS also failed in this RPCS3 run.
+- **Fix:** Record emulator milestones narrowly (RTSP status, key unwrap, decrypted RTP, ALAC frame, fixture result) and leave hardware display, sustained PCM, and audible quality explicitly pending until a version-matched console run.
+- **Prevention Rule:** Do not promote emulator decode or a single screenshot into hardware playback/display acceptance. Use direct FTP for console files and webMAN for console controls; preserve the installed app when the endpoint cannot be reached.

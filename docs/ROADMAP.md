@@ -1,6 +1,6 @@
 # Roadmap
 
-**Current status (2026-11-07):** AIRPLAY02 v0.1.35 / SFO 00.35 remains installed. A fresh 34-second log snapshot shows encrypted 44.1 kHz audio, 2,560 received RTP packets, 195 missing sequence numbers, zero recovered packets in retained recovery checkpoints, zero ALAC failures, and 86,106 active-stream PCM underflow frames. The user still reports audible dropouts and display flicker. The underflow duration is close to the duration represented by missing ALAC packets, making unrecovered RTP loss the leading audio cause, but not proof that all drops share one cause. v0.1.36's bounded late-resend acceptance is incorporated in the v0.1.37 candidate. Its display change removes continuous static-image flipping and refreshes after menu resume. Build, emulator replay, and hardware verification are pending. The PS3 staging directory is empty after the v0.1.35 package cleanup.
+**Current status (2026-11-07):** AIRPLAY02 v0.1.35 / SFO 00.35 remains the last confirmed physical install. Its 34-second log recorded 195 RTP gaps, zero recoveries in retained checkpoints, zero ALAC failures, and 86,106 active-stream PCM underflow frames (~1.79 s). v0.1.37 / SFO 00.37 is built and validated; its production PKG is 3,236,528 bytes (SHA-256 `9ee7f1a419fea99a1fcbf40306159db100a665ae7c482f12376b1f18bd9104a3`). RPCS3 installed and launched the emulator-only package on port 5001. A bounded synthetic encrypted RAOP session reached decode; the screen rendered its background and reported no repeated flips. Physical tests remain pending: the console endpoint did not answer direct FTP or webMAN during preflight, so no upload or install occurred.
 
 ## Milestones
 
@@ -22,12 +22,11 @@ Portable components cover bounded DNS-SD/mDNS, RTSP/SDP session handling, UDP RT
 
 ## Next steps
 
-1. Build v0.1.37 / SFO 00.37 from committed source using the established Lima pipeline; include v0.1.36's bounded resend recovery.
-2. Run the sanitizer/host suite and an RPCS3 synthetic stream, comparing recovered RTP and PCM underflow counters. Keep the port 5001 override emulator-only.
-3. After validation and a safe app exit, deploy v0.1.37 for a short hardware session. Compare sequence gaps, resend recovery, PCM underflows, and audible dropouts.
-4. Test display separately: launch, verify the static image, open/resume the PS menu twice, then confirm START returns to XMB. No log event substitutes for visual confirmation.
-5. Retrieve the capped log immediately after the session and verify installed SFO version before attributing counters.
-6. Defer soak tests, resident PRX work, and game-audio mixing until short playback, XMB resume, and clean exit are stable.
+1. Restore console reachability, then read installed SFO and the current app log over direct FTP/webMAN; only install after confirming the app is safely exited.
+2. Upload the production port-5000 v0.1.37 PKG as a new versioned file over direct FTP, verify its remote bytes, and install through the established webMAN/XMB process. Keep the port-5001 RPCS3 package off-console.
+3. On hardware, verify the background before/after two PS-menu resumes and a clean START-to-XMB exit. Compare RTP gaps, resend recovery, and active PCM underflows against v0.1.35; separately record whether the user hears fewer dropouts.
+4. Retrieve the capped log immediately and verify installed SFO version before attributing counters.
+5. Defer soak tests, resident PRX work, and game-audio mixing until short playback, XMB resume, and clean exit are stable.
 
 ### Current protocol hardening (2026-11-07)
 

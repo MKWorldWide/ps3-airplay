@@ -350,3 +350,12 @@ Display candidate restores the standard GPU-side wait-flip command ordering afte
 - `SCREEN_FRAMES` increases by 565–566 between ten-second heartbeats (~56.5 flips/second). No `SCREEN_PRESENT_FAILED` event appears. Repeated flips are confirmed; their role in the visible flicker is not. v0.1.37 changes the static renderer to stop continuous flipping and refresh after menu resume; user visual confirmation remains required.
 - v0.1.37 is the next package iteration with SFO `00.37`. The v0.1.35 staged PKG was removed from the console at the user's request; direct FTP confirms no staged PKGs remain. Installed AIRPLAY02 was not changed by that cleanup.
 - Host/sanitizer/PPU/package, RPCS3 streaming, and physical v0.1.37 validation remain pending. No clean-audio, stable-display, or XMB-resume claim is made.
+
+
+## v0.1.37 emulator validation and hardware boundary (2026-11-07)
+
+- v0.1.37 / SFO `00.37` production package validates at 3,236,528 bytes, SHA-256 `9ee7f1a419fea99a1fcbf40306159db100a665ae7c482f12376b1f18bd9104a3`. RPCS3 variant uses port 5001; its hash is `b6eb56a42dfaa65e6ccb273595c9e047e4c312a428f3a11c3b2bbcc3fa5c0524`.
+- RPCS3 installed/launched the app. The screen rendered the background; repeated `SCREEN_FLIPS value=0` heartbeats support removal of continuous static-image flipping, but no physical display or PS-menu-resume result exists.
+- A bounded encrypted synthetic RAOP session passed RTSP negotiation, RSA key unwrap, RTP decrypt, and ALAC decode; the integration sender reports the 128-packet RTP-to-PCM fixture passing. RPCS3 mDNS failed, and the run does not prove sustained PCM rendering or audible quality.
+- The latest PS3 evidence remains v0.1.35: 195 gaps, zero retained recoveries, zero ALAC errors, and 86,106 active PCM underflow frames. Direct FTP and webMAN checks could not reach the console during this pass; no console changes were made.
+- Next: restore console reachability, verify app stopped/version by FTP, deploy only production port 5000, then compare the same RTP/PCM counters and separately record visual/audio observations.

@@ -2,6 +2,7 @@
 
 This directory contains project decisions and release evidence suitable for the repository. Private machine notes, raw outputs, and unique device identifiers are excluded.
 
+- [Validate v0.1.37 and bound hardware claims](2026-11-07_1642_v0137_validation.md)
 - [Prepare v0.1.37 audio and display stability candidate](2026-11-07_1622_v0137_audio_display.md)
 
 - [Public release](2026-11-07_0040_public_release.md)
