@@ -94,3 +94,15 @@ LOG: <redacted attachment, if useful>
 ```
 
 Review reports and logs for console/account identifiers, network addresses, Wi-Fi names, credentials, and track metadata before sharing.
+
+## Latest RPCS3 run (2026-11-07)
+
+| Test | Result | Evidence and boundary |
+|---|---|---|
+| v0.1.24 startup with RPCS3 Internet disconnected | PASS to bounded failure | `NET_IP_TIMEOUT`, then `APP_STOP`; no receiver sockets opened. |
+| v0.1.24 startup with RPCS3 Internet connected | FAIL at RTSP bind | NetCtl route acquired; TCP 5000 bind failed because the host port was already occupied. |
+| v0.1.25 startup with emulator port override | PASS | Validated AIRPLAY02 package payload, APP_VER 0.1.25, RTSP TCP 5001 and RTP UDP 6000–6002 ready. Five-second tone was logged complete; audibility is unverified. |
+| mDNS inside RPCS3 | FAIL | Multicast-interface setup failed (stage 6, error 125). Discovery is therefore not established by this run. |
+| RTSP OPTIONS loopback | PASS | Local client received `RTSP/1.0 200 OK`; matching log recorded accept, OPTIONS, status 200, and peer close. This is not an iPhone or complete RAOP session. |
+| Display and controller exit | NOT VERIFIED | RPCS3 desktop was locked; `SCREEN_READY` is initialization evidence only. No visible-pixel or START/XMB result is claimed. |
+| RTP audio, ALAC, PCM output, Spotify | NOT RUN | No ANNOUNCE/SETUP/RECORD sender session and no streamed audio were tested in RPCS3. Physical PS3 was not touched. |

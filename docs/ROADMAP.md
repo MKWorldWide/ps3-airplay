@@ -1,6 +1,6 @@
 # Roadmap
 
-**Status: experimental; the maintainer reports one earlier AIRPLAY02 startup and five-second tone, but the exact package identity is unknown. AIRPLAY02 v0.1.2 and v0.1.3 later returned XMB error `80028F21`; AIRTEST01 v0.1.0 is parked. RPCS3 rejected v0.1.4–v0.1.6 before app startup. PS3DK-built v0.1.7–v0.1.9 installed and reached APP_START in RPCS3. v0.1.7/v0.1.8 failed RTSP bind with error 112 while emulator network status was disconnected. v0.1.9 then logged a bounded IP timeout while disconnected, and a bind error after route readiness when connected. v0.1.10–v0.1.12 bind RTSP on TCP 5001 and RTP on UDP 6000–6002. v0.1.12 then failed mDNS UDP bind on 5353 with `EADDRINUSE`; the host has a UDP listener on that port. The app screen is visible in RPCS3, while physical PS3 display/exit remain unverified.** See [build pipeline](BUILD_PIPELINE.md) and [versioning policy](VERSIONING.md).
+**Current status (2026-11-07):** AIRPLAY02 v0.1.24 and v0.1.25 have been launched in RPCS3 from validated package payloads. v0.1.24 reached `NET_IP_TIMEOUT` while RPCS3 networking was disconnected, then failed TCP 5000 after networking was enabled because that host port was occupied. v0.1.25 used the existing emulator-only TCP 5001 override: RTSP and RTP 6000–6002 opened, the five-second tone completed, and a local RTSP `OPTIONS` request received `200 OK`. mDNS still failed at multicast-interface setup in RPCS3. No iPhone session or audible streamed music is proven. The desktop remained locked during the latest run, so this pass did not visually inspect the screen or test controller exit. Physical PS3 state and boot plugins were not changed. See [build pipeline](BUILD_PIPELINE.md), [test matrix](TEST_MATRIX.md), and [versioning policy](VERSIONING.md).
 
 ## Milestones
 
@@ -23,10 +23,10 @@ Portable components cover bounded DNS-SD/mDNS, RTSP/SDP session handling, UDP RT
 ## Next steps
 
 1. Keep AIRTEST01 parked; do not use it as a substitute for the receiver.
-2. Stage 4/errno 112 identifies the RPCS3 failure as the mDNS UDP 5353 bind colliding with a host listener. Do not stop or alter Lima's listener during builds. Continue RAOP discovery testing on physical PS3 after its deployment approval gate; keep RPCS3 evidence separate.
+2. RPCS3 networking needs to be Connected for NetCtl to obtain a route. Keep production builds on TCP 5000; use `RTSP_PORT=5001` only for the emulator probe when host port 5000 is occupied. v0.1.25 binds RTSP but mDNS interface setup still fails in RPCS3. Do not stop or alter the host mDNS responder. Continue physical PS3 discovery testing separately.
 3. Before hardware deployment, bound the display's unbounded RSX waits and make sure controller exit remains available if graphics setup stalls.
 4. Once a receiver build is safe to test, the maintainer's standing authorization allows package staging/installation without another approval request. First verify one launch, visible output, tone, and START-to-XMB; stop if launch or clean exit fails.
-5. Retrieve a fresh log tied to the exact package. Attempt one iPhone connection and follow accept, RTSP method/status, session, SDP, and RTP stages.
+5. Retry RPCS3 with the desktop unlocked for visible-screen and controller-exit evidence. Then test mDNS on real PS3 hardware; for the emulator, investigate its multicast-interface failure without changing host-wide services. Attempt one iPhone connection only when discovery is advertised, then follow accept, RTSP method/status, session, SDP, and RTP stages.
 6. Continue toward audible AirPlay only after fresh hardware evidence establishes the working boundary; keep protocol, decrypt, ALAC, PCM, and GameOS output claims separate.
 7. Repeat the latest uninstrumented receiver loopback/timing pass to confirm the earlier intermittent timing-probe hang is no longer reproducible.
 8. Evaluate resident PRX lifecycle and per-title game audio only after standalone playback works; keep boot plugin configuration unchanged.
@@ -46,7 +46,7 @@ Portable components cover bounded DNS-SD/mDNS, RTSP/SDP session handling, UDP RT
 - The v0.1.22 standalone PPU ELF and finalized NPDRM PKG validate from pushed source `7b44acf`; the artifact is preserved locally. The RPCS3 app-data log remains an older v0.1.15 record and the desktop is locked, so runtime validation is pending.
 - v0.1.23 source bounds accepted-client RTSP writes with a two-second socket send timeout and overall response deadline. The full Lima host/sanitizer and PPU component suite passes, including a slow-reader backpressure test that verifies timeout logging and disconnect. Its finalized package also validates in Lima; RPCS3 runtime remains pending because the desktop is locked.
 - v0.1.24 adds bounded 128-packet RTP health checkpoints for loss, reordering, duplicates, late arrivals, queue drops, payload throughput, and queue depth. The Lima integration/sanitizer suite, PPU component compile, standalone ELF, and finalized PKG validate. RPCS3 runtime remains pending because desktop access still reports locked.
-- Next: install and launch v0.1.23 in RPCS3 when desktop access returns, collect a fresh matching log, then test v0.1.24 and classify any iPhone session by RTSP, RTP, decrypt/decode, PCM submission, and audible output. Next package version is v0.1.25.
+- Historical next-validation note above is superseded by the current RPCS3 probe below.
 
 ## Latest update (2026-11-07)
 
@@ -55,7 +55,14 @@ Portable components cover bounded DNS-SD/mDNS, RTSP/SDP session handling, UDP RT
 - AIRPLAY02 v0.1.16 now parses RAOP `SET_PARAMETER` volume, clamps output to attenuation only, maps `-144 dB` to mute, and ramps PCM gain across audio blocks. Full Lima host tests, PPU objects, standalone ELF and finalized PKG validation pass. Package SHA-256 is recorded in `docs/VERSIONING.md`; no RPCS3 or physical output result yet.
 - v0.1.17 removes the remaining `PRESS START TO EXIT` overlay so the background image is unobstructed. Full Lima host tests, PPU build, ELF validation, and finalized package checks pass; the artifact is recorded in `docs/VERSIONING.md`. The RPCS3 UI remains unavailable, so visual/runtime verification is pending.
 - v0.1.18 adds five-second PCM buffer/frame-flow diagnostics with numeric, privacy-safe counters. Full Lima host tests, PPU build, ELF validation, and finalized package checks pass. Runtime log behavior is unverified because RPCS3 UI access remains unavailable; no audible output is claimed.
-- Next validation: install/launch v0.1.17 in RPCS3 and inspect its versioned startup log when UI access is available, then test the exact v0.1.18 telemetry package. The saved network setting remains Disconnected; any route change needs separate action-time confirmation. After the display/exit check, continue toward an AirPlay session. Physical PS3 remains gated on safe recovery. Next package: v0.1.19.
+- Historical next-validation note above is superseded by the current RPCS3 probe below.
+
+### RPCS3 network and RTSP probe (2026-11-07)
+
+- v0.1.24 run with RPCS3 Internet disconnected reached `NET_IP_TIMEOUT` and `APP_STOP`. With RPCS3 Internet set to Connected, NetCtl obtained a route but TCP 5000 bind failed because the host port was occupied.
+- v0.1.25 was built from source `a59aa937401d432b5cc6f740eeda15bf0db091ba` with the existing emulator-only `RTSP_PORT=5001` override. RTSP 5001 and RTP 6000–6002 opened; mDNS failed at interface setup (stage 6, error 125). A local OPTIONS request received RTSP `200 OK`; the log recorded accept, OPTIONS, 200, and peer close.
+- The five-second diagnostic tone completed in the app log. Audible tone, display pixels, controller START, clean app teardown, iPhone discovery, RAOP session, and streamed music remain unverified in this run. The RPCS3 desktop was locked, preventing visual and controller observation.
+- Latest package version consumed: 0.1.25. Next package version: 0.1.26. Physical PS3 and boot plugin configuration were unchanged.
 ## Explicit boundaries
 
 - A successful build, package inspection, or PRX structural check does not prove hardware compatibility.

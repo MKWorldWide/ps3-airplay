@@ -127,3 +127,14 @@ The standalone receiver `Makefile` and canonical Lima build/package scripts defa
 - Checks: Lima PS3DK v0.27.0 + PSL1GHT build; ELF validator; finalized package envelope, AIRPLAY02 identity, APP_VER, content ID, EBOOT and background asset validation pass. The full Lima ASan/UBSan host suite and PPU component compile passed in the source pass.
 - Runtime: RPCS3 install/launch is pending. The user reported unlocking the Mac, but the automation runtime still reports it locked. No fresh v0.1.24 app log, iPhone session, or audible playback is verified; physical PS3 was not changed.
 - Artifacts are preserved in ignored `work/builds/0.1.24/`. Next package version: 0.1.25.
+
+## v0.1.25 RPCS3 probe package
+
+- Source revision: `a59aa937401d432b5cc6f740eeda15bf0db091ba`.
+- Build: PS3DK v0.27.0 PPU + PSL1GHT; emulator-only `RTSP_PORT=5001`. This override is for the occupied host port in RPCS3; production default remains TCP 5000.
+- AIRPLAY02 PKG: 3,231,152 bytes; SHA-256 `420971af3601d0a9813d4853f389f7e4ceb1c9f4a6077e27fcc3b81b292cbcd4`.
+- ELF: 2,780,120 bytes; SHA-256 `848b698f2feaa832cddd88f1610452174a42018cdd0a126ca9d35a5abd724dde`.
+- SFO APP_VER/title/content ID, CellOS PPC64 ELF, package structure, and finalized NPDRM envelope passed.
+- RPCS3: app starts, RTSP/RTP sockets open, five-second tone completion is logged, and local OPTIONS gets 200. mDNS multicast-interface setup fails. Visual display, controller exit, audible tone, iPhone connection, RTP audio, and Spotify playback are unverified.
+- Payload was staged directly from the validated extraction into local RPCS3 title data because its desktop installer UI was unavailable. Prior local title data is preserved for rollback. Physical console unchanged.
+- Next package version: 0.1.26.

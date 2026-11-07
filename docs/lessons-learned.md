@@ -364,3 +364,10 @@
 - **Root Cause:** The receiver diagnostics were added incrementally at the receive/decrypt boundaries; queue health statistics were not carried through to the capped log.
 - **Fix:** Emit privacy-safe counter deltas and queue depth every 128 parsed packets, omit zero-valued error counters, and reset the log baseline on FLUSH while retaining internal cumulative stats.
 - **Prevention Rule:** For real-time media, log bounded aggregate health counters at a fixed interval and test a discontinuity across stream flush; do not rely on raw per-packet logs.
+
+## Separate RPCS3 host networking failures from receiver defects
+
+- **Problem:** v0.1.24 stopped before opening the receiver when RPCS3 had no route; after enabling the emulator network, binding the production RTSP port still failed.
+- **Root Cause:** The disconnected emulator could not provide a NetCtl address. Once connected, host TCP 5000 was already owned, so RPCS3's translated socket could not bind it. A port conflict is an emulator-host constraint, not evidence that the PS3 listener is faulty.
+- **Fix:** Preserve production TCP 5000 and build an emulator-only v0.1.25 with the existing `RTSP_PORT=5001` override. It opened RTSP/RTP sockets and answered a local OPTIONS probe. mDNS separately failed at multicast-interface setup.
+- **Prevention Rule:** Verify RPCS3 NetCtl state and host port ownership before changing receiver code. Keep emulator overrides distinct from production defaults, and classify mDNS interface failures separately from TCP/RTSP results.

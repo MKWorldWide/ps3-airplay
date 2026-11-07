@@ -56,4 +56,14 @@ Keep the generated package, build manifest, and test logs outside Git. Record pa
 - v0.1.17 has not been installed or launched in RPCS3. The UI remains unavailable, so its visual output and runtime behavior are untested. The saved Internet setting was not changed.
 - v0.1.18 adds five-second numeric PCM telemetry for ring occupancy, frames queued/consumed, and frames submitted to GameOS audio blocks. Full Lima host tests, PPU objects, the canonical 2,780,120-byte CellOS PPC64 ELF, and finalized package checks pass. ELF SHA-256 `ba7450441a8e2def2a1f55e17d523630d3d5af256520f6769154a347b09d3759`; 3,230,448-byte PKG SHA-256 `5548fde98bc08949e4f3a6739a95d5b3dce7dea0458131ec693c01be97766ae0`. Block submission is not audible-output evidence.
 - v0.1.18 has not been installed or launched in RPCS3. UI access remains unavailable, no emulator setting changed, and no runtime log event is verified.
-- Current package candidate is v0.1.21, which corrects the RAOP TXT server-version value. Both standalone build and package scripts default to 0.1.21. Every generated package consumes its version even when it fails a test.
+- The historical v0.1.21 note above is superseded by the v0.1.25 RPCS3 probe below. Every generated package consumes its version even when it fails a test.
+
+## RPCS3 route and RTSP probe (2026-11-07)
+
+- The exact v0.1.24 package payload was copied into RPCS3 app data after preserving the prior title data. With RPCS3 Internet disconnected, the app reached its bounded `NET_IP_TIMEOUT` and stopped. After the authorized local emulator setting was changed to Connected, NetCtl obtained a route but TCP 5000 could not bind because that host port was occupied.
+- The existing build override `RTSP_PORT=5001` was used for v0.1.25. The app log confirmed RTSP 5001 and RTP UDP 6000–6002 readiness. mDNS failed at interface setup (failure stage 6, error 125), before any service could be confirmed discoverable.
+- A localhost RTSP `OPTIONS` probe received `200 OK`; the matching app log recorded `RTSP_CONNECTED`, `RTSP_OPTIONS`, `RTSP_STATUS=200`, and `RTSP_PEER_CLOSED`. The diagnostic tone start and completion were logged. No audible output was observed, and no iPhone session or audio stream was tested.
+- v0.1.25 package: 3,231,152 bytes, SHA-256 `420971af3601d0a9813d4853f389f7e4ceb1c9f4a6077e27fcc3b81b292cbcd4`. Build revision `a59aa937401d432b5cc6f740eeda15bf0db091ba`; build manifest records port 5001. The extracted package payload—not the GUI PKG installer—was used to update the local RPCS3 title data; the previous title files were preserved locally for rollback.
+- Do not change the production default from port 5000 based on this emulator-only conflict. The emulator's multicast-interface failure and the host's occupied port are environment constraints that need separate treatment from PS3 behavior.
+- The desktop remained locked, so the renderer's output and controller START exit could not be visually checked. The physical PS3 and its system/plugin settings were not touched.
+- Next package: v0.1.26.

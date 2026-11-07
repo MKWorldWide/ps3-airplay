@@ -1,8 +1,8 @@
 # Active work
 
-- **Current task:** Run v0.1.24 in RPCS3 when desktop access returns, then continue toward an iPhone RAOP session.
-- **Candidate:** v0.1.24 adds 128-packet RTP health checkpoints. Full Lima host/ASan/UBSan suite, PPU compile, ELF, and finalized PKG validation pass. PKG SHA-256 `7638825e0c2f6eb26a19410ba56ffd52ed96a70dc274f691b6bf2d12cf615757`.
-- **Host validation:** Full Lima suite passes, including discovery TXT assertion; RTSP/TCP + encrypted RTP/UDP + decrypt + ALAC + PCM ring loopback; 4,096 seeded ALAC mutations plus 256 random inputs under ASan/UBSan; and PPU component compilation.
-- **Emulator evidence:** Installed AIRPLAY02 was v0.1.15 at the last accessible snapshot. A direct `--no-gui` v0.1.20 EBOOT attempt did not update the capped app log; classify it as inconclusive. The user reports a visible app/background but also display overlays absent from current source and v0.1.20 ancestry. Exact observed package remains unknown. CUA still reports the desktop locked.
-- **Next:** RPCS3 UI remains locked and its current log is v0.1.15; when accessible, install v0.1.23, capture a fresh matching log, inspect display/exit, then test v0.1.24. Host simulation is not iPhone, GameOS output, or audible-playback evidence.
-- **Version:** v0.1.23 is bounded RTSP writes; v0.1.24 is RTP health logging; next package is v0.1.25. Keep physical console and boot plugin configuration unchanged; game-audio coexistence is a separate feasibility gate.
+- **Current task:** Diagnose RPCS3 routing and advance from listener readiness into an end-to-end RAOP session.
+- **Latest artifact:** AIRPLAY02 v0.1.25, built with emulator-only `RTSP_PORT=5001`; package SHA-256 `420971af3601d0a9813d4853f389f7e4ceb1c9f4a6077e27fcc3b81b292cbcd4`. Production default remains 5000.
+- **Verified in RPCS3:** Network route acquired; RTSP 5001 and RTP 6000–6002 ready; diagnostic tone completion logged; local OPTIONS returned 200 and the receiver logged accept/status/disconnect. App log and rollback copies are kept under ignored `work/`.
+- **Still unverified:** mDNS fails at interface setup (stage 6/error 125); no iPhone discovery/session, RTP audio, ALAC decode, audible tone/music, visible pixels, or controller START exit. Desktop remains locked. Physical PS3 and boot plugins unchanged.
+- **Next:** Revisit RPCS3 with desktop unlocked for visual/START checks; separately diagnose its multicast-interface mismatch. Then attempt a controlled ANNOUNCE/SETUP/RECORD session and follow RTP/decrypt/ALAC/PCM events. Keep public docs sanitized and do not overstate host/emulator evidence.
+- **Version:** v0.1.25 consumed; next package version v0.1.26. Game audio mixing remains a separate Cobra feasibility gate.
