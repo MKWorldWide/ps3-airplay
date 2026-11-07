@@ -224,3 +224,10 @@
 - **Root Cause:** SO_REUSEADDR alone did not permit this host's mDNS socket to share the port.
 - **Fix:** A temporary socket probe showed SO_REUSEPORT allowed bind and multicast reception. The receiver now requests it best-effort when the platform headers provide it; app-level discovery is not yet verified.
 - **Prevention Rule:** Validate the actual platform socket behavior with a bounded probe, then keep the option best-effort and verify target behavior before claiming discovery.
+
+## Keep the RTSP/RTP loopback hang visible
+
+- **Problem:** The full host build script intermittently stopped at the persistent RTSP/RTP loopback test without completing.
+- **Root Cause:** Not established. The untraced test exceeded a bounded timeout; the same test passed under strace with LeakSanitizer disabled, so timing or sanitizer interaction is plausible but unproven.
+- **Fix:** Ran the rest of the host tests separately and retained the loopback test result as timing-sensitive. The PPU build and package validation proceeded independently.
+- **Prevention Rule:** Do not silently skip or count a traced pass as proof the untraced hang is fixed. Keep a bounded timeout and investigate the schedule-sensitive test separately.
