@@ -188,37 +188,60 @@ error:
 	return error;
 }
 
-/* Keep VSH's in-game overlay supplied with scanout frames without waiting
- * in the input/audio loop. Both buffers already contain the static image. */
+/* The image is static. A single scanout refresh is sufficient after VSH
+ * returns control; continuously flipping identical buffers can flicker. */
 void diagnostic_screen_invalidate(diagnostic_screen *screen)
 {
  if (screen == NULL || !screen->initialized) return;
  screen->redraw_mask = 3U;
  /* The compositor may have held a flip while its menu was active. */
- if (screen->flip_started_us != 0) screen->flip_started_us = sysGetSystemTime();
+ if (screen->flip_pending) screen->flip_started_us = sysGetSystemTime();
 }
 
 int diagnostic_screen_present(diagnostic_screen *screen, int system_menu_open)
 {
  uint64_t now;
+ uint32_t active_buffer;
+ uint32_t buffer;
  if (screen == NULL || !screen->initialized) return 0;
  now = sysGetSystemTime();
- if (screen->flip_started_us != 0 && gcmGetFlipStatus() != 0)
-  return !system_menu_open && now - screen->flip_started_us > 500000U ? DIAGNOSTIC_SCREEN_TIMEOUT : 0;
- if (now - screen->flip_started_us < 16667U) return 0;
- if (!system_menu_open && (screen->redraw_mask & (1U << screen->next_buffer))) {
-  copy_image((uint32_t *)screen->buffers[screen->next_buffer], screen->pitch,
+ if (screen->flip_pending) {
+  if (gcmGetFlipStatus() != 0)
+   return !system_menu_open && now - screen->flip_started_us > 500000U ?
+    DIAGNOSTIC_SCREEN_TIMEOUT : 0;
+  screen->flip_pending = 0;
+  if (system_menu_open) return 0;
+
+  /* The just-completed target is active. Refresh the other buffer without
+   * another flip unless invalidation dirtied the active image as well. */
+  active_buffer = screen->next_buffer ^ 1U;
+  buffer = screen->next_buffer;
+  if (screen->redraw_mask & (1U << buffer)) {
+   copy_image((uint32_t *)screen->buffers[buffer], screen->pitch,
+    screen->width, screen->height, screen->image_rgb);
+   screen->redraw_mask &= ~(1U << buffer);
+  }
+  if (!(screen->redraw_mask & (1U << active_buffer))) return 0;
+ } else if (system_menu_open || screen->redraw_mask == 0) {
+  return 0;
+ }
+
+ /* next_buffer is inactive whenever no flip is pending. */
+ buffer = screen->next_buffer;
+ if (screen->redraw_mask & (1U << buffer)) {
+  copy_image((uint32_t *)screen->buffers[buffer], screen->pitch,
    screen->width, screen->height, screen->image_rgb);
-  screen->redraw_mask &= ~(1U << screen->next_buffer);
+  screen->redraw_mask &= ~(1U << buffer);
  }
  gcmResetFlipStatus();
- if (gcmSetFlip((gcmContextData *)screen->context, screen->next_buffer) != 0)
+ if (gcmSetFlip((gcmContextData *)screen->context, buffer) != 0)
   return DIAGNOSTIC_SCREEN_FLIP_FAILED;
  rsxFlushBuffer((gcmContextData *)screen->context);
- /* Queue the standard GPU-side flip wait; this call does not spin the CPU. */
+ /* Queue the standard GPU-side wait without blocking the audio/input loop. */
  gcmSetWaitFlip((gcmContextData *)screen->context);
  screen->next_buffer ^= 1U;
  screen->flip_started_us = now;
+ screen->flip_pending = 1;
  return 1;
 }
 

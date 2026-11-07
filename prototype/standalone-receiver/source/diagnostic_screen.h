@@ -14,6 +14,7 @@ typedef struct {
 	uint16_t height;
 	uint32_t pitch;
 	int initialized;
+	int flip_pending;
 	uint32_t next_buffer;
 	uint64_t flip_started_us;
 } diagnostic_screen;

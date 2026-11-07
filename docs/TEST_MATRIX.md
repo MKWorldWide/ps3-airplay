@@ -243,3 +243,16 @@ The emitter used a paced diagnostic fixture; target output submission is not pro
 | Display/XMB resume | NOT ESTABLISHED by this log snapshot; no fresh user visual observation was recorded. |
 | v0.1.36 source regression | PASS: bounded recovery of an in-window retransmission after tracking loss; full Lima ASan/UBSan suite and PPU component compilation pass. |
 | v0.1.36 package/RPCS3/PS3 | PENDING. |
+
+
+## v0.1.35 hardware audio/display baseline and v0.1.37 candidate (2026-11-07)
+
+| Test | Result | Evidence |
+|---|---|---|
+| Installed package identity | PASS: v0.1.35 / SFO 00.35 | Read-only FTP PARAM.SFO validation. PS3 package staging directory is now empty. |
+| AirPlay receive/decode | PASS through sampled ALAC frames | Wrapped 34-second log shows encrypted 44.1 kHz session, 2,560 received RTP packets, sampled successful 352-sample ALAC frames, and zero ALAC failures. |
+| RTP continuity | DEGRADED | 195 sequence gaps and 214 late-packet observations; zero recovered packets in the three retained recovery checkpoints. |
+| PCM output | DEGRADED | 86,106 active-stream output-underflow frames (~1.79 seconds at 48 kHz); ring snapshots reached 0–11,234 source frames. |
+| Display flip cadence | OBSERVED IN LOG | `SCREEN_FRAMES` advanced by 565–566 over ten-second heartbeat intervals (~56.5 Hz). No presentation failure was logged; this does not prove the visible flicker cause. |
+| User-reported output | FAIL: dropouts and flicker persist | Current symptom report; no fresh subjective test was performed by the agent. |
+| v0.1.37 source | IN PROGRESS | Includes bounded late-resend recovery and a one-shot static-image resume refresh. Build, sanitizer, RPCS3, and hardware checks are pending. |

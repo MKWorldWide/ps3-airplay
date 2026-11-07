@@ -497,3 +497,17 @@ The v0.1.31 fresh RPCS3 replay verifies the portable-arithmetic correction: the 
 - **Root Cause:** Confirmed code behavior: a parsed resend was discarded whenever its one-second outstanding tracking entry was absent, even when its sequence could still be ahead of playout. The hardware log does not establish how many responses failed for this reason versus arriving late.
 - **Fix:** v0.1.36 accepts an unmatched resend only from the negotiated peer and only when it is within the bounded 256-packet window behind the highest original RTP sequence. Queue insertion continues to reject already-played packets, duplicates, and capacity overflow. Add aggregated reason counters and an integration regression for a still-playable resend after tracking loss.
 - **Prevention Rule:** Log resend acceptance/rejection categories and correlate active PCM underflows with received, missing, late, recovered, and buffer-occupancy counters before changing the resampler or claiming a single cause.
+
+## Correlate active PCM starvation with RTP loss before changing audio DSP
+
+- **Problem:** The user still hears AirPlay dropouts; the latest capture records 86,106 underflow frames during active playback.
+- **Root Cause:** The same v0.1.35 capture has 195 missing RTP sequence numbers and no recovered resend packets in retained totals. Their expected audio duration is close to the logged underflow duration. This is strong correlation, not exclusive proof; sender pacing and scheduling may also contribute.
+- **Fix:** Evaluate the bounded resend recovery already added in v0.1.36 on a new v0.1.37 hardware run, and compare missing, recovered, late, and underflow counters before changing buffering or resampling.
+- **Prevention Rule:** Normalize packet gaps to audio-frame duration and compare them with active underflow frames. Keep recovery counters and avoid a decoder rewrite while transport loss is measurable.
+
+## Static output does not need a continuous flip loop
+
+- **Problem:** The user reports background flicker, especially after PS menu resume. Logs show no flip failure but record about 56.5 flips per second for a static image.
+- **Root Cause:** The renderer continuously flips two identical framebuffers to support the system overlay. The log does not establish that this alone causes visible flicker.
+- **Fix:** v0.1.37 submits a flip only for a menu-resume redraw, then refreshes the inactive framebuffer without repeated scanout changes.
+- **Prevention Rule:** Keep a static standalone screen static. Test menu resume separately from steady-state scanout and require repeated physical display confirmation.

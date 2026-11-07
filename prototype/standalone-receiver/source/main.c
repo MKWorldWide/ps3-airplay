@@ -55,7 +55,7 @@ mbedtls_ms_time_t mbedtls_ms_time(void)
 static volatile int exit_requested;
 static int system_menu_open;
 static int presentation_failed;
-static uint64_t presented_frames;
+static uint64_t screen_flips;
 static int last_pad_mask;
 static int last_pad_result;
 static raop_receiver receiver;
@@ -429,7 +429,7 @@ int main(void)
 		if (exit_requested) break;
 		if (!presentation_failed) {
 			int present_result = diagnostic_screen_present(&screen, system_menu_open);
-			if (present_result > 0) ++presented_frames;
+			if (present_result > 0) ++screen_flips;
 			if (present_result < 0) {
 				(void)log_event("SCREEN_PRESENT_FAILED", present_result, 0);
 				presentation_failed = 1;
@@ -579,7 +579,7 @@ int main(void)
 		if ((u64)sysGetSystemTime() >= next_heartbeat_us) {
    (void)log_event("APP_HEARTBEAT", (int)receiver.session.state, system_menu_open);
    (void)log_event("PAD_HEALTH", last_pad_result, (size_t)last_pad_mask);
-   (void)log_event("SCREEN_FRAMES", bounded_counter_delta(presented_frames, 0), screen.redraw_mask);
+   (void)log_event("SCREEN_FLIPS", bounded_counter_delta(screen_flips, 0), screen.redraw_mask);
    next_heartbeat_us = sysGetSystemTime() + 10000000U;
   }
 		if ((u64)sysGetSystemTime() >= next_audio_stats_us) {

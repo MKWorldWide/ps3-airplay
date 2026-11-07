@@ -1,9 +1,7 @@
 # Active work
 
-# Active work
-
-- Current candidate: v0.1.36, built from the v0.1.35 baseline.
-- Fresh read-only v0.1.35 evidence: 2,048 received RTP packets, 302 sequence gaps, 209 late packets, 58 resend requests, no recovered packets in retained totals, zero ALAC failures, and 102,200 active-stream PCM underflow frames. Log wrapped; capture does not isolate one exclusive cause.
-- Implemented bounded acceptance of valid retransmissions that arrive after request tracking expires but before their sequence is played; added reason counters and a network integration regression.
-- Full Lima ASan/UBSan host suite and PPU component compilation pass. Source/documentation commit is next; then build exact v0.1.36 ELF/PKG, validate, run RPCS3 checks, and stage without interrupting the current PS3 session.
-- Graphics resume/flicker remains unproven and is not changed speculatively; verify actual XMB transitions on hardware after audio recovery is tested.
+- Current hardware baseline: AIRPLAY02 v0.1.35 / SFO 00.35 is installed. Latest private FTP capture shows 195 RTP sequence gaps and zero recorded resend recoveries alongside 86,106 active-stream PCM underflow frames; ALAC failures are zero.
+- Leading audio hypothesis: unrecovered RTP loss explains most observed dropout duration. v0.1.36's bounded late-resend acceptance is included in the v0.1.37 candidate; hardware comparison remains necessary.
+- Display change: replace continuous static-image flips with a resume redraw and inactive-buffer refresh. The user-reported flicker has no matching presentation-error event, so hardware confirmation is required.
+- Source edits are present locally. Finish the decision/memory records, privacy review, commit/push, then run Lima sanitizer/PPU/package validation and RPCS3 synthetic replay.
+- PS3 package directory is empty. Do not replace AIRPLAY02 while it is running; verify a safe exit before deployment and collect a version-matched log after the test.

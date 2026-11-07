@@ -205,3 +205,10 @@ Combines v0.1.34's bounded RTP resend-range recovery with valid PCM underflow ac
 ## v0.1.36 / SFO 00.36 candidate in progress
 
 Live read-only evidence captured while AIRPLAY02 v0.1.35 was running: installed SFO 00.35; staged v0.1.35 package hash matched the recorded artifact. In the wrapped active-stream log, 2,048 RTP packets, 302 sequence gaps, 209 late packets, 58 resend requests, zero recovered packets, zero ALAC failures, and 102,200 valid PCM underflow frames were recorded. The receiver previously discarded a valid peer resend when its tracking range was absent, without distinguishing that case from a late/duplicate packet. Candidate source adds bounded untracked recovery inside the 256-packet receive window and reason-coded aggregate counters. Host/Lima tests and PPU component compilation pass. Standalone build/package and emulator/hardware tests remain pending; no clean-audio or display-resume claim.
+
+## v0.1.37 stability candidate
+
+- Release label `0.1.37`; PS3 SFO `00.37`; application ID `AIRPLAY02`.
+- Includes v0.1.36's bounded in-window late RTP resend recovery and changes the static-screen renderer to submit only a menu-resume refresh instead of flipping continuously.
+- Fresh console baseline remains v0.1.35 / SFO 00.35. v0.1.37 build, package hashes, RPCS3 replay, and hardware validation are pending.
+- Production RTSP remains port 5000. Use port 5001 only for emulator testing when the host port conflicts, and label that package as an emulator variant.

@@ -2,6 +2,8 @@
 
 This directory contains project decisions and release evidence suitable for the repository. Private machine notes, raw outputs, and unique device identifiers are excluded.
 
+- [Prepare v0.1.37 audio and display stability candidate](2026-11-07_1622_v0137_audio_display.md)
+
 - [Public release](2026-11-07_0040_public_release.md)
 - [Startup audio diagnostic](2026-11-06_2353_startup_audio_diagnostic.md)
 - [First PKG transfer](2026-11-07_0008_first_pkg_transfer.md)

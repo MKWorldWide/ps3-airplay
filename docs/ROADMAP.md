@@ -1,6 +1,6 @@
 # Roadmap
 
-**Current status (2026-11-07):** AIRPLAY02 v0.1.33 / SFO 00.33 is installed on the demonstration PS3. The maintainer confirms AirPlay music from multiple Spotify tracks is audible for the first time, but crackles and sounds unstable/low fidelity. The screen flickers, especially after XMB resume. The retrieved log confirms encrypted 44.1 kHz stereo RTP, successful ALAC decode and PCM generation; its retained segment also reports repeated RTP sequence gaps and zero ALAC failures. v0.1.34 adds bounded resend queuing/tracking and less chatty checkpoints; the full Lima host suite passes. The new PKG and hardware retest are pending. First playback is a breakthrough, not stable AirPlay. See the [hardware report](reports/2026-11-07_v0133_first_airplay_playback.md), [test matrix](TEST_MATRIX.md), and [versioning policy](VERSIONING.md).
+**Current status (2026-11-07):** AIRPLAY02 v0.1.35 / SFO 00.35 remains installed. A fresh 34-second log snapshot shows encrypted 44.1 kHz audio, 2,560 received RTP packets, 195 missing sequence numbers, zero recovered packets in retained recovery checkpoints, zero ALAC failures, and 86,106 active-stream PCM underflow frames. The user still reports audible dropouts and display flicker. The underflow duration is close to the duration represented by missing ALAC packets, making unrecovered RTP loss the leading audio cause, but not proof that all drops share one cause. v0.1.36's bounded late-resend acceptance is incorporated in the v0.1.37 candidate. Its display change removes continuous static-image flipping and refreshes after menu resume. Build, emulator replay, and hardware verification are pending. The PS3 staging directory is empty after the v0.1.35 package cleanup.
 
 ## Milestones
 
@@ -18,16 +18,16 @@
 
 ## Current implementation
 
-Portable components cover bounded DNS-SD/mDNS, RTSP/SDP session handling, UDP RTP, timing probes, retransmission requests and validation, RAOP crypto, ALAC decoding, PCM buffering, and capped diagnostics. The standalone app plays one five-second, low-level 440 Hz startup diagnostic through GameOS audio blocks before normal PCM rendering. v0.1.33 music playback is confirmed by the maintainer; the static background flickers after XMB resume. It polls controller START for orderly return to XMB; the latest observed run exited with clean cleanup. The resident candidate decodes supported packets for diagnostics and discards PCM.
+Portable components cover bounded DNS-SD/mDNS, RTSP/SDP session handling, UDP RTP, timing probes, retransmission requests and validation, RAOP crypto, ALAC decoding, PCM buffering, and capped diagnostics. The standalone app plays one five-second, low-level 440 Hz startup diagnostic through GameOS audio blocks before normal PCM rendering. Real Spotify audio over AirPlay was previously confirmed on v0.1.33, with crackle/dropouts and XMB-resume flicker. The latest capture identifies v0.1.35 as installed and records active starvation without ALAC decode failures. The resident candidate remains separate and discards decoded PCM.
 
 ## Next steps
 
-1. Finish and validate v0.1.34's bounded RTP retransmission queue and delayed-response tracking, then build a new package with SFO 00.34.
-2. Install and run a short controlled stream. Compare missing, requested, recovered, late and dropped packets with the v0.1.33 baseline; ask the maintainer whether crackling improves.
-3. Test the screen separately: launch, open PS menu, resume twice, verify stable background, then START-to-XMB. The captured log shows no presentation error but cannot prove a stable HDMI image.
-4. Preserve a fresh log immediately after the controlled stream and before relaunch; the 16 KiB log wraps and startup/session negotiation can be lost.
-5. If audio remains poor despite low RTP loss, measure audio underflows, sender-clock drift and output sample handling before attempting a decoder rewrite. Do not change the conservative output gain without a measured need.
-6. Keep soak testing, resident PRX work, and per-title game audio mixing deferred until short playback, XMB resume and clean exit are stable.
+1. Build v0.1.37 / SFO 00.37 from committed source using the established Lima pipeline; include v0.1.36's bounded resend recovery.
+2. Run the sanitizer/host suite and an RPCS3 synthetic stream, comparing recovered RTP and PCM underflow counters. Keep the port 5001 override emulator-only.
+3. After validation and a safe app exit, deploy v0.1.37 for a short hardware session. Compare sequence gaps, resend recovery, PCM underflows, and audible dropouts.
+4. Test display separately: launch, verify the static image, open/resume the PS menu twice, then confirm START returns to XMB. No log event substitutes for visual confirmation.
+5. Retrieve the capped log immediately after the session and verify installed SFO version before attributing counters.
+6. Defer soak tests, resident PRX work, and game-audio mixing until short playback, XMB resume, and clean exit are stable.
 
 ### Current protocol hardening (2026-11-07)
 
@@ -87,6 +87,6 @@ The historical 0.30 build starts and plays its tone on the PS3; START exits whil
 Big-endian PCM bytes and paced target packet/decode/PCM path now validate in RPCS3. Candidate is installed. Regular scanout and input-first loop target the reported PS/START issue; hardware overlay/exit confirmation remains required. Graphics waits are bounded and idle logging no longer destroys connection history as quickly. No extended soak until physical controls and clean exit pass.
 
 
-## v0.1.36 stability work
+## v0.1.37 audio and display work
 
-Live v0.1.35 diagnostics now show active PCM starvation coincident with RTP sequence gaps and resend requests that yielded no recorded recoveries. v0.1.36 adds bounded acceptance for still-playable retransmissions after request bookkeeping expires, with categorized aggregate diagnostics. Next: build and validate the exact candidate, run RPCS3, then stage it for a controlled PS3 test after approval. Keep graphics resume work separate until fresh hardware display evidence is captured.
+The v0.1.35 capture aligns missing RTP packet duration with active PCM underruns and records no resend recoveries. v0.1.36 accepts valid in-window resend packets after their tracking entry expires. v0.1.37 pairs that transport recovery with a static-framebuffer policy: no continuous flips, one redraw/flip after menu resume, then an inactive-buffer refresh. This is a measured mitigation, not a proven display fix. Build, RPCS3 replay, and PS3 audio/display/exit tests remain required.
