@@ -177,7 +177,7 @@ Demonstration target: PS3 with Evilnat 4.93 CFW and Cobra 8.5 observed; the cons
 
 - A deterministic 256-input malformed ALAC smoke run, with UBSan configured to halt, found additional undefined behavior: a corrupt interlace shift above 31 and signed overflow in predictor coefficient accumulation.
 - Decoder rejects unsupported predictor modes and invalid quantization/read sizes before entropy/predictor work; interlace shifts are bounded; predictor accumulation uses 64-bit intermediates and explicit sign extension; weighted stereo reconstruction uses bounded 64-bit math; the RAOP ALAC offer rejects Rice k-modifier values above 30.
-- The valid encrypted reference RTP-to-PCM test remains byte-identical. The 353-vs-352 and `UINT32_MAX` regressions still reject safely; all 256 deterministic malformed inputs complete without ASan/UBSan findings when halt-on-error is enabled.
+- The sanitizer corpus now includes 4,096 deterministic mutations of a known-valid ALAC frame after the 54-bit fixed header plus 256 random packets. The valid encrypted reference RTP-to-PCM test remains byte-identical. The 353-vs-352 and `UINT32_MAX` regressions still reject safely; all malformed inputs complete without ASan/UBSan findings when halt-on-error is enabled.
 - These follow-on runtime changes are in v0.1.20. Full Lima host tests under ASan/UBSan halt-on-error, standalone PPU link/ELF validation, and finalized PKG checks pass. RPCS3 and physical hardware remain pending.
 
 ## AIRPLAY02 v0.1.20 build and runtime boundary (2026-11-07)

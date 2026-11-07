@@ -54,8 +54,9 @@ int raop_session_decrypt_audio(const raop_session *session,
 /*
  * Handle one complete bounded RTSP message, including any Content-Length body.
  * Request content is parsed in-place and never copied into the response or logs.
- * Supports a deliberately limited classic RAOP control sequence; it does not
- * answer Apple-Challenge or implement session crypto/codec behavior.
+ * Supports a deliberately limited classic RAOP control sequence, including
+ * Apple-Challenge replies and ANNOUNCE key negotiation when crypto is set up.
+ * ALAC decoding remains a separate layer.
  * Returns 1 when a response was produced, otherwise 0 for malformed input.
  */
 int raop_session_handle(raop_session *session, const char *request,

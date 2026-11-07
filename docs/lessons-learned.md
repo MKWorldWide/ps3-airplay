@@ -315,3 +315,10 @@
 - **Root Cause:** Build and package checks complete in Lima independently of whether RPCS3 can be launched and inspected.
 - **Fix:** Record source revision, ELF/PKG hashes, package structure checks, and runtime results as separate facts. Preserve the candidate locally while desktop access is unavailable.
 - **Prevention Rule:** Never infer app launch, visible display, network readiness, or playback from ELF/PKG validation. Require a fresh runtime log tied to the tested package and user-visible evidence for audible output.
+
+## Mutate valid compressed frames to reach deep decoder paths
+
+- **Problem:** Uniform random packet bytes can be rejected at the fixed header and provide little coverage of entropy and predictor code.
+- **Root Cause:** The initial sanitizer smoke generated only unconstrained random payloads, most of which did not resemble a valid ALAC frame.
+- **Fix:** Keep a valid reference payload, preserve its fixed 54-bit header, and apply deterministic mutations to compressed bits; also test truncated variants and retain the random-byte corpus.
+- **Prevention Rule:** For binary codec hardening, combine malformed random input with structure-aware mutations of a valid fixture under sanitizers.

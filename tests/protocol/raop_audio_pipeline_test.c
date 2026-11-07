@@ -82,12 +82,36 @@ static uint32_t next_random(uint32_t *state)
 	return value;
 }
 
-static void malformed_smoke(raop_alac_decoder *decoder)
+static void malformed_smoke(raop_alac_decoder *decoder,
+	const uint8_t *valid_packet, size_t valid_packet_length)
 {
 	uint32_t state = 0x00c0ffeeU;
 	uint8_t input[RAOP_ALAC_INPUT_MAX];
 	uint8_t output[RAOP_ALAC_PCM_MAX];
 	unsigned int case_index;
+	assert(valid_packet != NULL && valid_packet_length >= 8 &&
+		valid_packet_length <= sizeof(input));
+	for (case_index = 0; case_index < 4096; ++case_index) {
+		size_t length = valid_packet_length;
+		size_t bit_count = length * 8U;
+		unsigned int mutations = 1U + next_random(&state) % 8U;
+		unsigned int mutation;
+		memcpy(input, valid_packet, length);
+		/* Preserve the fixed 54-bit ALAC frame header; mutate the compressed
+		 * payload so the sanitizer reaches entropy and predictor decoding. */
+		for (mutation = 0; mutation < mutations; ++mutation) {
+			size_t bit = 54U + next_random(&state) % (bit_count - 54U);
+			input[bit >> 3] ^= (uint8_t)(1U << (7U - (bit & 7U)));
+		}
+		if ((case_index & 3U) == 0)
+			length = 8U + next_random(&state) % (valid_packet_length - 7U);
+		{
+			size_t pcm_length;
+			uint32_t samples;
+			(void)raop_alac_decode(decoder, input, length, output,
+				sizeof(output), &pcm_length, &samples);
+		}
+	}
 	for (case_index = 0; case_index < 256; ++case_index) {
 		size_t length = 32U +
 			(next_random(&state) % (RAOP_ALAC_INPUT_MAX - 31U));
@@ -218,9 +242,9 @@ int main(void)
 	puts("ALAC frame sample count bounded, including UINT32_MAX: PASS");
 	decoder = raop_alac_create(&receiver.session.offer);
 	assert(decoder != NULL);
-	malformed_smoke(decoder);
+	malformed_smoke(decoder, frame.payload, frame.packet.payload_length);
 	raop_alac_destroy(decoder);
-	puts("ALAC deterministic malformed-packet sanitizer smoke: PASS (256 packets)");
+	puts("ALAC deterministic sanitizer smoke: PASS (4096 seeded mutations + 256 random packets)");
 	raop_crypto_context_free(&crypto);
 	free(encoded);
 	free(expected);
