@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <lv2/systime.h>
 
 #include <rsx/gcm_sys.h>
 #include <rsx/rsx.h>
@@ -47,16 +48,28 @@ static void copy_image(uint32_t *buffer, uint32_t pitch, uint16_t width,
 	}
 }
 
-static void wait_rsx_idle(gcmContextData *context)
+static int wait_rsx_idle(gcmContextData *context)
 {
-	uint32_t label = 1;
-	rsxSetWriteBackendLabel(context, GCM_LABEL_INDEX, label);
-	rsxSetWaitLabel(context, GCM_LABEL_INDEX, label);
-	++label;
-	rsxSetWriteBackendLabel(context, GCM_LABEL_INDEX, label);
-	rsxFlushBuffer(context);
-	while (*(volatile uint32_t *)gcmGetLabelAddress(GCM_LABEL_INDEX) != label)
-		usleep(30);
+ static uint32_t label = 1;
+ uint64_t deadline = sysGetSystemTime() + 500000U;
+ uint32_t target = ++label;
+ rsxSetWriteBackendLabel(context, GCM_LABEL_INDEX, target);
+ rsxFlushBuffer(context);
+ while (*(volatile uint32_t *)gcmGetLabelAddress(GCM_LABEL_INDEX) != target) {
+  if (sysGetSystemTime() >= deadline) return 0;
+  usleep(1000);
+ }
+ return 1;
+}
+
+static int wait_initial_flip(void)
+{
+ uint64_t deadline = sysGetSystemTime() + 500000U;
+ while (gcmGetFlipStatus() != 0) {
+  if (sysGetSystemTime() >= deadline) return 0;
+  usleep(200);
+ }
+ return 1;
 }
 
 static int setup_video_mode(gcmContextData *context, videoState *state,
@@ -72,7 +85,8 @@ static int setup_video_mode(gcmContextData *context, videoState *state,
 	configuration.pitch = rsxAlign(64,
 		(uint32_t)resolution->width * sizeof(uint32_t));
 	configuration.aspect = state->displayMode.aspect;
-	wait_rsx_idle(context);
+	if (!wait_rsx_idle(context))
+		return DIAGNOSTIC_SCREEN_TIMEOUT;
 	if (videoConfigure(0, &configuration, NULL, 0) != 0 ||
 		videoGetState(0, 0, state) != 0)
 		return DIAGNOSTIC_SCREEN_VIDEO_CONFIG_FAILED;
@@ -142,8 +156,10 @@ int diagnostic_screen_open(diagnostic_screen *screen, const char *rgb_path)
 	}
 	rsxFlushBuffer(context);
 	gcmSetWaitFlip(context);
-	while (gcmGetFlipStatus() != 0)
-		usleep(200);
+	if (!wait_initial_flip()) {
+		error = DIAGNOSTIC_SCREEN_TIMEOUT;
+		goto error;
+	}
 	gcmResetFlipStatus();
 	if (gcmSetFlip(context, 0) != 0) {
 		error = DIAGNOSTIC_SCREEN_FLIP_FAILED;
@@ -151,10 +167,13 @@ int diagnostic_screen_open(diagnostic_screen *screen, const char *rgb_path)
 	}
 	rsxFlushBuffer(context);
 	gcmSetWaitFlip(context);
-	while (gcmGetFlipStatus() != 0)
-		usleep(200);
+	if (!wait_initial_flip()) {
+		error = DIAGNOSTIC_SCREEN_TIMEOUT;
+		goto error;
+	}
 	gcmResetFlipStatus();
 	screen->initialized = 1;
+	screen->next_buffer = 1;
 	return DIAGNOSTIC_SCREEN_OK;
 
 error:
@@ -162,28 +181,46 @@ error:
 	if (screen->context != NULL) {
 		diagnostic_screen_close(screen);
 	} else {
-		if (context != NULL)
-			rsxFinish(context, 1);
-		free(screen->host_memory);
+		if (context == NULL || wait_rsx_idle(context))
+			free(screen->host_memory);
 	}
 	memset(screen, 0, sizeof(*screen));
 	return error;
 }
 
-void diagnostic_screen_close(diagnostic_screen *screen)
+/* Keep VSH's in-game overlay supplied with scanout frames without waiting
+ * in the input/audio loop. Both buffers already contain the static image. */
+int diagnostic_screen_present(diagnostic_screen *screen)
 {
-	uint32_t i;
-	if (screen == NULL)
-		return;
-	if (screen->context != NULL) {
-		if (screen->initialized)
-			gcmSetWaitFlip((gcmContextData *)screen->context);
-		for (i = 0; i < SCREEN_BUFFER_COUNT; ++i) {
-			if (screen->buffers[i] != NULL)
-				rsxFree(screen->buffers[i]);
-		}
-		rsxFinish((gcmContextData *)screen->context, 1);
-	}
-	free(screen->host_memory);
-	memset(screen, 0, sizeof(*screen));
+ uint64_t now;
+ if (screen == NULL || !screen->initialized) return 0;
+ now = sysGetSystemTime();
+ if (screen->flip_started_us != 0 && gcmGetFlipStatus() != 0)
+  return now - screen->flip_started_us > 500000U ? DIAGNOSTIC_SCREEN_TIMEOUT : 0;
+ if (now - screen->flip_started_us < 16667U) return 0;
+ gcmResetFlipStatus();
+ if (gcmSetFlip((gcmContextData *)screen->context, screen->next_buffer) != 0)
+  return DIAGNOSTIC_SCREEN_FLIP_FAILED;
+ rsxFlushBuffer((gcmContextData *)screen->context);
+ screen->next_buffer ^= 1U;
+ screen->flip_started_us = now;
+ return 1;
+}
+
+int diagnostic_screen_close(diagnostic_screen *screen)
+{
+ uint32_t i;
+ if (screen == NULL) return 0;
+ /* On timeout, leave allocations for process teardown rather than freeing
+  * memory that the RSX may still reference. No unbounded rsxFinish/waitFlip. */
+ if (screen->context != NULL &&
+     !wait_rsx_idle((gcmContextData *)screen->context)) {
+  memset(screen, 0, sizeof(*screen));
+  return DIAGNOSTIC_SCREEN_TIMEOUT;
+ }
+ for (i = 0; i < SCREEN_BUFFER_COUNT; ++i)
+  if (screen->buffers[i] != NULL) rsxFree(screen->buffers[i]);
+ free(screen->host_memory);
+ memset(screen, 0, sizeof(*screen));
+ return 0;
 }

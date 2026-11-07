@@ -29,7 +29,13 @@
  *
  */
 
+#if defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+static const int host_bigendian = 1;
+#elif defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 static const int host_bigendian = 0;
+#else
+#error "ALAC decoder requires a known target byte order"
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>

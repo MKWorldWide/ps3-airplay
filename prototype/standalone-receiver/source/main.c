@@ -53,6 +53,9 @@ mbedtls_ms_time_t mbedtls_ms_time(void)
 #endif
 
 static volatile int exit_requested;
+static int system_menu_open;
+static int last_pad_mask;
+static int last_pad_result;
 static raop_receiver receiver;
 static raop_mdns_service mdns_service;
 static raop_crypto_context crypto_context;
@@ -84,6 +87,8 @@ static void on_system_event(u64 status, u64 param, void *userdata)
 	(void)param;
 	(void)userdata;
 	(void)log_event("SYSUTIL_EVENT", (int)status, 0);
+	if (status == SYSUTIL_MENU_OPEN) system_menu_open = 1;
+	if (status == SYSUTIL_MENU_CLOSE) system_menu_open = 0;
 	if (status == SYSUTIL_EXIT_GAME)
 		exit_requested = 1;
 }
@@ -97,6 +102,29 @@ static int log_event(const char *event, int value, size_t bytes)
 		"%Y-%m-%dT%H:%M:%SZ", utc) == 0)
 		memcpy(timestamp, "1970-01-01T00:00:00Z", sizeof(timestamp));
 	return receiver_log_file_event(&diagnostic_log, timestamp, event, value, bytes);
+}
+
+static void poll_controls(int enabled)
+{
+ padInfo info;
+ int pad;
+ sysUtilCheckCallback();
+ if (!enabled) return;
+ last_pad_result = ioPadGetInfo(&info);
+ if (last_pad_result != 0) return;
+ last_pad_mask = 0;
+ for (pad = 0; pad < MAX_PADS; ++pad) {
+  padData data;
+  if (!info.status[pad]) continue;
+  last_pad_mask |= 1 << pad;
+  memset(&data, 0, sizeof(data));
+  last_pad_result = ioPadGetData((u32)pad, &data);
+  if (last_pad_result == 0 && data.len > 0 && data.BTN_START) {
+   (void)log_event("USER_EXIT_START", pad, 0);
+   exit_requested = 1;
+   break;
+  }
+ }
 }
 
 static int local_ipv4(uint8_t address[4])
@@ -233,6 +261,8 @@ int main(void)
 	uint8_t ip[4];
 	char instance[64], host[64];
 	u64 next_log_us = 0;
+	u64 next_heartbeat_us = 0;
+	int presentation_failed = 0;
 	u64 next_audio_stats_us = 0;
 	int screen_result;
 	uint64_t reported_underflows = 0;
@@ -370,7 +400,17 @@ int main(void)
 	printf("RAOP diagnostic receiver ready. Log: %s\n", RECEIVER_LOG_PATH);
 
 	while (!exit_requested) {
-		int poll_result = raop_receiver_poll(&receiver, 1);
+		int poll_result;
+		poll_controls(pad_initialized);
+		if (exit_requested) break;
+		if (!presentation_failed) {
+			int present_result = diagnostic_screen_present(&screen);
+			if (present_result < 0) {
+				(void)log_event("SCREEN_PRESENT_FAILED", present_result, 0);
+				presentation_failed = 1;
+			}
+		}
+		poll_result = raop_receiver_poll(&receiver, 1);
 		if (poll_result < 0) {
 			(void)log_event("RECEIVER_ERROR", poll_result, 0);
 			break;
@@ -388,21 +428,6 @@ int main(void)
 			(void)log_event("MDNS_POLL_FAILED", -1, 0);
 			raop_mdns_service_close(&mdns_service);
 			mdns_opened = 0;
-		}
-		if (pad_initialized) {
-			padInfo info;
-			padData data;
-			int pad;
-			if (ioPadGetInfo(&info) == 0) {
-				for (pad = 0; pad < MAX_PADS; ++pad) {
-					if (info.status[pad] && ioPadGetData((u32)pad, &data) == 0 &&
-						data.BTN_START) {
-						(void)log_event("USER_EXIT_START", pad, 0);
-						exit_requested = 1;
-						break;
-					}
-				}
-			}
 		}
 		if (exit_requested)
 			break;
@@ -455,13 +480,15 @@ int main(void)
 		{
 			raop_rtp_frame frame;
 			unsigned int drained = 0;
-			while (audio_prebuffer_ready && drained < 32 &&
+			while (audio_prebuffer_ready && drained < 4 &&
 				pcm_ring.count <= RAOP_PCM_RING_CAPACITY - RAOP_ALAC_FRAME_MAX &&
 				raop_receiver_pop_audio(&receiver, &frame)) {
 				++drained;
 				if (decoder != NULL) {
 					size_t pcm_length = 0;
 					uint32_t samples = 0;
+					if (decoded_packet_count == 0)
+						(void)log_event("ALAC_DECODE_START", 0, frame.packet.payload_length);
 					if (raop_alac_decode(decoder, frame.payload,
 						frame.packet.payload_length, decoded_pcm,
 						sizeof(decoded_pcm), &pcm_length, &samples)) {
@@ -489,7 +516,8 @@ int main(void)
 		sysUtilCheckCallback();
 		if ((u64)sysGetSystemTime() >= next_log_us) {
 			uint64_t current = pcm_ring.output_underflows;
-			if (current != reported_underflows)
+			if (receiver.session.state == RAOP_SESSION_RECORDING &&
+				current != reported_underflows)
 				(void)log_event("PCM_UNDERFLOW", (int)(current - reported_underflows),
 					(size_t)pcm_ring.count);
 			reported_underflows = current;
@@ -498,8 +526,13 @@ int main(void)
 				(void)log_event("PCM_DROP", (int)(current - reported_drops),
 					(size_t)pcm_ring.count);
 			reported_drops = current;
-			next_log_us = sysGetSystemTime() + 1000000U;
+			next_log_us = sysGetSystemTime() + 5000000U;
 		}
+		if ((u64)sysGetSystemTime() >= next_heartbeat_us) {
+   (void)log_event("APP_HEARTBEAT", (int)receiver.session.state, system_menu_open);
+   (void)log_event("PAD_HEALTH", last_pad_result, (size_t)last_pad_mask);
+   next_heartbeat_us = sysGetSystemTime() + 10000000U;
+  }
 		if ((u64)sysGetSystemTime() >= next_audio_stats_us) {
 			if (decoder != NULL) {
 				/* Periodic counters contain only numeric stream-health data. */
@@ -527,8 +560,7 @@ cleanup:
 	if (pad_initialized)
 		(void)ioPadEnd();
 	(void)log_event("SCREEN_CLOSE_START", 0, 0);
-	diagnostic_screen_close(&screen);
-	(void)log_event("SCREEN_CLOSE_DONE", 0, 0);
+	(void)log_event("SCREEN_CLOSE_DONE", diagnostic_screen_close(&screen), 0);
 	if (decoder != NULL)
 		raop_alac_destroy(decoder);
 	memset(decoded_pcm, 0, sizeof(decoded_pcm));

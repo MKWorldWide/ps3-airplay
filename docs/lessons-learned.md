@@ -439,3 +439,10 @@
 - **Prevention Rule:** Run private-key operations on the target ABI. Host crypto tests cannot catch a target-specific assembly/pointer-width incompatibility. Always inspect emulator fatal logs alongside app logs before diagnosing a missing response as a timeout.
 
 The v0.1.31 fresh RPCS3 replay verifies the portable-arithmetic correction: the same challenge/private-key path completes (54 ms challenge, 26 ms encrypted ANNOUNCE), followed by successful SETUP/RECORD/TEARDOWN. Actual PS3 streamed music and controller behavior still require observation.
+
+## Big-endian decode and live control diagnostics
+
+- **Problem:** First real sender attempt produced crackling; START and PS controls appeared unavailable after disconnect.
+- **Root Cause:** Decoder incorrectly hard-coded little-endian host order, producing incorrectly ordered 16-bit PCM on PS3. Separately, the app only flipped the display at startup and serviced controls after network work. Idle underrun spam overwrote the session evidence; the exact control/overlay cause is not yet confirmed.
+- **Fix:** Compiler-based byte order, nonblocking regular presentation, input/callback polling first, bounded graphics cleanup, small decode batches, and rate-limited heartbeat/pad/menu logging. Remote normal quit completed all cleanup stages without reboot.
+- **Prevention Rule:** Compare PCM bytes on the target architecture; a little-endian host test cannot validate the big-endian branch. Preserve logs before recovery and distinguish live audio polling from a frozen process. Do not promise PS-button overlay support until verified on hardware.
