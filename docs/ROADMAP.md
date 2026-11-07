@@ -1,6 +1,6 @@
 # Roadmap
 
-**Status: experimental; an earlier standalone run reportedly played its diagnostic tone but showed a black screen, and the iPhone listed the receiver but did not connect. Version 0.1.2 builds and extracts locally with verbose logging and a NetCtl-derived advertised address; it has not been transferred or tested on hardware.** This roadmap separates build evidence from behavior that still requires a PS3 and an iPhone.
+**Status: experimental; an earlier standalone run reportedly played its diagnostic tone but showed a black screen, and the iPhone listed the receiver but did not connect. Version 0.1.2 is locally verified but not transferred or hardware-tested. The console is currently unreachable for read-only preflight, and a fresh receiver loopback test is scheduling-sensitive.** This roadmap separates build evidence from behavior that still requires a PS3 and an iPhone.
 
 ## Milestones
 
@@ -20,13 +20,15 @@ Portable components cover bounded DNS-SD/mDNS, RTSP/SDP session handling, UDP RT
 
 ## Next steps
 
-1. Improve RTP jitter handling and sender-clock scheduling with bounded memory and measurable host tests.
-2. Obtain approval for the exact 0.1.2 PKG before replacing the staged package; install it from XMB.
-3. Check the `DISPLAY ACTIVE` banner and controller START exit.
-4. Try the iPhone once and retrieve the capped log; use accept, method, status, state, SDP, and RTP events to locate the failure before changing capabilities.
-5. Re-test audio and iPhone RAOP behavior after the display/exit gate is stable.
-6. Consider resident PRX lifecycle testing as a separate, reversible experiment.
-7. Test audio coexistence per title only after resident lifecycle and standalone output are established.
+1. Restore console reachability, complete read-only disk/package/log checks, and confirm the installed AIRPLAY02 version and recovery route.
+2. Review the unbounded RSX label/flip polling in the v0.1.2 source before deployment; decide whether to test that exact artifact or make a small timeout-only safety release.
+3. Once preflight is complete, obtain approval for the exact package filename, version, hash, destination, and rollback procedure before transfer.
+4. Check the `DISPLAY ACTIVE` banner and controller START exit; stop extended testing if exit fails.
+5. Run the receiver loopback test repeatedly without tracing and resolve its timing-probe stall before treating the host suite as green.
+6. Try the iPhone once and retrieve the capped log; use accept, method, status, state, SDP, and RTP events to locate the failure before changing capabilities.
+7. Re-test AirPlay audio after display, clean exit, and RTSP/RTP stage evidence are established.
+8. Consider resident PRX lifecycle testing as a separate, reversible experiment.
+9. Test audio coexistence per title only after resident lifecycle and standalone output are established.
 
 ## Explicit boundaries
 

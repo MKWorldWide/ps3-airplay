@@ -1,5 +1,12 @@
 # Lessons learned
 
+## Instrumentation can mask receiver-test stalls
+
+- **Problem:** A fresh receiver loopback run timed out while waiting for its first timing probe when run directly, but completed under `strace`.
+- **Root Cause:** Not established. The trace-assisted run shows the loopback scenario can complete; instrumentation changes timing enough to mask the direct-run stall. This does not prove whether the cause is a test race, receiver scheduling, or the emulated host.
+- **Fix:** No implementation fix yet. Record direct execution as unresolved and do not count the trace-assisted run as a normal passing test.
+- **Prevention Rule:** Repeat timing-sensitive network tests without instrumentation; add an explicit test deadline and collect narrowly scoped diagnostics before claiming a pass.
+
 ## Discovery does not prove the advertised address is reachable
 
 - **Problem:** The iPhone listed the receiver but reported that it could not connect; the available old log contained no RTSP accept event and may not match that attempt.

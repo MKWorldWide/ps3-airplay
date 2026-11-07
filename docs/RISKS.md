@@ -11,6 +11,8 @@
 | Diagnostic service is mistaken for playback-ready software | Silent or failed connections | Label capability accurately and gate claims on iPhone and audible-output evidence |
 | Sensitive data enters source, issues, or logs | Privacy exposure | Use the contributor redaction checklist; never publish identifiers, credentials, addresses, or raw logs without review |
 | Third-party licensing is incomplete | Redistribution may violate license terms | Preserve notices and review dependencies before binary releases |
+| RSX label or flip polling never completes | Foreground app can appear frozen and prevent controller exit; this resembles the reported black-screen/forced-shutdown failure | v0.1.2 source has no overall deadline on these waits; review and add bounded failure handling before another risky hardware run unless v0.1.2 is deliberately selected after recovery/preflight review |
+| Receiver loopback timing test is scheduling-sensitive | A host run can stall at its first timing-probe receive, reducing confidence in protocol changes | Latest direct guest run timed out; trace-assisted run passed. Diagnose the discrepancy and require repeated uninstrumented passes before marking green |
 
 ## Required gates before hardware testing
 
