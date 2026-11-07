@@ -25,6 +25,8 @@ The compiler name depends on the toolchain. Confirm the selected compiler and SD
 
 The `scripts/build-lima-*.sh` scripts are tailored to a configured Linux x86_64 PS3DK environment. Review each script and set its expected SDK variables before use. The scripts build host/PPU artifacts; successful compilation or PRX structural validation does not establish that an artifact can load or run on a PS3.
 
+For a controlled comparison against the PSL1GHT runtime from 2020, `scripts/build-lima-legacy-runtime.sh` requires an isolated PS3DEV bundle, the PSL1GHT source at commit `6e565a70e927f55813babe86dc6f64149535f908`, the PS3DK source tree for its CMake toolchain, and Mbed TLS 3.6.7 source/build paths. It verifies the PSL1GHT commit before rebuilding Mbed TLS and the standalone receiver. Package it separately by setting `APP_VERSION`, `ELF`, and `OUT_DIR` for `scripts/package-lima-standalone-receiver.sh`; do not overwrite a known package or deploy without the project's hardware-test approval gate.
+
 The standalone receiver sources are under `prototype/standalone-receiver`. The experimental resident candidate is under `experimental/resident`. See each directory's README for scope and known limits.
 
 ## Validation boundaries

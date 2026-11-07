@@ -5,12 +5,12 @@ set -euo pipefail
 PROJECT_ROOT="${PROJECT_ROOT:-$(pwd)}"
 PS3DEV="${PS3DEV:-$PS3DK_SOURCE/stage/ps3dev}"
 PS3DK_TOOLS="${PS3DK_TOOLS:-$HOME/ps3-airplay-host/ps3-sdk-tools-v0.27.0-linux-x86_64/bin}"
-ELF="$PROJECT_ROOT/build/lima-standalone-receiver/ps3-airplay-receiver.elf"
-OUT_DIR="$PROJECT_ROOT/build/lima-standalone-package"
+ELF="${ELF:-$PROJECT_ROOT/build/lima-standalone-receiver/ps3-airplay-receiver.elf}"
+OUT_DIR="${OUT_DIR:-$PROJECT_ROOT/build/lima-standalone-package}"
 STAGE="$OUT_DIR/stage"
 EXTRACT="$OUT_DIR/extracted"
 APPID=AIRPLAY02
-APP_VERSION=0.1.2
+APP_VERSION="${APP_VERSION:-0.1.2}"
 PACKAGE="$OUT_DIR/ps3-airplay-receiver-${APP_VERSION}.pkg"
 CONTENTID="UP0001-${APPID}_00-0000000000000000"
 ICON0="$PS3DEV/bin/ICON0.PNG"

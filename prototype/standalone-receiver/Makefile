@@ -40,11 +40,21 @@ TITLE := PS3 AirPlay 1 Receiver
 APPID := AIRPLAY02
 CONTENTID := UP0001-$(APPID)_00-0000000000000000
 
+ifeq ($(LEGACY_RUNTIME),1)
+# The 2020 PSL1GHT headers declare select() through net/select.h. Do not set
+# __SELECT_H__ here; that guard would hide the declaration needed by RAOP.
+SELECT_HEADER_COMPAT :=
+else
+# PS3DK's newer sys/select.h needs its guard pre-defined to avoid a conflict
+# with the network header included by the SDK.
+SELECT_HEADER_COMPAT := -D__SELECT_H__
+endif
+
 CFLAGS := -O2 -Wall -Wextra -Werror \
 	-Wno-pointer-to-int-cast -Wno-int-to-pointer-cast \
 	-mcpu=cell $(MACHDEP) \
 	-DMBEDTLS_NO_PLATFORM_ENTROPY -DMBEDTLS_PLATFORM_MS_TIME_ALT \
-	-DRAOP_USE_PSL1GHT -DRAOP_VERBOSE_LOGGING=1 -D__SELECT_H__ \
+	-DRAOP_USE_PSL1GHT -DRAOP_VERBOSE_LOGGING=1 $(SELECT_HEADER_COMPAT) \
 	-include $(PS3DK)/ppu/include/sys/select.h \
 	-I$(MBEDTLS_INCLUDE) $(INCLUDE)
 LIBS := -laudio -lgcm_sys -lrsx -lio -lsysutil -lnetctl -lnet -lsysmodule -lrt -lm \

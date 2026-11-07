@@ -1,13 +1,13 @@
 # Roadmap
 
-**Status: experimental; v0.1.2 is installed, but XMB launch returns error `80028F21`. The installed EBOOT and PARAM.SFO match the verified package. The existing diagnostic log is from an earlier run, so display, tone, clean exit, and AirPlay behavior for v0.1.2 remain untested.** This roadmap separates build evidence from behavior that still requires a PS3 and an iPhone.
+**Status: experimental; v0.1.2 is installed, but XMB launch returns error `80028F21`. A separately built v0.1.3 candidate uses the 2020 PSL1GHT runtime and passes host build/package checks. Its launch behavior on Evilnat CFW is unknown; it has not been transferred or installed.** This roadmap separates build evidence from behavior that still requires a PS3 and an iPhone.
 
 ## Milestones
 
 | Milestone | Goal | Status |
 |---|---|---|
 | Build foundation | Reproducible PPU build and sample PRX structure check | Host/toolchain work complete; hardware compatibility unknown |
-| Standalone audio | Launch the receiver and verify audible output at the system menu | v0.1.2 launch fails with `80028F21`; earlier five-second tone is from an unidentified build; display and clean exit unresolved |
+| Standalone audio | Launch the receiver and verify audible output at the system menu | v0.1.2 launch fails with `80028F21`. v0.1.3 legacy-runtime candidate is ready for an approved controlled launch test; earlier five-second tone came from an unidentified build. |
 | AirPlay interoperability | Discover the receiver and complete a real iPhone RAOP session | Earlier iPhone listing followed by connection failure; cause unconfirmed |
 | Standalone playback | Stable playback, controls, reconnects, and a 30-minute session | Not tested |
 | Resident module | Safely load, receive, stop, and unload a diagnostic PRX | Build checks only; no hardware test |
@@ -20,14 +20,13 @@ Portable components cover bounded DNS-SD/mDNS, RTSP/SDP session handling, UDP RT
 
 ## Next steps
 
-1. Diagnose the XMB launch failure before another console launch. Verify NPDRM SELF metadata, application startup/link assumptions, and package contract against the installed file hashes; do not change CFW or system settings based on the undocumented error alone.
-2. Build a minimal, reversible launch/display control using the same toolchain if static package checks do not identify the cause. Require a known recovery route before testing another build.
-3. After a corrected build launches, run the visible display, five-second tone, and START-to-XMB checks. Stop if the screen is black or normal exit fails.
-4. Run the receiver loopback test repeatedly without tracing and resolve its timing-probe stall before treating the host suite as green.
-5. Try the iPhone once and retrieve the capped log; use accept, method, status, state, SDP, and RTP events to locate the failure before changing capabilities.
-6. Re-test AirPlay audio after display, clean exit, and RTSP/RTP stage evidence are established.
-7. Consider resident PRX lifecycle testing as a separate, reversible experiment.
-8. Test audio coexistence per title only after resident lifecycle and standalone output are established.
+1. With approval, transfer v0.1.3 under a versioned filename, install it through XMB, and test whether it launches. This candidate is based on an upstream report that modern PSL1GHT runtime builds failed before `main()` on 4.93 HEN while a 2020 runtime build worked; that report does not cover Evilnat CFW, so treat the result as a controlled test, not a proven fix.
+2. If launch succeeds, verify visible display, five-second tone, and START-to-XMB twice. Stop if output is black or normal exit fails.
+3. Try the iPhone once and retrieve the capped log; use accept, method, status, state, SDP, and RTP events to locate the failure before changing capabilities.
+4. Re-test AirPlay audio after display, clean exit, and RTSP/RTP stage evidence are established.
+5. Repeat the receiver loopback test without tracing; this run passed, but the earlier untraced timing-probe stall remains an intermittent host-test concern.
+6. Consider resident PRX lifecycle testing as a separate, reversible experiment.
+7. Test audio coexistence per title only after resident lifecycle and standalone output are established.
 
 ## Explicit boundaries
 

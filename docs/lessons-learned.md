@@ -7,6 +7,13 @@
 - **Fix:** No code or console change yet. Record a launch failure, preserve the exact package/log evidence, and inspect the NPDRM SELF metadata and startup contract before creating another build.
 - **Prevention Rule:** Verify installed identity and classify launch, early startup, and in-app failures separately. Do not infer a loader cause from an undocumented error or from a stale app log.
 
+## A newer console runtime can fail before application logging starts
+
+- **Problem:** The exact v0.1.2 app files are installed, but XMB returns `80028F21` and the app log is unchanged.
+- **Root Cause:** Unknown. An independent PS3 project reports pre-`main()` launch failure for PSL1GHT 2021+ runtime builds on HFW 4.93 + HEN and success with its 2020 runtime build. This is relevant evidence, but it does not establish behavior on Evilnat CFW or isolate which runtime change matters.
+- **Fix:** Build a separate v0.1.3 candidate with PSL1GHT commit `6e565a70e927f55813babe86dc6f64149535f908`, rebuilding its crypto dependency with the same GCC 7.2 toolchain. Host tests and package structure pass; hardware launch is pending approval.
+- **Prevention Rule:** Preserve the failing package, vary one toolchain axis at a time, and require exact hardware results before calling a compatibility hypothesis a fix.
+
 ## Instrumentation can mask receiver-test stalls
 
 - **Problem:** A fresh receiver loopback run timed out while waiting for its first timing probe when run directly, but completed under `strace`.
