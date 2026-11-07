@@ -30,6 +30,20 @@ void raop_pcm_ring_init(raop_pcm_ring *ring, uint8_t input_channels)
 		ring->input_channels = input_channels;
 }
 
+void raop_pcm_ring_clear(raop_pcm_ring *ring)
+{
+	if (ring == NULL)
+		return;
+	ring->read_index = 0;
+	ring->write_index = 0;
+	ring->count = 0;
+	ring->phase = 0;
+	ring->current[0] = ring->current[1] = 0;
+	ring->next[0] = ring->next[1] = 0;
+	ring->have_current = 0;
+	ring->have_next = 0;
+}
+
 size_t raop_pcm_ring_push_le16(raop_pcm_ring *ring, const uint8_t *pcm,
 	size_t byte_length)
 {

@@ -57,6 +57,7 @@ typedef struct {
 	uint64_t resend_rejected;
 	uint64_t resend_last_send_ms;
 	uint64_t last_audio_log_packets;
+	uint64_t flush_generation;
 } raop_receiver;
 
 /* Opens one TCP control endpoint and three bounded UDP endpoints. */

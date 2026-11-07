@@ -73,6 +73,32 @@ int main(void)
 		assert(ring.output_underflows < 10);
 	}
 
+	{
+		uint8_t buffered[12];
+		uint64_t written, read, underflows, dropped;
+		write_le16(buffered, 12000);
+		write_le16(buffered + 2, -12000);
+		write_le16(buffered + 4, 8000);
+		write_le16(buffered + 6, -8000);
+		write_le16(buffered + 8, 4000);
+		write_le16(buffered + 10, -4000);
+		raop_pcm_ring_init(&ring, 2);
+		assert(raop_pcm_ring_push_le16(&ring, buffered, sizeof(buffered)) == 3);
+		assert(raop_pcm_ring_render_float(&ring, 44100, 48000, output, 1) == 1);
+		assert(ring.have_current && ring.have_next);
+		written = ring.frames_written;
+		read = ring.frames_read;
+		underflows = ring.output_underflows;
+		dropped = ring.frames_dropped;
+		raop_pcm_ring_clear(&ring);
+		assert(ring.count == 0 && ring.read_index == 0 && ring.write_index == 0);
+		assert(ring.phase == 0 && !ring.have_current && !ring.have_next);
+		assert(ring.frames_written == written && ring.frames_read == read);
+		assert(ring.output_underflows == underflows && ring.frames_dropped == dropped);
+		assert(raop_pcm_ring_render_float(&ring, 48000, 48000, output, 1) == 1);
+		assert(output[0] == 0.0f && output[1] == 0.0f);
+	}
+
 	puts("bounded PCM ring, stereo conversion and 44.1-to-48 kHz resampling: PASS");
 	return 0;
 }

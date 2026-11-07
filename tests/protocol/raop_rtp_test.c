@@ -85,6 +85,21 @@ int main(void)
 	length = make_packet(packet, 10000, payload, sizeof(payload));
 	assert(!raop_rtp_queue_recover(&queue, packet, length));
 	assert(queue.stats.queue_drops == 2);
+	{
+		uint64_t packets_before = queue.stats.packets;
+		uint64_t drops_before = queue.stats.queue_drops;
+		raop_rtp_queue_flush(&queue);
+		assert(queue.count == 0);
+		assert(queue.read_index == 0 && queue.write_index == 0);
+		assert(!queue.stats.have_sequence);
+		assert(!queue.have_popped_sequence);
+		assert(queue.stats.packets == packets_before);
+		assert(queue.stats.queue_drops == drops_before);
+		length = make_packet(packet, 9, payload, sizeof(payload));
+		assert(raop_rtp_queue_push(&queue, packet, length));
+		assert(raop_rtp_queue_pop(&queue, &frame));
+		assert(frame.packet.sequence == 9);
+	}
 	packet[0] = 0x40;
 	assert(!raop_rtp_queue_push(&queue, packet, 16));
 	assert(queue.stats.malformed_packets == 1);

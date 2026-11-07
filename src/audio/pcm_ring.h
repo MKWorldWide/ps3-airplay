@@ -24,6 +24,8 @@ typedef struct {
 } raop_pcm_ring;
 
 void raop_pcm_ring_init(raop_pcm_ring *ring, uint8_t input_channels);
+/* Discard buffered frames and resampler history, preserving cumulative stats. */
+void raop_pcm_ring_clear(raop_pcm_ring *ring);
 /* Input is signed 16-bit little-endian mono/stereo. Returns frames accepted. */
 size_t raop_pcm_ring_push_le16(raop_pcm_ring *ring, const uint8_t *pcm,
 	size_t byte_length);

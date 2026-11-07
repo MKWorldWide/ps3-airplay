@@ -231,3 +231,17 @@
 - **Root Cause:** Not established. The untraced test exceeded a bounded timeout; the same test passed under strace with LeakSanitizer disabled, so timing or sanitizer interaction is plausible but unproven.
 - **Fix:** Ran the rest of the host tests separately and retained the loopback test result as timing-sensitive. The PPU build and package validation proceeded independently.
 - **Prevention Rule:** Do not silently skip or count a traced pass as proof the untraced hang is fixed. Keep a bounded timeout and investigate the schedule-sensitive test separately.
+
+## Clear every buffered layer on RTSP FLUSH
+
+- **Problem:** A successful FLUSH could leave pre-seek RTP packets in the bounded receiver queue or kernel UDP socket, and already-decoded PCM/resampler history could still play.
+- **Root Cause:** The RTSP handler acknowledged FLUSH without coordinating the receiver's RTP queue with the standalone application's PCM queue.
+- **Fix:** On successful FLUSH, clear the RTP queue and retransmission/sequence epoch, drain pending audio datagrams with a fixed packet bound, and increment a generation observed by the app loop. The app clears PCM and interpolation history while preserving cumulative diagnostics. A zero-length UDP datagram is consumed and counted as a datagram rather than prematurely ending the drain.
+- **Prevention Rule:** Treat seek/track discontinuity as an end-to-end buffer invalidation across socket, packet queue, decoder output, and resampler state; keep every drain bounded and report when a cap is reached.
+
+## Do not confuse emulator screen startup with receiver readiness
+
+- **Problem:** RPCS3 displayed a transient image while launching v0.1.14, which could be mistaken for a running receiver.
+- **Root Cause:** Screen and controller initialization precede network address acquisition; the app can render successfully and then terminate before opening its listeners.
+- **Fix:** The fresh capped log was summarized by allowlisted event and numeric fields. It reached `SCREEN_READY`, then `NET_IP_TIMEOUT` and `APP_STOP` result 1, with no crypto, RTSP, RTP, mDNS, or audio-ready event.
+- **Prevention Rule:** Use the earliest missing readiness event to locate startup failure. Screen visibility, title launch, network route, listener readiness, AirPlay session, and audio output are separate test gates.

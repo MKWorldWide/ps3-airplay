@@ -219,6 +219,7 @@ int main(void)
 	int screen_result;
 	uint64_t reported_underflows = 0;
 	uint64_t reported_drops = 0;
+	uint64_t handled_flush_generation = 0;
 
 	mdns_service.socket_fd = -1;
 	raop_pcm_ring_init(&pcm_ring, 2);
@@ -395,6 +396,15 @@ int main(void)
 			raop_pcm_ring_init(&pcm_ring, 2);
 			memset(&receiver.audio_queue, 0, sizeof(receiver.audio_queue));
 			audio_prebuffer_ready = 0;
+		}
+		if (receiver.flush_generation != handled_flush_generation) {
+			uint32_t discarded_frames = pcm_ring.count;
+			raop_pcm_ring_clear(&pcm_ring);
+			memset(decoded_pcm, 0, sizeof(decoded_pcm));
+			audio_prebuffer_ready = 0;
+			decoded_packet_count = 0;
+			handled_flush_generation = receiver.flush_generation;
+			(void)log_event("PCM_FLUSH", (int)discarded_frames, 0);
 		}
 		if (decoder != NULL && !audio_prebuffer_ready &&
 			receiver.audio_queue.count >= RAOP_RTP_PREBUFFER_PACKETS) {

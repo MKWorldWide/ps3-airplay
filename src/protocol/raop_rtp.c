@@ -160,6 +160,21 @@ int raop_rtp_queue_pop(raop_rtp_queue *queue, raop_rtp_frame *frame)
 	return 1;
 }
 
+void raop_rtp_queue_flush(raop_rtp_queue *queue)
+{
+	if (queue == NULL)
+		return;
+	queue->read_index = 0;
+	queue->write_index = 0;
+	queue->count = 0;
+	queue->last_popped_sequence = 0;
+	queue->have_popped_sequence = 0;
+	queue->stats.last_sequence = 0;
+	queue->stats.last_missing_sequence = 0;
+	queue->stats.last_missing_count = 0;
+	queue->stats.have_sequence = 0;
+}
+
 int raop_rtp_queue_recover(raop_rtp_queue *queue, const uint8_t *data,
 	size_t length)
 {

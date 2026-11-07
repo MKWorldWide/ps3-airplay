@@ -30,6 +30,12 @@ Portable components cover bounded DNS-SD/mDNS, RTSP/SDP session handling, UDP RT
 6. Continue toward audible AirPlay only after fresh hardware evidence establishes the working boundary; keep protocol, decrypt, ALAC, PCM, and GameOS output claims separate.
 7. Diagnose the receiver loopback test's repeated uninstrumented timing-probe hang before using it as a green regression gate.
 8. Evaluate resident PRX lifecycle and per-title game audio only after standalone playback works; keep boot plugin configuration unchanged.
+
+## Latest update (2026-11-07)
+
+- AIRPLAY02 v0.1.14 was installed and launched in RPCS3. The fresh capped log reached screen/controller and NetCtl initialization, then `NET_IP_TIMEOUT` and `APP_STOP result=1`. It did not reach crypto, receiver listeners, mDNS, or audio. The package is structurally validated, but its SO_REUSEPORT discovery change was not exercised.
+- RTSP FLUSH now invalidates queued RTP, pending bounded audio datagrams, retransmission/sequence state, and standalone PCM/resampler history. Full Lima host tests and PPU object compilation passed. Next package version: 0.1.15.
+- Next validation: build the versioned package from the committed source; investigate RPCS3 route availability without changing physical-console settings; then retest listeners and discovery only when startup reaches network-ready state. Physical PS3 tests remain gated on reachability and safe recovery.
 ## Explicit boundaries
 
 - A successful build, package inspection, or PRX structural check does not prove hardware compatibility.

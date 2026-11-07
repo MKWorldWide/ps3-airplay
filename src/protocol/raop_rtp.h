@@ -60,5 +60,7 @@ int raop_rtp_queue_push(raop_rtp_queue *queue, const uint8_t *data,
 int raop_rtp_queue_recover(raop_rtp_queue *queue, const uint8_t *data,
 	size_t length);
 int raop_rtp_queue_pop(raop_rtp_queue *queue, raop_rtp_frame *frame);
+/* Invalidate queued frames and sequence epoch while retaining cumulative stats. */
+void raop_rtp_queue_flush(raop_rtp_queue *queue);
 
 #endif

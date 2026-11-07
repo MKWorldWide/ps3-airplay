@@ -191,6 +191,40 @@ static void log_event(raop_receiver *receiver, const char *event,
 	(void)receiver_log_file_event(receiver->log, timestamp, event, value, bytes);
 }
 
+static size_t flush_pending_audio_datagrams(raop_receiver *receiver)
+{
+	uint8_t packet[RAOP_UDP_PACKET_MAX];
+	size_t discarded = 0;
+	unsigned int attempt;
+	for (attempt = 0; attempt < RAOP_RTP_QUEUE_CAPACITY; ++attempt) {
+		fd_set read_set;
+		struct timeval timeout = {0, 0};
+		int ready;
+		FD_ZERO(&read_set);
+		FD_SET(receiver->audio_fd, &read_set);
+		ready = select(receiver->audio_fd + 1, &read_set, NULL, NULL,
+			&timeout);
+		if (ready <= 0 || !FD_ISSET(receiver->audio_fd, &read_set))
+			break;
+		if (recvfrom(receiver->audio_fd, packet, sizeof(packet), 0,
+			NULL, NULL) < 0)
+			break;
+		++discarded;
+	}
+	log_event(receiver, "RTP_SOCKET_FLUSH", (int)discarded, 0);
+	if (attempt == RAOP_RTP_QUEUE_CAPACITY) {
+		fd_set read_set;
+		struct timeval timeout = {0, 0};
+		FD_ZERO(&read_set);
+		FD_SET(receiver->audio_fd, &read_set);
+		if (select(receiver->audio_fd + 1, &read_set, NULL, NULL,
+			&timeout) > 0 && FD_ISSET(receiver->audio_fd, &read_set))
+			log_event(receiver, "RTP_FLUSH_DRAIN_LIMIT",
+				RAOP_RTP_QUEUE_CAPACITY, 0);
+	}
+	return discarded;
+}
+
 #ifdef RAOP_VERBOSE_LOGGING
 static const char *rtsp_method_event(const char *request, size_t length)
 {
@@ -294,6 +328,7 @@ static int serve_messages(raop_receiver *receiver)
 		size_t size = 0;
 		int result = message_length(receiver->request,
 			receiver->request_length, &size);
+		int status = 0;
 		char response[RAOP_SESSION_RESPONSE_MAX];
 #ifdef RAOP_VERBOSE_LOGGING
 		const char *method_event;
@@ -313,6 +348,23 @@ static int serve_messages(raop_receiver *receiver)
 			log_event(receiver, "RTSP_BAD_FRAME", result, receiver->request_length);
 			return 0;
 		}
+		(void)sscanf(response, "RTSP/1.0 %d", &status);
+		if (status == 200 && size >= 6 &&
+			memcmp(receiver->request, "FLUSH ", 6) == 0) {
+			size_t discarded = receiver->audio_queue.count;
+			raop_rtp_queue_flush(&receiver->audio_queue);
+			(void)flush_pending_audio_datagrams(receiver);
+			receiver->resend_range_valid = 0;
+			receiver->resend_received_mask = 0;
+			receiver->resend_packet_count = 0;
+			receiver->resend_sequence = 0;
+			receiver->resend_first_sequence = 0;
+			receiver->resend_last_send_ms = 0;
+			receiver->last_audio_log_packets =
+				receiver->audio_queue.stats.packets;
+			++receiver->flush_generation;
+			log_event(receiver, "RTP_QUEUE_FLUSH", (int)discarded, 0);
+		}
 		if (!send_all(receiver->client_fd, response, strlen(response))) {
 #ifdef RAOP_VERBOSE_LOGGING
 			log_event(receiver, "RTSP_SEND_FAIL", errno, strlen(response));
@@ -324,8 +376,6 @@ static int serve_messages(raop_receiver *receiver)
 			(size >= 9 && memcmp(receiver->request, "TEARDOWN ", 9) == 0))
 			receiver->resend_range_valid = 0;
 		{
-			int status = 0;
-			(void)sscanf(response, "RTSP/1.0 %d", &status);
 #ifdef RAOP_VERBOSE_LOGGING
 			log_event(receiver, "RTSP_STATUS", status, size);
 			if (receiver->session.state != previous_state)
@@ -676,8 +726,10 @@ int raop_receiver_poll(raop_receiver *receiver, unsigned int timeout_ms)
 	int max_fd;
 	int result;
 	uint64_t now;
+	uint64_t flush_generation_before;
 	if (receiver == NULL || receiver->tcp_fd < 0 || receiver->audio_fd < 0)
 		return -1;
+	flush_generation_before = receiver->flush_generation;
 	now = monotonic_milliseconds();
 	if (receiver->client_fd >= 0 && now != 0 &&
 		((receiver->client_last_activity_ms != 0 &&
@@ -753,7 +805,8 @@ int raop_receiver_poll(raop_receiver *receiver, unsigned int timeout_ms)
 			disconnect_client(receiver);
 		}
 	}
-	if (FD_ISSET(receiver->audio_fd, &read_set))
+	if (receiver->flush_generation == flush_generation_before &&
+		FD_ISSET(receiver->audio_fd, &read_set))
 		receive_udp(receiver, receiver->audio_fd, 0);
 	if (FD_ISSET(receiver->control_fd, &read_set))
 		receive_udp(receiver, receiver->control_fd, 1);

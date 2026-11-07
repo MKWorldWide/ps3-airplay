@@ -52,19 +52,25 @@ static void *run_receiver(void *opaque)
 		if (args->receiver->timing_responses != 0)
 			atomic_store_explicit(&args->timing_seen, 1, memory_order_release);
 		pthread_mutex_unlock(&args->receiver_lock);
+		(void)nanosleep(&(struct timespec){0, 1000000L}, NULL);
 	}
 	return NULL;
 }
 
-static void send_request(int fd, const char *request, char *response,
-	size_t capacity)
+static void write_request(int fd, const char *request)
 {
-	size_t length = strlen(request), sent = 0, total = 0;
+	size_t length = strlen(request), sent = 0;
 	while (sent < length) {
 		ssize_t amount = send(fd, request + sent, length - sent, 0);
 		assert(amount > 0);
 		sent += (size_t)amount;
 	}
+}
+
+static void receive_response(int fd, const char *request, char *response,
+	size_t capacity)
+{
+	size_t total = 0;
 	while (total + 1 < capacity) {
 		ssize_t amount = recv(fd, response + total, capacity - total - 1, 0);
 		if (amount <= 0) {
@@ -77,6 +83,13 @@ static void send_request(int fd, const char *request, char *response,
 			return;
 	}
 	assert(0 && "RTSP response exceeded test buffer");
+}
+
+static void send_request(int fd, const char *request, char *response,
+	size_t capacity)
+{
+	write_request(fd, request);
+	receive_response(fd, request, response, capacity);
 }
 
 static void send_rtp(uint16_t port, uint16_t sequence)
@@ -95,6 +108,17 @@ static void send_rtp(uint16_t port, uint16_t sequence)
 	assert(sendto(fd, packet, sizeof(packet), 0,
 		(struct sockaddr *)&target, sizeof(target)) == (ssize_t)sizeof(packet));
 	close(fd);
+}
+
+static void send_empty_datagram(int fd, uint16_t port)
+{
+	struct sockaddr_in address;
+	memset(&address, 0, sizeof(address));
+	address.sin_family = AF_INET;
+	address.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+	address.sin_port = htons(port);
+	assert(sendto(fd, "", 0, 0, (struct sockaddr *)&address,
+		sizeof(address)) == 0);
 }
 
 static void send_resend(int fd, uint16_t port, uint16_t sequence,
@@ -313,10 +337,31 @@ int main(void)
 		assert(frame.packet.sequence == 45);
 	}
 	pthread_mutex_unlock(&args.receiver_lock);
+	send_rtp(raop_receiver_audio_port(&receiver), 46);
+	for (wait = 0; wait < 50 &&
+		atomic_load_explicit(&args.audio_packets_seen, memory_order_acquire) < 3;
+		++wait)
+		(void)nanosleep(&(struct timespec){0, 10000000L}, NULL);
+	assert(atomic_load_explicit(&args.audio_packets_seen,
+		memory_order_acquire) == 3);
+	pthread_mutex_lock(&args.receiver_lock);
+	assert(receiver.audio_queue.count == 1);
+	pthread_mutex_unlock(&args.receiver_lock);
 
-	send_request(fd, "FLUSH rtsp://127.0.0.1/stream RTSP/1.0\r\n"
-		"CSeq: 5\r\n\r\n", response, sizeof(response));
+	pthread_mutex_lock(&args.receiver_lock);
+	send_rtp(raop_receiver_audio_port(&receiver), 47);
+	send_empty_datagram(peer_udp_fd, raop_receiver_audio_port(&receiver));
+	write_request(fd, "FLUSH rtsp://127.0.0.1/stream RTSP/1.0\r\n"
+		"CSeq: 5\r\n\r\n");
+	pthread_mutex_unlock(&args.receiver_lock);
+	receive_response(fd, "FLUSH", response, sizeof(response));
 	assert(strstr(response, "RTSP/1.0 200 OK") != NULL);
+	pthread_mutex_lock(&args.receiver_lock);
+	assert(receiver.flush_generation == 1);
+	assert(receiver.audio_queue.count == 0);
+	assert(!receiver.audio_queue.stats.have_sequence);
+	assert(receiver.audio_queue.stats.packets == 3);
+	pthread_mutex_unlock(&args.receiver_lock);
 	send_resend(peer_udp_fd, receiver.control_port, 44, 1);
 	for (wait = 0; wait < 50 &&
 		atomic_load_explicit(&args.resend_rejected_seen,
@@ -324,6 +369,18 @@ int main(void)
 		(void)nanosleep(&(struct timespec){0, 10000000L}, NULL);
 	assert(atomic_load_explicit(&args.resend_rejected_seen,
 		memory_order_acquire) == 5);
+	send_rtp(raop_receiver_audio_port(&receiver), 1);
+	for (wait = 0; wait < 50 &&
+		atomic_load_explicit(&args.audio_packets_seen, memory_order_acquire) < 4;
+		++wait)
+		(void)nanosleep(&(struct timespec){0, 10000000L}, NULL);
+	assert(atomic_load_explicit(&args.audio_packets_seen,
+		memory_order_acquire) >= 4);
+	pthread_mutex_lock(&args.receiver_lock);
+	assert(receiver.audio_queue.count == 1);
+	assert(receiver.audio_queue.stats.have_sequence);
+	assert(receiver.audio_queue.stats.last_sequence == 1);
+	pthread_mutex_unlock(&args.receiver_lock);
 	send_request(fd, "TEARDOWN rtsp://127.0.0.1/stream RTSP/1.0\r\n"
 		"CSeq: 6\r\n\r\n", response, sizeof(response));
 	assert(strstr(response, "RTSP/1.0 200 OK") != NULL);
@@ -346,6 +403,10 @@ int main(void)
 	assert(strstr(log_contents, "RTP_RESEND_REQUEST") != NULL);
 	assert(strstr(log_contents, "RTP_RESEND_RECOVERED") != NULL);
 	assert(strstr(log_contents, "RTP_RESEND_REJECTED") != NULL);
+	assert(strstr(log_contents,
+		"event=RTP_QUEUE_FLUSH value=1 bytes=0") != NULL);
+	assert(strstr(log_contents,
+		"event=RTP_SOCKET_FLUSH value=2 bytes=0") != NULL);
 	assert(unlink(log_path) == 0);
 	puts("RAOP persistent RTSP + UDP RTP loopback: PASS");
 	return 0;

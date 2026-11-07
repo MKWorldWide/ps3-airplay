@@ -87,6 +87,11 @@ int main(void)
 		"RECORD rtsp://ps3/stream RTSP/1.0\r\nCSeq: 1\r\n\r\n",
 		455, "Method Not Valid in This State");
 	assert(session.state == RAOP_SESSION_IDLE);
+	raop_session_init(&session, 6000, 6001, 6002);
+	request(&session,
+		"FLUSH rtsp://ps3/stream RTSP/1.0\r\nCSeq: 1\r\n\r\n",
+		455, "Method Not Valid in This State");
+	assert(session.state == RAOP_SESSION_IDLE);
 	assert(raop_session_handle(&session,
 		"OPTIONS * RTSP/1.0\r\n\r\n",
 		sizeof("OPTIONS * RTSP/1.0\r\n\r\n") - 1, response,
