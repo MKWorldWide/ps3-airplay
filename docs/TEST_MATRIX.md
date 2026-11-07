@@ -18,7 +18,7 @@ This matrix distinguishes portable host evidence and cross-build evidence from r
 | Discovery | RAOP response serialization and capability consistency | Host wire-format test passes for the 0.1.2 TXT version; PS3 LAN/iPhone discovery for this build untested |
 | Diagnostics | Allowlisted RTSP methods/status/state, SDP numeric format, socket failures/readiness, RTP batch events; log cap and rollover | Host log redaction/cap/rollover checks pass; verbose receiver events cross-build; PS3 log retrieval for 0.1.2 not run |
 | PPU/PRX | Cross-build and PRX structural checks | Build checks pass; console compatibility untested |
-| Standalone package | Package inspection and extraction checks | v0.1.2 candidate: 3,225,712 bytes, SHA-256 `923aebf6eca5693b21b494a9a4225c36629f13e8b316b2825d5deb3763226ebf`; extracted package identity and assets match. Staged and downloaded-back hash-verified; not installed or hardware-tested. |
+| Standalone package | Package inspection, extraction, and installed-file identity | v0.1.2 candidate: 3,225,712 bytes, SHA-256 `923aebf6eca5693b21b494a9a4225c36629f13e8b316b2825d5deb3763226ebf`; installed EBOOT and PARAM.SFO hashes match the extracted candidate. XMB launch fails with `80028F21`; cause unresolved. |
 | Resident PCM output | Plugin audio output | Not implemented; candidate discards decoded PCM |
 
 ## PS3 and iPhone gates
@@ -28,11 +28,12 @@ This matrix distinguishes portable host evidence and cross-build evidence from r
 | DEPLOY-01 | FTP preflight, package staging, and downloaded-back hash verification | PASS. v0.1.2 is staged at `/dev_hdd0/packages/ps3-airplay-receiver.pkg`, 3,225,712 bytes; downloaded-back SHA-256 matches `923aebf6eca5693b21b494a9a4225c36629f13e8b316b2825d5deb3763226ebf`. Previous 01.01 PKG backup is verified locally. |
 | DEPLOY-02 | Replace staged package with corrected NPDRM PKG and verify downloaded-back hash | PASS; 416,240 bytes, exact SHA-256 match |
 | DEPLOY-03 | Replace staged package with screen-enabled 01.01 candidate and verify downloaded-back hash | PASS; 3,222,640 bytes, byte-identical to approved artifact |
+| DEPLOY-04 | Install v0.1.2 and verify installed app identity against candidate | PASS: SFO reports AIRPLAY02 / 0.1.2; installed EBOOT (445,232 bytes) and SFO match the extracted v0.1.2 files by SHA-256 |
 | BUILD-03 | Cross-build visible diagnostic screen and controller START exit; inspect packaged image | PASS in Lima for 0.1.2; hardware behavior untested |
-| HW-01 | Confirm tested recovery procedure and record a privacy-safe baseline | Partial: console is currently at XMB and reachable after a prior forced power-off/reboot; standalone app does not alter boot plugins. A clean in-app exit and recovery from a new freeze are not yet proven. |
-| HW-02 | Install/launch standalone app and exit cleanly | Unresolved: current installed SFO is still 01.01. v0.1.2 is staged but not installed or launched. Previous log lacks a version marker and `USER_EXIT_START`; visible output and clean XMB return remain unconfirmed. |
-| HW-03 | Audible test audio at the system menu | Partial PASS; user heard the five-second diagnostic tone; normal AirPlay music not tested |
-| HW-04 | iPhone discovers receiver and completes AirPlay session | Partial: iPhone lists `ps3-airplay-diagnostic`; selecting it fails to connect; session not established |
+| HW-01 | Confirm tested recovery procedure and record a privacy-safe baseline | Partial: console remained reachable for read-only checks after the launch error; clean in-app exit and recovery from a new freeze remain unproven. Standalone app does not alter boot plugins. |
+| HW-02 | Install/launch standalone app and exit cleanly | FAIL at launch: user reports XMB error `80028F21`. Installed files match v0.1.2, but the diagnostic log is unchanged from the earlier run. No visible-screen, tone, controller, or clean-exit result is attributable to v0.1.2. |
+| HW-03 | Audible test audio at the system menu | Prior partial PASS only: user heard the five-second diagnostic tone in a run whose package identity was not established. v0.1.2 tone test BLOCKED by launch failure; normal AirPlay music not tested. |
+| HW-04 | iPhone discovers receiver and completes AirPlay session | Prior partial result only: iPhone listed `ps3-airplay-diagnostic`; selecting it failed to connect. No v0.1.2 connection attempt; session not established. |
 | HW-05 | Verify audible AirPlay playback and controls | NOT RUN |
 | HW-06 | Reconnect after sender/network interruption | NOT RUN |
 | HW-07 | Sustained standalone playback and resource stability | NOT RUN |

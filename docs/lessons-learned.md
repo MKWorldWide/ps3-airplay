@@ -1,5 +1,12 @@
 # Lessons learned
 
+## Installed package identity does not explain a launch rejection
+
+- **Problem:** The user installed v0.1.2, but selecting AIRPLAY02 returned XMB error `80028F21` and no new diagnostic log appeared.
+- **Root Cause:** Unknown. Read-only checks show the installed SFO reports AIRPLAY02 / 0.1.2 and its SFO and EBOOT hashes exactly match the extracted candidate. The old log is unchanged, so it gives no evidence for this attempt. Public error-code references do not establish a cause for `80028F21`.
+- **Fix:** No code or console change yet. Record a launch failure, preserve the exact package/log evidence, and inspect the NPDRM SELF metadata and startup contract before creating another build.
+- **Prevention Rule:** Verify installed identity and classify launch, early startup, and in-app failures separately. Do not infer a loader cause from an undocumented error or from a stale app log.
+
 ## Instrumentation can mask receiver-test stalls
 
 - **Problem:** A fresh receiver loopback run timed out while waiting for its first timing probe when run directly, but completed under `strace`.
