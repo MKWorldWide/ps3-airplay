@@ -18,22 +18,6 @@
 #define IMAGE_HEIGHT 720U
 #define IMAGE_RGB_BYTES (IMAGE_WIDTH * IMAGE_HEIGHT * 3U)
 
-static const uint8_t glyphs[26][7] = {
-	{14,17,17,31,17,17,17}, {30,17,17,30,17,17,30},
-	{14,17,16,16,16,17,14}, {30,17,17,17,17,17,30},
-	{31,16,16,30,16,16,31}, {31,16,16,30,16,16,16},
-	{14,17,16,23,17,17,15}, {17,17,17,31,17,17,17},
-	{14,4,4,4,4,4,14}, {7,2,2,2,18,18,12},
-	{17,18,20,24,20,18,17}, {16,16,16,16,16,16,31},
-	{17,27,21,21,17,17,17}, {17,25,21,19,17,17,17},
-	{14,17,17,17,17,17,14}, {30,17,17,30,16,16,16},
-	{14,17,17,17,21,18,13}, {30,17,17,30,20,18,17},
-	{15,16,16,14,1,1,30}, {31,4,4,4,4,4,4},
-	{17,17,17,17,17,17,14}, {17,17,17,17,17,10,4},
-	{17,17,17,21,21,21,10}, {17,17,10,4,10,17,17},
-	{17,17,10,4,4,4,4}, {31,1,2,4,8,16,31}
-};
-
 static int load_rgb_image(const char *path, uint8_t *rgb, size_t expected)
 {
 	FILE *file = fopen(path, "rb");
@@ -59,41 +43,6 @@ static void copy_image(uint32_t *buffer, uint32_t pitch, uint16_t width,
 			size_t source = ((size_t)source_y * IMAGE_WIDTH + source_x) * 3U;
 			row[x] = ((uint32_t)rgb[source] << 16) |
 				((uint32_t)rgb[source + 1] << 8) | rgb[source + 2];
-		}
-	}
-}
-
-static void draw_text(uint32_t *buffer, uint32_t pitch, uint16_t width,
-	uint16_t height, const char *text, uint16_t top, uint32_t scale)
-{
-	size_t length = strlen(text), index;
-	uint32_t glyph_width = (uint32_t)length * 6U * scale;
-	uint32_t left = width > glyph_width ? (width - glyph_width) / 2U : 0;
-	for (index = 0; index < length; ++index) {
-		unsigned char ch = (unsigned char)text[index];
-		uint32_t row, column;
-		if (ch >= 'a' && ch <= 'z')
-			ch = (unsigned char)(ch - 'a' + 'A');
-		for (row = 0; row < 7; ++row) {
-			uint8_t pattern = ch >= 'A' && ch <= 'Z' ? glyphs[ch - 'A'][row] : 0;
-			for (column = 0; column < 5; ++column) {
-				uint32_t dx, dy, sx = left + (uint32_t)index * 6U * scale + column * scale;
-				uint32_t sy = top + row * scale;
-				if ((pattern & (1U << (4U - column))) == 0)
-					continue;
-				for (dy = 0; dy < scale; ++dy) {
-					if (sy + dy >= height)
-						continue;
-					for (dx = 0; dx < scale; ++dx) {
-						uint32_t px = sx + dx;
-						if (px < width) {
-							uint32_t *target = (uint32_t *)((uint8_t *)buffer +
-								(sy + dy) * pitch);
-							target[px] = 0x00ffffffU;
-						}
-					}
-				}
-			}
 		}
 	}
 }
@@ -131,18 +80,6 @@ static int setup_video_mode(gcmContextData *context, videoState *state,
 	gcmResetFlipStatus();
 	(void)context;
 	return DIAGNOSTIC_SCREEN_OK;
-}
-
-static void draw_diagnostic_overlay(uint32_t *buffer, uint32_t pitch,
-	uint16_t width, uint16_t height)
-{
-	uint32_t scale = height >= 900 ? 4U : 2U;
-	uint32_t text_height = 7U * scale;
-	uint32_t margin = 12U * scale;
-	uint16_t prompt_top = height > text_height + margin ?
-		(uint16_t)(height - text_height - margin) : 0;
-	draw_text(buffer, pitch, width, height, "PRESS START TO EXIT",
-		prompt_top, scale);
 }
 
 int diagnostic_screen_open(diagnostic_screen *screen, const char *rgb_path)
@@ -196,8 +133,6 @@ int diagnostic_screen_open(diagnostic_screen *screen, const char *rgb_path)
 		}
 		copy_image((uint32_t *)screen->buffers[i], screen->pitch,
 			screen->width, screen->height, rgb);
-		draw_diagnostic_overlay((uint32_t *)screen->buffers[i],
-			screen->pitch, screen->width, screen->height);
 	}
 	free(rgb);
 	/* Prime scanout with the spare buffer, matching PSL1GHT videoTest. */

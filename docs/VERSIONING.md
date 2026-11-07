@@ -16,3 +16,14 @@ AIRPLAY02 follows conservative pre-1.0 versioning. Increment the patch number fo
 3. Record source revision, package size, SHA-256, toolchain, checks run, and the exact failure boundary.
 4. Reserve a minor milestone for a coherent capability boundary; do not advance minor versions for routine fixes.
 5. Do not call a milestone stable until its acceptance tests in the roadmap pass at the stated hardware boundary.
+
+## v0.1.16 package record
+
+- Source: `0a204b04364803e2af9fcc8adf2f7420751ac83f` on `main`.
+- Artifact: `ps3-airplay-receiver-0.1.16.pkg`, AIRPLAY02, APP_VER `0.1.16`.
+- Size / SHA-256: 3,231,088 bytes / `3c69bff7ab626c433728ca131bc04ab0adbc117b8845d88c748e1dad1968bd3c`.
+- ELF: 2,780,096 bytes, CellOS PPC64, five PT_LOAD segments; SHA-256 `968f9c3238e7c8d4479c0191452f378f4705d7d6585c68364cfcd7d792682f2a`.
+- Build: Existing Lima VM; PS3DK v0.27.0 PPU compiler 16.1.0, GNU ld 2.42, PSL1GHT revision `dd4e8c9be744e3273d665c393fa6d97a87402e2e`.
+- Package checks: SFO/version/title ID/content ID, icon/background, extraction, EBOOT comparison, and finalized NPDRM envelope PASS.
+- RPCS3 installation/launch and physical hardware tests: pending. Do not infer volume behavior from host tests or ELF/package validation.
+- The next unused package version is 0.1.17.

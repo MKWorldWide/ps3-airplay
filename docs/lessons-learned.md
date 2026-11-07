@@ -266,3 +266,17 @@
 - **Root Cause:** Several shell variables were assigned in one `export` command; expansions used the old, empty parent variables.
 - **Fix:** Re-exported `PS3DEV` and `DEPS_ROOT` first, then derived `PS3DK`, `MBEDTLS_INCLUDE`, and the library path in subsequent commands. The same source then linked and passed ELF validation.
 - **Prevention Rule:** In shell setup, assign parent environment variables before expanding them into dependent paths; verify include/library paths when a tool reports a root-level path.
+
+## Prepare image assets on the host when Lima lacks Pillow
+
+- **Problem:** The canonical package build stopped before compilation because the Lima guest could not import `PIL`.
+- **Root Cause:** The checked-in image preparation script depends on Pillow, available on the Mac host but not installed in the lean guest.
+- **Fix:** Ran the unchanged repository image preparation script on the host, verified the expected 2,764,800-byte RGB asset, and copied only that generated asset into the ignored Lima build directory.
+- **Prevention Rule:** Keep optional image tooling out of the guest; run the deterministic checked-in asset converter on the host and verify exact dimensions/byte count before packaging.
+
+## Remove redundant diagnostic text after image visibility is confirmed
+
+- **Problem:** The user requested removal of blue framing and the `DISPLAY ACTIVE` label after seeing the application open; the current renderer contained neither item, but still drew a `PRESS START TO EXIT` overlay.
+- **Root Cause:** The display implementation retained a diagnostic text overlay even after the supplied image itself was sufficient confirmation.
+- **Fix:** Removed the glyph table, text renderer, and remaining prompt draw call so scanout shows the supplied background image without text.
+- **Prevention Rule:** Keep the foreground display visually minimal once image visibility has been demonstrated; inspect the actual renderer before removing requested UI elements.
