@@ -98,7 +98,7 @@ Demonstration target: PS3 with Evilnat 4.93 CFW and Cobra 8.5 observed; the cons
 - v0.1.10/v0.1.11 reached `MDNS_FAILED` after RTSP/RTP listener readiness, but the previous event did not identify the cause.
 - v0.1.12 adds bounded stages: argument, socket, TTL, bind, multicast join, multicast interface, and initial announcement. The failure stage is logged as `value`; numeric errno is logged as `bytes`. No IP, MAC, service label, or hostname is recorded. `SO_REUSEADDR` remains best-effort, preserving prior behavior.
 - On partial setup failure, drop the multicast membership when joined and close the socket. The full Lima host suite passes and host tests verify deterministic invalid-argument reporting.
-- RPCS3 v0.1.12 reported mDNS stage 4 (UDP bind) and errno 112 (`EADDRINUSE`). The host UDP 5353 port is held by the Lima host process, and a wildcard bind probe fails even with `SO_REUSEADDR`. Keep Lima networking intact; treat the conflict as an emulator host limitation until native PS3 testing proves otherwise.
+- RPCS3 v0.1.12 reported mDNS stage 4 (UDP bind) and errno 112 (`EADDRINUSE`). A second run with Lima stopped still failed; host inspection showed macOS `mDNSResponder` owns wildcard UDP 5353 and a wildcard bind probe fails even with `SO_REUSEADDR`. Lima's host proxy is an additional holder while the VM runs. Do not stop the system service; keep the emulator limitation separate from native PS3 behavior.
 - v0.1.13 is the next package version. The v0.1.12 package tested was generated from the exact mDNS diagnostic source changes, but the package manifest recorded base revision `46fca40` because the diagnostic pass was not yet committed at build time; retain this provenance limitation in its report.
 
 ## Invariants

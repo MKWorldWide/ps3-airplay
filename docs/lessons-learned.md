@@ -203,3 +203,10 @@
 - **Root Cause:** Lima's `PS3DEV/bin/sprxlinker` was the older PSL1GHT tool, which does not understand PS3DK's 64-byte `.sys_proc_prx_param` section.
 - **Fix:** Built and installed PS3DK's `tools/sprx-linker` fork into the staged toolchain's `PS3DEV/bin` and `PS3DK/bin`; the app and NPDRM PKG then built successfully.
 - **Prevention Rule:** When an SDK post-link tool reports missing process parameters, inspect that SDK's build/runtime scripts and ensure host tools match the installed SDK revision before changing application code.
+
+## Attribute RPCS3 mDNS bind failures to the host
+
+- **Problem:** v0.1.12 reached its RTSP and RTP listeners in RPCS3 but failed to bind UDP 5353, preventing discovery.
+- **Root Cause:** The same failure reproduced with Lima stopped. macOS `mDNSResponder` owns wildcard UDP 5353; Lima's host proxy can be an additional holder while Lima runs.
+- **Fix:** Keep the system mDNS service untouched and record the RPCS3 limitation. Validate mDNS on the PS3 separately before changing receiver behavior.
+- **Prevention Rule:** Isolate emulator networking from host services before changing protocol code; a host bind failure does not establish a target-console failure.
