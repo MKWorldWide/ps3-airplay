@@ -13,7 +13,7 @@ PS3 AirPlay is an experimental AirPlay 1 / RAOP receiver for PS3 homebrew. The i
 - `src/audio`: bounded PCM ring and conversion.
 - `src/observability`: capped, privacy-conscious diagnostic logging.
 - `prototype/standalone-receiver`: standalone receiver wiring protocol and audio components.
-- The standalone screen candidate uses PSL1GHT RSX framebuffers, primes scanout using the PSL1GHT `videoTest` sample's spare-buffer-first pattern, and overlays a bright `DISPLAY ACTIVE` banner and controller START exit prompt over the public maintainer-provided background. This makes black/no-signal distinguishable from the intentionally dark image; visible output and orderly XMB return remain unconfirmed on hardware.
+- The standalone screen uses PSL1GHT RSX framebuffers and primes scanout using the PSL1GHT `videoTest` sample's spare-buffer-first pattern. v0.1.11 removes the blue bands and `DISPLAY ACTIVE` label; it shows the public background with a white controller START exit prompt. RPCS3 visibly renders it, while physical HDMI output and orderly XMB return remain unconfirmed.
 - The standalone app begins with a bounded five-second 440 Hz diagnostic rendered through the same GameOS audio blocks as receiver PCM; host waveform checks do not establish audible hardware output.
 - Latest hardware observation: the user reports a five-second tone, a black screen, and iPhone discovery of `ps3-airplay-diagnostic` followed by a failed connection. A 350-byte log snapshot contains `SCREEN_READY`, `CONTROLLER_READY`, `MDNS_READY`, and `AUDIO_TEST_TONE_START` but no completion, RTSP, or stop event; its package version is unconfirmed, and FTP later timed out. Do not infer that visible pixels reached the display or that AirPlay connected.
 - Previous verified build: version 01.01 was staged with an exact downloaded-back SHA-256 match; the later black-screen run's package identity is unknown. The prior staged package was preserved locally before replacement.
@@ -91,6 +91,15 @@ Demonstration target: PS3 with Evilnat 4.93 CFW and Cobra 8.5 observed; the cons
 - RPCS3 installed and ran v0.1.10. The fresh log reached route readiness, crypto readiness, RTSP listen on 5001, RTP audio/control/timing ports 6000/6001/6002, then `MDNS_FAILED`, `AUDIO_READY`, and diagnostic tone start/completion. PCM underflows followed because no stream was connected. This is not AirPlay discovery or playback.
 - The user reports that the app opens and the background is visible, but the exact hardware/package attribution for that observation is not yet captured. Remove the blue screen bands and `DISPLAY ACTIVE` overlay; retain the user-provided background and white START-to-exit prompt.
 - The next package candidate is v0.1.11. Diagnose mDNS startup failure by logging a bounded failure-stage enum and numeric errno without addresses, labels, or other private data.
+
+## mDNS stage diagnostics (2026-11-07)
+
+- v0.1.11 rendered the public background image and a START-to-exit prompt in RPCS3. The blue bands and DISPLAY ACTIVE label are removed; the user separately reports that the app opens.
+- v0.1.10/v0.1.11 reached `MDNS_FAILED` after RTSP/RTP listener readiness, but the previous event did not identify the cause.
+- v0.1.12 adds bounded stages: argument, socket, TTL, bind, multicast join, multicast interface, and initial announcement. The failure stage is logged as `value`; numeric errno is logged as `bytes`. No IP, MAC, service label, or hostname is recorded. `SO_REUSEADDR` remains best-effort, preserving prior behavior.
+- On partial setup failure, drop the multicast membership when joined and close the socket. The full Lima host suite passes and host tests verify deterministic invalid-argument reporting.
+- RPCS3 v0.1.12 reported mDNS stage 4 (UDP bind) and errno 112 (`EADDRINUSE`). The host UDP 5353 port is held by the Lima host process, and a wildcard bind probe fails even with `SO_REUSEADDR`. Keep Lima networking intact; treat the conflict as an emulator host limitation until native PS3 testing proves otherwise.
+- v0.1.13 is the next package version. The v0.1.12 package tested was generated from the exact mDNS diagnostic source changes, but the package manifest recorded base revision `46fca40` because the diagnostic pass was not yet committed at build time; retain this provenance limitation in its report.
 
 ## Invariants
 

@@ -2,6 +2,7 @@
 #include "../../src/discovery/raop_mdns_service.h"
 
 #include <assert.h>
+#include <errno.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -143,6 +144,14 @@ int main(void)
 		"host", 0, ipv4, txt, txt_count, 120) == 0);
 	assert(raop_mdns_build_response(packet, sizeof(packet), "instance",
 		"host", 5000, ipv4, txt, 0, 120) == 0);
+	{
+		raop_mdns_service service;
+		assert(!raop_mdns_service_open(&service, ipv4, "instance", "host",
+			0, 0));
+		assert(service.socket_fd == -1);
+		assert(service.failure_stage == RAOP_MDNS_FAILURE_ARGUMENT);
+		assert(service.failure_error == EINVAL);
+	}
 
 	printf("RAOP mDNS packet validated: %lu bytes, five records\n",
 		(unsigned long)packet_length);

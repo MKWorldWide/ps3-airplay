@@ -20,7 +20,7 @@ Example, with paths adjusted to the local Lima guest:
 export PS3DK_SOURCE="$HOME/ps3-airplay-host/ps3-sdk-src-v0.27.0"
 export PS3DEV="$PS3DK_SOURCE/stage/ps3dev"
 export SOURCE_REVISION="<full SHA of the exact source commit copied into Lima>"
-export APP_VERSION=0.1.11
+export APP_VERSION=0.1.13
 # Optional emulator-only probe when the host's port 5000 is occupied.
 export RTSP_PORT=5001
 bash scripts/build-lima-crypto.sh
@@ -38,10 +38,12 @@ Keep the generated package, build manifest, and test logs outside Git. Record pa
 - v0.1.7 (source revision `95f5924`) installed in RPCS3 and reached `APP_START`, `SCREEN_READY`, controller/network module initialization, and crypto initialization. It then logged RTSP bind error value `112`, `RECEIVER_OPEN_FAILED`, and `APP_STOP`. This is a successful loader/startup boundary followed by a network/socket failure; it does not establish display output or AirPlay operation.
 - The RPCS3 network configuration was observed disconnected during this run. The relationship to bind error 112 is plausible but unproven; do not change emulator network settings without authorization. Physical PS3, visible display, clean XMB exit, iPhone RAOP, and streamed-audio results remain separate tests.
 
-# v0.1.8-v0.1.11 follow-up
+# v0.1.8-v0.1.13 follow-up
 
 - v0.1.8 was built from the corrected PS3DK/Lima pipeline. It installed and reached `APP_START` in RPCS3, then failed RTSP bind with error value 112. RPCS3's network status was observed as disconnected; causation is unknown. The app stopped before receiver readiness.
 - v0.1.9 moves the existing bounded local IPv4 readiness check ahead of receiver socket creation. In RPCS3, this produced `NET_IP_TIMEOUT` while networking was disabled and `NET_IP_ROUTE_READY` after enabling networking; the RTSP bind still failed with value 112.
 - A wildcard host TCP listener occupied 5000 during the connected run. This is a port-conflict hypothesis, not a proven cause. The v0.1.10 build input permits a controlled test on 5001; the normal RTSP port remains 5000, and mDNS publishes the actual listener port.
 - v0.1.10 bound RTSP on 5001 and RTP UDP on 6000-6002 in RPCS3, then logged `MDNS_FAILED`. Audio initialized and the diagnostic tone completed. No AirPlay discovery/session or music was established.
-- Current package version is 0.1.11. Every generated package consumes its version even when it fails a test.
+- v0.1.11 visibly rendered the supplied background and `PRESS START TO EXIT` in RPCS3 without blue bands or `DISPLAY ACTIVE`. It still logged `MDNS_FAILED` without a substage. The screen result is emulator evidence; the user's report separately confirms the app opens.
+- v0.1.12 adds a numeric mDNS failure stage and errno to the privacy-safe `MDNS_FAILED` event. RPCS3 logged stage 4 (UDP bind) and errno 112 (`EADDRINUSE`). The host already had a UDP listener on 5353; a wildcard bind probe with `SO_REUSEADDR` also returned `EADDRINUSE`. This is a local emulator host-port conflict, not evidence that the PS3's port 5353 is occupied.
+- Current next package version is 0.1.13. Every generated package consumes its version even when it fails a test.

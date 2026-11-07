@@ -1,6 +1,6 @@
 # Roadmap
 
-**Status: experimental; the maintainer reports one earlier AIRPLAY02 startup and five-second tone, but the exact package identity is unknown. AIRPLAY02 v0.1.2 and v0.1.3 later returned XMB error `80028F21`; AIRTEST01 v0.1.0 is parked. RPCS3 rejected v0.1.4–v0.1.6 before app startup. PS3DK-built v0.1.7–v0.1.9 installed and reached APP_START in RPCS3. v0.1.7/v0.1.8 failed RTSP bind with error 112 while emulator network status was disconnected. v0.1.9 then logged a bounded IP timeout while disconnected, and a bind error after route readiness when connected. v0.1.10 bound TCP 5001 and UDP 6000–6002, but mDNS startup failed. Host port 5000 remains occupied and is not the remaining listener blocker.** See [build pipeline](BUILD_PIPELINE.md) and [versioning policy](VERSIONING.md).
+**Status: experimental; the maintainer reports one earlier AIRPLAY02 startup and five-second tone, but the exact package identity is unknown. AIRPLAY02 v0.1.2 and v0.1.3 later returned XMB error `80028F21`; AIRTEST01 v0.1.0 is parked. RPCS3 rejected v0.1.4–v0.1.6 before app startup. PS3DK-built v0.1.7–v0.1.9 installed and reached APP_START in RPCS3. v0.1.7/v0.1.8 failed RTSP bind with error 112 while emulator network status was disconnected. v0.1.9 then logged a bounded IP timeout while disconnected, and a bind error after route readiness when connected. v0.1.10–v0.1.12 bind RTSP on TCP 5001 and RTP on UDP 6000–6002. v0.1.12 then failed mDNS UDP bind on 5353 with `EADDRINUSE`; the host has a UDP listener on that port. The app screen is visible in RPCS3, while physical PS3 display/exit remain unverified.** See [build pipeline](BUILD_PIPELINE.md) and [versioning policy](VERSIONING.md).
 
 ## Milestones
 
@@ -18,12 +18,12 @@
 
 ## Current implementation
 
-Portable components cover bounded DNS-SD/mDNS, RTSP/SDP session handling, UDP RTP, timing probes, retransmission requests and validation, RAOP crypto, ALAC decoding, PCM buffering, and capped diagnostics. The standalone app plays a five-second, low-level 440 Hz startup diagnostic through its GameOS audio blocks before normal PCM rendering. The revised local screen candidate primes scanout with PSL1GHT's sample sequence and overlays a bright `DISPLAY ACTIVE` banner and START prompt over the maintainer's background. It polls controller START for orderly return to XMB. The screen code cross-builds in Lima; hardware rendering and exit behavior are unverified. The resident candidate decodes supported packets for diagnostics and discards PCM.
+Portable components cover bounded DNS-SD/mDNS, RTSP/SDP session handling, UDP RTP, timing probes, retransmission requests and validation, RAOP crypto, ALAC decoding, PCM buffering, and capped diagnostics. The standalone app plays a five-second, low-level 440 Hz startup diagnostic through its GameOS audio blocks before normal PCM rendering. The local screen candidate primes scanout with PSL1GHT's sample sequence and shows the background with a white START-to-exit prompt. v0.1.11 visibly rendered this in RPCS3; physical output remains unverified. It polls controller START for orderly return to XMB. The screen code cross-builds in Lima; hardware rendering and exit behavior are unverified. The resident candidate decodes supported packets for diagnostics and discards PCM.
 
 ## Next steps
 
 1. Keep AIRTEST01 parked; do not use it as a substitute for the receiver.
-2. Add stage-specific mDNS failure logging and diagnose why v0.1.10's socket bind/multicast setup fails after receiver ports are ready. Keep testing on RPCS3 port 5001 until the mDNS path is understood.
+2. Stage 4/errno 112 identifies the RPCS3 failure as the mDNS UDP 5353 bind colliding with a host listener. Do not stop or alter Lima's listener during builds. Continue RAOP discovery testing on physical PS3 after its deployment approval gate; keep RPCS3 evidence separate.
 3. Before hardware deployment, bound the display's unbounded RSX waits and make sure controller exit remains available if graphics setup stalls.
 4. Once a receiver build is safe to test, the maintainer's standing authorization allows package staging/installation without another approval request. First verify one launch, visible output, tone, and START-to-XMB; stop if launch or clean exit fails.
 5. Retrieve a fresh log tied to the exact package. Attempt one iPhone connection and follow accept, RTSP method/status, session, SDP, and RTP stages.

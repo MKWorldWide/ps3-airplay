@@ -4,6 +4,17 @@
 #include <stdint.h>
 #include <stddef.h>
 
+typedef enum {
+	RAOP_MDNS_FAILURE_NONE = 0,
+	RAOP_MDNS_FAILURE_ARGUMENT = 1,
+	RAOP_MDNS_FAILURE_SOCKET = 2,
+	RAOP_MDNS_FAILURE_TTL = 3,
+	RAOP_MDNS_FAILURE_BIND = 4,
+	RAOP_MDNS_FAILURE_JOIN = 5,
+	RAOP_MDNS_FAILURE_INTERFACE = 6,
+	RAOP_MDNS_FAILURE_ANNOUNCE = 7
+} raop_mdns_failure_stage;
+
 typedef struct {
 	int socket_fd;
 	uint8_t ipv4[4];
@@ -11,6 +22,8 @@ typedef struct {
 	char host_label[64];
 	uint16_t port;
 	uint64_t next_announce_ms;
+	raop_mdns_failure_stage failure_stage;
+	int failure_error;
 } raop_mdns_service;
 
 /* Return the single source of truth for the service's advertised capabilities. */

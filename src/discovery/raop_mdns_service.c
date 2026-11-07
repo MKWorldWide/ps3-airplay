@@ -69,6 +69,30 @@ static void close_socket(int fd)
 #endif
 }
 
+static int fail_open(raop_mdns_service *service, int fd,
+	raop_mdns_failure_stage stage, int error, const uint8_t ipv4[4],
+	int joined)
+{
+	if (joined && fd >= 0) {
+		struct ip_mreq membership;
+		memset(&membership, 0, sizeof(membership));
+		membership.imr_multiaddr.s_addr = htonl(0xe00000fbU);
+		memcpy(&membership.imr_interface.s_addr, ipv4, 4);
+		(void)setsockopt(fd, IPPROTO_IP, IP_DROP_MEMBERSHIP, &membership,
+			sizeof(membership));
+	}
+	if (fd >= 0)
+		close_socket(fd);
+	if (service != NULL) {
+		memset(service, 0, sizeof(*service));
+		service->socket_fd = -1;
+		service->failure_stage = stage;
+		service->failure_error = error;
+	}
+	errno = error;
+	return 0;
+}
+
 static int send_record(raop_mdns_service *service, uint32_t ttl)
 {
 	const char *const *txt;
@@ -80,8 +104,10 @@ static int send_record(raop_mdns_service *service, uint32_t ttl)
 	length = raop_mdns_build_response(packet, sizeof(packet),
 		service->instance_label, service->host_label, service->port,
 		service->ipv4, txt, txt_count, ttl);
-	if (length == 0)
+	if (length == 0) {
+		errno = EINVAL;
 		return 0;
+	}
 	memset(&group, 0, sizeof(group));
 	group.sin_family = AF_INET;
 	group.sin_addr.s_addr = htonl(0xe00000fbU);
@@ -103,39 +129,47 @@ int raop_mdns_service_open(raop_mdns_service *service,
 	struct in_addr outgoing_interface;
 	if (service == NULL || ipv4 == NULL || instance_label == NULL ||
 		host_label == NULL || port == 0 || strlen(instance_label) >= 64 ||
-		strlen(host_label) >= 64)
+		strlen(host_label) >= 64) {
+		if (service != NULL) {
+			memset(service, 0, sizeof(*service));
+			service->socket_fd = -1;
+			service->failure_stage = RAOP_MDNS_FAILURE_ARGUMENT;
+			service->failure_error = EINVAL;
+		}
+		errno = EINVAL;
 		return 0;
+	}
 	memset(service, 0, sizeof(*service));
 	service->socket_fd = -1;
 	fd = socket(AF_INET, SOCK_DGRAM, 0);
 	if (fd < 0)
-		return 0;
+		return fail_open(service, -1, RAOP_MDNS_FAILURE_SOCKET, errno,
+			ipv4, 0);
+	/* Reuse is best-effort; the original receiver continued without it. */
 	(void)setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse));
 	if (setsockopt(fd, IPPROTO_IP, IP_MULTICAST_TTL, &ttl, sizeof(ttl)) < 0) {
-		close_socket(fd);
-		return 0;
+		return fail_open(service, fd, RAOP_MDNS_FAILURE_TTL, errno, ipv4, 0);
 	}
 	memset(&local, 0, sizeof(local));
 	local.sin_family = AF_INET;
 	local.sin_addr.s_addr = htonl(INADDR_ANY);
 	local.sin_port = htons(5353);
 	if (bind(fd, (struct sockaddr *)&local, sizeof(local)) < 0) {
-		close_socket(fd);
-		return 0;
+		return fail_open(service, fd, RAOP_MDNS_FAILURE_BIND, errno, ipv4, 0);
 	}
 	memset(&membership, 0, sizeof(membership));
 	membership.imr_multiaddr.s_addr = htonl(0xe00000fbU);
 	memcpy(&membership.imr_interface.s_addr, ipv4, 4);
 	if (setsockopt(fd, IPPROTO_IP, IP_ADD_MEMBERSHIP, &membership,
 		sizeof(membership)) < 0) {
-		close_socket(fd);
-		return 0;
+		return fail_open(service, fd, RAOP_MDNS_FAILURE_JOIN, errno,
+			ipv4, 0);
 	}
 	outgoing_interface.s_addr = membership.imr_interface.s_addr;
 	if (setsockopt(fd, IPPROTO_IP, IP_MULTICAST_IF, &outgoing_interface,
 		sizeof(outgoing_interface)) < 0) {
-		close_socket(fd);
-		return 0;
+		return fail_open(service, fd, RAOP_MDNS_FAILURE_INTERFACE, errno,
+			ipv4, 1);
 	}
 	service->socket_fd = fd;
 	memcpy(service->ipv4, ipv4, 4);
@@ -144,8 +178,9 @@ int raop_mdns_service_open(raop_mdns_service *service,
 	service->port = port;
 	service->next_announce_ms = now_ms;
 	if (!send_record(service, 120)) {
-		raop_mdns_service_close(service);
-		return 0;
+		int error = errno;
+		return fail_open(service, fd, RAOP_MDNS_FAILURE_ANNOUNCE, error,
+			ipv4, 1);
 	}
 	service->next_announce_ms = now_ms + RAOP_MDNS_ANNOUNCE_INTERVAL_MS;
 	return 1;

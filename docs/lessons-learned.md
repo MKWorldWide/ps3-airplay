@@ -1,5 +1,12 @@
 # Lessons learned
 
+## Log the failing mDNS setup stage
+
+- **Problem:** RPCS3 v0.1.10 and v0.1.11 logged `MDNS_FAILED` after TCP and RTP sockets became ready, but the event had no failure detail.
+- **Root Cause:** The startup helper collapsed socket creation, multicast configuration, and announcement send failures into a single boolean result.
+- **Fix:** Preserve a bounded failure-stage enum and errno through cleanup; store only stage and numeric error in the capped diagnostic log. Drop multicast membership when setup fails after joining.
+- **Prevention Rule:** Network startup failures should report a privacy-safe stage and numeric platform error at the point of failure.
+
 ## Keep a working background image unobstructed
 
 - **Problem:** The diagnostic screen's blue bands, color stripes, and `DISPLAY ACTIVE` label obscured the background after the maintainer reported that the application now opens and the image is visible.

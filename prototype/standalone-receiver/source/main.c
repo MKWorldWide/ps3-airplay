@@ -293,7 +293,9 @@ int main(void)
 		ip[0], ip[1], ip[2], ip[3]);
 	mdns_opened = raop_mdns_service_open(&mdns_service, ip, instance, host,
 		raop_receiver_rtsp_port(&receiver), (uint64_t)(sysGetSystemTime() / 1000U));
-	(void)log_event(mdns_opened ? "MDNS_READY" : "MDNS_FAILED", mdns_opened, 0);
+	(void)log_event(mdns_opened ? "MDNS_READY" : "MDNS_FAILED",
+		mdns_opened ? 1 : (int)mdns_service.failure_stage,
+		mdns_opened ? 0 : (size_t)mdns_service.failure_error);
 	if (sysUtilRegisterCallback(SYSUTIL_EVENT_SLOT0, on_system_event, NULL) != 0) {
 		(void)log_event("CALLBACK_REGISTER_FAILED", -1, 0);
 		goto cleanup;
