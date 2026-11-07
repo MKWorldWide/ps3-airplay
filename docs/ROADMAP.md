@@ -20,7 +20,7 @@ Portable components cover bounded DNS-SD/mDNS, RTSP/SDP session handling, UDP RT
 
 ## Next steps
 
-1. Request approval to transfer and install `AIRTEST01` v0.1.0, preserving AIRPLAY02 and its staged rollback; test XMB launch, visible colors, START exit, automatic timeout, and fresh local log.
+1. Request approval to install the staged `AIRTEST01` v0.1.0 through XMB Package Manager; its new PKG has been download-back verified and AIRPLAY02 remains untouched. Test XMB launch, visible colors, START exit, automatic timeout, and fresh local log.
 2. Use the launch-control hardware result to identify whether the PS3DK-native launch/display path works on this console. This does not validate AirPlay receiver dependencies.
 3. Fix the hard-coded `PKG_VERSION_0.1.2` startup event so future receiver logs identify the actual package version.
 4. Check whether a licensed Sony PS3 SDK 4.75 installation and its Windows build VM are available. Thermal Bench documents that workflow; it is a separate, proprietary toolchain and not a drop-in replacement.

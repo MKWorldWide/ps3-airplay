@@ -2,7 +2,7 @@
 
 **Date:** 2026-11-07 (America/New_York, EST)
 **Source base:** `4808fad` on `docs/v012-preflight-review`; implementation files in this report are the current working-tree changes.
-**Hardware:** None. No package was sent to or installed on the PS3.
+**Hardware:** Package staged by approved FTP upload; not installed or launched.
 
 ## Purpose
 
@@ -33,6 +33,8 @@ The package tool validated the PKG container and reported the expected content I
 
 The `build/` artifact directory is ignored and excluded from the commit; the source, CMake recipe, SFO template, instructions, and hashes are recorded here. No host unit tests were run in this pass. The cross-build and package inspection were the requested validation for this app.
 
+After the user approved upload, the package was placed as a new file at `/dev_hdd0/packages/ps3-airplay-native-launch-control-0.1.0.pkg`. A complete downloaded-back copy matched the local 192,688-byte package byte-for-byte and had the expected SHA-256. The file was only staged: no XMB install, launch, or console-side app changes occurred.
+
 ## Test boundary and next action
 
 | Behavior | Result |
@@ -41,10 +43,12 @@ The `build/` artifact directory is ignored and excluded from the commit; the sou
 | SELF generation | PASS locally |
 | NPDRM PKG generation | PASS locally |
 | Package title/content identity and extraction | PASS locally |
+| FTP staging and downloaded-back verification | PASS; exact file match |
+| XMB installation | NOT RUN; requires separate approval |
 | XMB launch on Evilnat | NOT RUN |
 | Visible HDMI output | NOT RUN |
 | START exit / automatic return to XMB | NOT RUN |
 | Fresh hardware log | NOT RUN |
 | AirPlay or audible streaming | NOT APPLICABLE to this control |
 
-Next, request approval to transfer this exact package with rollback details. If installed, ask the user to check XMB launch, visible cycling colors, START-to-XMB exit, and the automatic timeout separately. Do not replace AIRPLAY02 or claim that this proves receiver compatibility.
+Next, request separate approval to install the staged package through XMB Package Manager. If installed, ask the user to check XMB launch, visible cycling colors, START-to-XMB exit, and the automatic timeout separately. If needed, remove only AIRTEST01 from XMB Package Manager. Do not replace AIRPLAY02 or claim that this proves receiver compatibility.
