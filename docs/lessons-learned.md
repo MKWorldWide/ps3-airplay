@@ -308,3 +308,10 @@
 - **Root Cause:** The ALAC bitstream exposed fields used as C shift counts and arithmetic operands without range checks; unsupported predictor modes were logged but still continued into reconstruction.
 - **Fix:** Reject unsupported predictor modes, zero quantization where the algorithm shifts by quantization minus one, invalid sample widths, and interlace shifts above 31. Use 64-bit predictor and weighted-interlace intermediates, explicit bounded sign extension, and constrain the RAOP Rice k-modifier to 30 or less.
 - **Prevention Rule:** Keep a deterministic malformed-frame sanitizer corpus in the regular host path and set sanitizers to halt, so undefined behavior cannot be reported as a passing test.
+
+## Keep package evidence separate from emulator evidence
+
+- **Problem:** A validated build can be mistaken for a working runtime, especially when GUI access is temporarily blocked.
+- **Root Cause:** Build and package checks complete in Lima independently of whether RPCS3 can be launched and inspected.
+- **Fix:** Record source revision, ELF/PKG hashes, package structure checks, and runtime results as separate facts. Preserve the candidate locally while desktop access is unavailable.
+- **Prevention Rule:** Never infer app launch, visible display, network readiness, or playback from ELF/PKG validation. Require a fresh runtime log tied to the tested package and user-visible evidence for audible output.

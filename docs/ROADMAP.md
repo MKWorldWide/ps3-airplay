@@ -35,8 +35,8 @@ Portable components cover bounded DNS-SD/mDNS, RTSP/SDP session handling, UDP RT
 
 - ASan found and the receiver now guards ALAC in-band frame sample counts against the negotiated maximum before sample-array writes.
 - The new host composition test covers RSA-OAEP key recovery, encrypted RTP payload decryption, ALAC decode, and reference PCM equality in one run. It does not substitute for the existing socket loopback or any iPhone/console test.
-- AIRPLAY02 v0.1.19 is built from commit `7b451031487aab7dbad147ab0b47ef80a1e22265` and passed ELF/package validation. RPCS3 install/launch is pending because the Mac desktop remains locked. The physical PS3 remains a separate gate.
-- A deterministic malformed-frame sanitizer smoke test exposed and drove fixes for unchecked ALAC shifts and signed predictor overflow. The full Lima host suite and PPU component checks now pass; build and validate v0.1.20 from the committed source next.
+- AIRPLAY02 v0.1.20 is built from commit `8a4e641d114e1a613421b9ffb51f8615ad851827`; Lima host sanitizer tests, PPU link, ELF validation, and finalized package checks pass. RPCS3 UI remains inaccessible while the Mac is locked. Physical PS3 remains a separate, approval-gated test.
+- Next: when desktop access is restored, install/run the exact v0.1.20 package in RPCS3 and collect its version-matched log. Then continue with the first controlled iPhone session; classify evidence by RTSP, RTP, decrypt/decode, PCM submission, and audible output. Next package version is 0.1.21 only after a new implementation pass.
 
 ## Latest update (2026-11-07)
 

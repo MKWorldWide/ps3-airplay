@@ -61,4 +61,15 @@ AIRPLAY02 follows conservative pre-1.0 versioning. Increment the patch number fo
 - The package and ELF are preserved in the ignored local `work/builds/0.1.19/` directory. RPCS3 install/launch was not performed because Computer Use still reports the Mac desktop locked. No physical-console transfer/install, iPhone session, or audible playback is verified.
 - Next unused package version: 0.1.20.
 
-The standalone receiver `Makefile` and canonical Lima build/package scripts now default to 0.1.20 to prevent accidental reuse of the v0.1.19 artifact version.
+The standalone receiver `Makefile` and canonical Lima build/package scripts default to 0.1.20.
+
+## v0.1.20 package record
+
+- Source: `8a4e641d114e1a613421b9ffb51f8615ad851827` on `main` (ALAC malformed-bitstream bounds and arithmetic hardening).
+- Artifact: `ps3-airplay-receiver-0.1.20.pkg`, AIRPLAY02, APP_VER `0.1.20`.
+- Size / SHA-256: 3,230,384 bytes / `bfaa3f960de39daf95c2ab405bd361a031ed92bd35c76a99e667d4ffe8d19e87`.
+- ELF: 2,780,120 bytes, CellOS PPC64, five PT_LOAD segments; SHA-256 `f50e6a4fe247149feb7759a69a81ae881c0972d789cb1a5dcfa2019bd202b3d9`.
+- Build: Existing Lima VM; PS3DK v0.27.0 PPU compiler 16.1.0, GNU ld 2.42, PSL1GHT revision `dd4e8c9be744e3273d665c393fa6d97a87402e2e`.
+- Checks: Full Lima host suite with ASan/UBSan halt-on-error, deterministic 256 malformed ALAC inputs, encrypted RTP-to-PCM golden test, PPU app link/ELF validation, SFO/version/title/content ID, assets, extraction, EBOOT comparison, and finalized NPDRM envelope PASS.
+- Runtime: RPCS3 is not tested; current Computer Use reports the Mac desktop locked. No physical PS3 transfer/install, AirPlay sender session, or audible output is verified.
+- The package, ELF, and build-info are preserved locally under ignored `work/builds/0.1.20/`. Next unused package version: 0.1.21.

@@ -178,4 +178,12 @@ Demonstration target: PS3 with Evilnat 4.93 CFW and Cobra 8.5 observed; the cons
 - A deterministic 256-input malformed ALAC smoke run, with UBSan configured to halt, found additional undefined behavior: a corrupt interlace shift above 31 and signed overflow in predictor coefficient accumulation.
 - Decoder rejects unsupported predictor modes and invalid quantization/read sizes before entropy/predictor work; interlace shifts are bounded; predictor accumulation uses 64-bit intermediates and explicit sign extension; weighted stereo reconstruction uses bounded 64-bit math; the RAOP ALAC offer rejects Rice k-modifier values above 30.
 - The valid encrypted reference RTP-to-PCM test remains byte-identical. The 353-vs-352 and `UINT32_MAX` regressions still reject safely; all 256 deterministic malformed inputs complete without ASan/UBSan findings when halt-on-error is enabled.
-- These follow-on runtime changes are not in v0.1.19. The full Lima host suite now passes with ASan/UBSan halt-on-error and PPU component object compilation passes. Build/package v0.1.20 from the final committed source next. RPCS3 and physical hardware remain pending.
+- These follow-on runtime changes are in v0.1.20. Full Lima host tests under ASan/UBSan halt-on-error, standalone PPU link/ELF validation, and finalized PKG checks pass. RPCS3 and physical hardware remain pending.
+
+## AIRPLAY02 v0.1.20 build and runtime boundary (2026-11-07)
+
+- Built from committed source `8a4e641d114e1a613421b9ffb51f8615ad851827` in the existing Lima VM using PS3DK v0.27.0 PPU and PSL1GHT `dd4e8c9be744e3273d665c393fa6d97a87402e2e`.
+- ELF: 2,780,120 bytes, SHA-256 `f50e6a4fe247149feb7759a69a81ae881c0972d789cb1a5dcfa2019bd202b3d9`. Finalized AIRPLAY02 v0.1.20 PKG: 3,230,384 bytes, SHA-256 `bfaa3f960de39daf95c2ab405bd361a031ed92bd35c76a99e667d4ffe8d19e87`. Artifacts are kept in ignored `work/builds/0.1.20/`.
+- Package SFO/version/title/content ID, asset equality, extraction, EBOOT comparison, ELF shape, and finalized NPDRM checks pass. Host sanitizer and encrypted RTP-to-PCM tests pass; this is not device runtime evidence.
+- Computer Use currently reports the Mac locked, so v0.1.20 has not been installed or run in RPCS3. Physical console untouched. No fresh display, clean exit, iPhone session, RTP sender, audible output, Spotify, or 30-minute playback evidence.
+- Next package version: 0.1.21. Retry RPCS3 after desktop access is restored; preserve the current package as an untested candidate meanwhile.
