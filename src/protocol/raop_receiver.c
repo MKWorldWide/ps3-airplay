@@ -46,6 +46,8 @@
 #define RAOP_RESEND_MAX_PACKETS 16U
 #define RAOP_RESEND_MIN_INTERVAL_MS 50U
 
+static int bounded_event_count(uint64_t count);
+
 static uint64_t monotonic_milliseconds(void)
 {
 #if defined(RAOP_USE_PSL1GHT)
