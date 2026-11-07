@@ -173,3 +173,17 @@ Release label 0.30 maps to PS3 SFO 00.30. Packaging uses the preserved v01.01 ty
 | Shutdown | Abnormal observed | Three-second power hold, three beeps; cause unknown |
 
 Recovered log hash and provenance are recorded in memory and the hardware follow-up report; raw logs stay private.
+
+## v0.1.31 RSA fix
+
+| Check | Result |
+|---|---|
+| Host challenge/key recovery/RTP decrypt | PASS under ASan/UBSan |
+| RPCS3 Apple-Challenge | PASS: 200 and Apple-Response, 54 ms |
+| RPCS3 encrypted ANNOUNCE | PASS: unwrap success, 200, 26 ms |
+| RPCS3 SETUP / RECORD / TEARDOWN | PASS: all 200 |
+| RPCS3 RTP / target decode | PARTIAL: packet reception/loss inferred from resend requests; no target prebuffer/decode confirmation |
+| PS3 package install | PASS: installed SFO/EBOOT match validated package |
+| PS3 audible music / controller exit during sender session | PENDING maintainer observation |
+
+See the v0.1.31 report for precise host-versus-target evidence boundaries.

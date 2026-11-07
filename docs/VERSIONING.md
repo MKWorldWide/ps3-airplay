@@ -181,3 +181,7 @@ Release label 0.30 maps to PS3 SFO 00.30. Packaging uses the preserved v01.01 ty
 ## Hardware evidence after SFO correction
 
 The historical 0.30 build starts and plays its tone on the PS3; START exits while idle (maintainer report). A real iPhone attempt ends in an unanswered OPTIONS request and no completed RAOP session. No streamed music. START and PS input become unresponsive during that attempt. Corrected release label: 0.1.30; SFO remains 00.30. Resolve the request-handling stall before extended playback tests.
+
+## v0.1.31 / SFO 00.31
+
+Disables incompatible Mbed TLS PPC64 assembly on the PS3 ABI and adds challenge/RNG/handler/cleanup checkpoints. Source 224f15d. Package 3,233,584 bytes, SHA-256 354dc5f33ef19c9342fee12efe21b70d2a7818d26660bc7ee439327675b4d60d. Installed payload verified. RPCS3 challenge and encrypted RTSP session complete; physical music/exit result pending.

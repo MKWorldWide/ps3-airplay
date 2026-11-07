@@ -437,3 +437,5 @@
 - **Root Cause:** Mbed TLS selected PPC64 assembly that loads/stores pointer locals as eight bytes; the PS3 compiler stores those pointers as four bytes. This corrupts pointer slots during RSA arithmetic.
 - **Fix:** Disable that assembly path through a consistent PS3 user configuration; retain portable C arithmetic, RSA blinding, and RNG. Add phase/timing diagnostics.
 - **Prevention Rule:** Run private-key operations on the target ABI. Host crypto tests cannot catch a target-specific assembly/pointer-width incompatibility. Always inspect emulator fatal logs alongside app logs before diagnosing a missing response as a timeout.
+
+The v0.1.31 fresh RPCS3 replay verifies the portable-arithmetic correction: the same challenge/private-key path completes (54 ms challenge, 26 ms encrypted ANNOUNCE), followed by successful SETUP/RECORD/TEARDOWN. Actual PS3 streamed music and controller behavior still require observation.
