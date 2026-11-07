@@ -1,5 +1,6 @@
 #include "raop_session.h"
 
+#include <math.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -79,6 +80,124 @@ static int parse_decimal(const char *value, size_t length, size_t maximum,
 	}
 	*number = result;
 	return 1;
+}
+
+static int parse_volume_millidb(const char *value, size_t length,
+	int32_t *volume_millidb)
+{
+	uint32_t whole = 0;
+	uint32_t fraction = 0;
+	uint32_t fraction_digits = 0;
+	uint32_t magnitude;
+	size_t i = 0;
+	int negative = 0;
+	int have_whole = 0;
+	int have_fraction = 0;
+	while (i < length && (value[i] == ' ' || value[i] == '\t'))
+		++i;
+	if (i < length && (value[i] == '-' || value[i] == '+')) {
+		negative = value[i] == '-';
+		++i;
+	}
+	while (i < length && value[i] >= '0' && value[i] <= '9') {
+		have_whole = 1;
+		if (whole < 1000000U)
+			whole = whole * 10U + (uint32_t)(value[i] - '0');
+		++i;
+	}
+	if (i < length && value[i] == '.') {
+		++i;
+		while (i < length && value[i] >= '0' && value[i] <= '9') {
+			have_fraction = 1;
+			if (fraction_digits < 3U) {
+				fraction = fraction * 10U +
+					(uint32_t)(value[i] - '0');
+				++fraction_digits;
+			}
+			++i;
+		}
+		if (!have_fraction)
+			return 0;
+	}
+	if (!have_whole && !have_fraction)
+		return 0;
+	while (i < length && (value[i] == ' ' || value[i] == '\t'))
+		++i;
+	if (i != length)
+		return 0;
+	while (fraction_digits < 3U) {
+		fraction *= 10U;
+		++fraction_digits;
+	}
+	if (whole > 1000000U)
+		whole = 1000000U;
+	magnitude = whole * 1000U + fraction;
+	if (magnitude > 1000000000U)
+		magnitude = 1000000000U;
+	*volume_millidb = negative ? -(int32_t)magnitude : (int32_t)magnitude;
+	return 1;
+}
+
+static int parse_parameter_volume(const request_fields *fields,
+	const char *request, int32_t *volume_millidb, int *has_volume)
+{
+	size_t cursor;
+	size_t end;
+	*has_volume = 0;
+	if (!ascii_equal(fields->content_type, strlen(fields->content_type),
+		"text/parameters"))
+		return 1;
+	cursor = fields->body_offset;
+	end = cursor + fields->body_length;
+	while (cursor < end) {
+		size_t line_start = cursor;
+		size_t line_end;
+		size_t colon;
+		while (cursor < end && request[cursor] != '\r' &&
+			request[cursor] != '\n')
+			++cursor;
+		line_end = cursor;
+		while (cursor < end && (request[cursor] == '\r' ||
+			request[cursor] == '\n'))
+			++cursor;
+		while (line_start < line_end && (request[line_start] == ' ' ||
+			request[line_start] == '\t'))
+			++line_start;
+		while (line_end > line_start && (request[line_end - 1] == ' ' ||
+			request[line_end - 1] == '\t'))
+			--line_end;
+		for (colon = line_start; colon < line_end && request[colon] != ':';
+			++colon)
+			;
+		if (colon < line_end && ascii_equal(request + line_start,
+			colon - line_start, "volume")) {
+			if (*has_volume || !parse_volume_millidb(request + colon + 1,
+				line_end - colon - 1, volume_millidb))
+				return 0;
+			*has_volume = 1;
+		}
+	}
+	return 1;
+}
+
+static void set_volume(raop_session *session, int32_t requested_millidb)
+{
+	int32_t applied_millidb = requested_millidb;
+	if (requested_millidb <= -144000) {
+		session->volume_millidb = -144000;
+		session->volume_gain = 0.0f;
+		session->volume_muted = 1;
+	} else {
+		if (applied_millidb < -30000)
+			applied_millidb = -30000;
+		if (applied_millidb > 0)
+			applied_millidb = 0;
+		session->volume_millidb = applied_millidb;
+		session->volume_gain = powf(10.0f,
+			(float)applied_millidb / 20000.0f);
+		session->volume_muted = 0;
+	}
+	++session->volume_updates;
 }
 
 static int parse_transport_port(const char *transport, const char *name,
@@ -223,6 +342,7 @@ void raop_session_init(raop_session *session, uint16_t audio_port,
 	session->audio_port = audio_port;
 	session->control_port = control_port;
 	session->timing_port = timing_port;
+	session->volume_gain = 1.0f;
 }
 
 int raop_session_configure_crypto(raop_session *session,
@@ -274,6 +394,8 @@ int raop_session_handle(raop_session *session, const char *request,
 	int count;
 	int clear_offer = 0;
 	int announce_encrypted = 0;
+	int has_volume = 0;
+	int32_t requested_volume_millidb = 0;
 	raop_sdp_offer offer;
 	uint8_t new_audio_key[RAOP_AES_KEY_SIZE] = { 0 };
 	uint8_t new_audio_iv[RAOP_AES_IV_SIZE] = { 0 };
@@ -441,6 +563,11 @@ int raop_session_handle(raop_session *session, const char *request,
 		if (session->state == RAOP_SESSION_IDLE) {
 			status = 455;
 			reason = "Method Not Valid in This State";
+		} else if (strcmp(fields.method, "SET_PARAMETER") == 0 &&
+			!parse_parameter_volume(&fields, request,
+				&requested_volume_millidb, &has_volume)) {
+			status = 400;
+			reason = "Bad Request";
 		} else {
 			extra = "Session: PS3AIRPLAY000001\r\n";
 		}
@@ -478,7 +605,12 @@ int raop_session_handle(raop_session *session, const char *request,
 				sizeof(session->audio_iv));
 			session->has_audio_key = 0;
 			memset(&session->offer, 0, sizeof(session->offer));
+			session->volume_millidb = 0;
+			session->volume_gain = 1.0f;
+			session->volume_muted = 0;
 		}
+		if (has_volume)
+			set_volume(session, requested_volume_millidb);
 	}
 	++session->requests;
 	return 1;

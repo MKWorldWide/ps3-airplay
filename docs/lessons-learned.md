@@ -252,3 +252,17 @@
 - **Root Cause:** The fresh app log reached `NET_IP_TIMEOUT`; RPCS3 logged `EADDRNOTAVAIL`, and its Internet setting is `Disconnected`.
 - **Fix:** No receiver code change. Record the emulator's virtual network state and test one connected run with the setting restored afterward before diagnosing mDNS or RTSP behavior.
 - **Prevention Rule:** Confirm that the emulator guest has a virtual address/route before attributing bind or discovery failures to receiver code. Keep emulator networking separate from the physical console network.
+
+## Apply RAOP volume instead of acknowledging it as a no-op
+
+- **Problem:** `SET_PARAMETER` returned success for volume requests while the PCM stream always rendered at unity gain.
+- **Root Cause:** Session handling treated GET_PARAMETER and SET_PARAMETER as generic keepalives; the audio output had no gain control.
+- **Fix:** Parse bounded `text/parameters` volume values, clamp to attenuation only, map the AirPlay mute sentinel to zero gain, and ramp PCM gain across each output block. Invalid and duplicate volume fields receive a 400 response and do not mutate session state.
+- **Prevention Rule:** A successful control response must correspond to an applied runtime change. Cover both protocol state and the actual audio-sample transform with host tests, then verify the output path on hardware.
+
+## Export dependent Lima paths sequentially
+
+- **Problem:** The first full standalone build attempt used `/ps3dk` and `/src` include paths and failed before compiling.
+- **Root Cause:** Several shell variables were assigned in one `export` command; expansions used the old, empty parent variables.
+- **Fix:** Re-exported `PS3DEV` and `DEPS_ROOT` first, then derived `PS3DK`, `MBEDTLS_INCLUDE`, and the library path in subsequent commands. The same source then linked and passed ELF validation.
+- **Prevention Rule:** In shell setup, assign parent environment variables before expanding them into dependent paths; verify include/library paths when a tool reports a root-level path.

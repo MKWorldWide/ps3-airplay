@@ -70,7 +70,7 @@ cc -std=c11 -Wall -Wextra -Werror -g -fsanitize=address,undefined \
 	"$PROJECT_ROOT/src/crypto/raop_crypto.c" \
 	"$PROJECT_ROOT/src/protocol/raop_sdp.c" \
 	"$PROJECT_ROOT/src/protocol/raop_session.c" \
-	"$PROJECT_ROOT/tests/protocol/raop_session_crypto_test.c" "$HOST_LIBRARY" \
+	"$PROJECT_ROOT/tests/protocol/raop_session_crypto_test.c" "$HOST_LIBRARY" -lm \
 	-o "$HOST_SESSION_TEST"
 "$HOST_SESSION_TEST"
 
@@ -81,7 +81,7 @@ cc -std=c11 -Wall -Wextra -Werror -g -fsanitize=address,undefined \
 	"$PROJECT_ROOT/src/crypto/raop_crypto.c" \
 	"$PROJECT_ROOT/src/protocol/raop_sdp.c" \
 	"$PROJECT_ROOT/src/protocol/raop_session.c" \
-	"$PROJECT_ROOT/tests/protocol/raop_session_test.c" "$HOST_LIBRARY" \
+	"$PROJECT_ROOT/tests/protocol/raop_session_test.c" "$HOST_LIBRARY" -lm \
 	-o "$HOST_STATE_TEST"
 "$HOST_STATE_TEST"
 
@@ -91,7 +91,7 @@ cc -std=c11 -Wall -Wextra -Werror \
 	"$PROJECT_ROOT/src/crypto/raop_crypto.c" \
 	"$PROJECT_ROOT/src/protocol/raop_sdp.c" \
 	"$PROJECT_ROOT/src/protocol/raop_session.c" \
-	"$PROJECT_ROOT/tests/protocol/raop_sdp_test.c" "$HOST_LIBRARY" \
+	"$PROJECT_ROOT/tests/protocol/raop_sdp_test.c" "$HOST_LIBRARY" -lm \
 	-o "$HOST_SDP_TEST"
 "$HOST_SDP_TEST"
 
@@ -113,7 +113,7 @@ cc -std=c11 -Wall -Wextra -Werror -g -fsanitize=address,undefined -pthread \
 	"$PROJECT_ROOT/src/protocol/raop_rtp.c" \
 	"$PROJECT_ROOT/src/protocol/raop_receiver.c" \
 	"$PROJECT_ROOT/src/observability/receiver_log.c" \
-	"$PROJECT_ROOT/tests/protocol/raop_receiver_test.c" "$HOST_LIBRARY" \
+	"$PROJECT_ROOT/tests/protocol/raop_receiver_test.c" "$HOST_LIBRARY" -lm \
 	-o "$PROJECT_ROOT/build/lima-crypto/raop_receiver_test"
 "$PROJECT_ROOT/build/lima-crypto/raop_receiver_test"
 
@@ -140,6 +140,12 @@ cc -std=c11 -Wall -Wextra -Werror -g -fsanitize=address,undefined \
 	-I"$PROJECT_ROOT/src/audio" "$PROJECT_ROOT/src/audio/pcm_ring.c" \
 	"$PROJECT_ROOT/tests/audio/pcm_ring_test.c" -o "$PCM_RING_TEST"
 "$PCM_RING_TEST"
+
+PCM_GAIN_TEST="$PROJECT_ROOT/build/lima-crypto/pcm_gain_test"
+cc -std=c11 -Wall -Wextra -Werror -g -fsanitize=address,undefined \
+	-I"$PROJECT_ROOT/src/audio" "$PROJECT_ROOT/src/audio/pcm_gain.c" \
+	"$PROJECT_ROOT/tests/audio/pcm_gain_test.c" -o "$PCM_GAIN_TEST"
+"$PCM_GAIN_TEST"
 
 TONE_TEST="$PROJECT_ROOT/build/lima-crypto/diagnostic_tone_test"
 cc -std=c11 -Wall -Wextra -Werror -g -fsanitize=address,undefined \
@@ -172,7 +178,12 @@ done
 	-fmodulo-sched $PPU_CFLAGS -I"$PROJECT_ROOT/src/audio" \
 	-I"$PS3DK_SOURCE/sdk/include" -c "$PROJECT_ROOT/src/audio/pcm_ring.c" \
 	-o "$PROJECT_ROOT/build/lima-crypto/pcm_ring.ppu.o"
+"$PPU_CC" -std=c11 -Wall -Wextra -Werror -mcpu=cell -mhard-float \
+	-fmodulo-sched $PPU_CFLAGS -I"$PROJECT_ROOT/src/audio" \
+	-I"$PS3DK_SOURCE/sdk/include" -c "$PROJECT_ROOT/src/audio/pcm_gain.c" \
+	-o "$PROJECT_ROOT/build/lima-crypto/pcm_gain.ppu.o"
 file "$PPU_OBJECT" "$PPU_SESSION_OBJECT" "$PPU_RECEIVER_OBJECT" \
 	"$PROJECT_ROOT/build/lima-crypto/alac.ppu.o" "$PPU_ALAC_OBJECT" \
 	"$PROJECT_ROOT/build/lima-crypto/pcm_ring.ppu.o" \
+	"$PROJECT_ROOT/build/lima-crypto/pcm_gain.ppu.o" \
 	"$PPU_LIBRARY"

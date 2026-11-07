@@ -21,6 +21,10 @@ typedef enum {
 typedef struct {
 	raop_session_state state;
 	uint32_t requests;
+	uint32_t volume_updates;
+	int32_t volume_millidb;
+	float volume_gain;
+	uint8_t volume_muted;
 	uint16_t audio_port;
 	uint16_t control_port;
 	uint16_t timing_port;

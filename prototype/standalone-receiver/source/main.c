@@ -5,6 +5,7 @@
 #include "raop_crypto.h"
 #include "raop_mdns_service.h"
 #include "pcm_ring.h"
+#include "pcm_gain.h"
 #include "diagnostic_tone.h"
 #include "raop_receiver.h"
 #include "diagnostic_screen.h"
@@ -57,6 +58,7 @@ static raop_crypto_context crypto_context;
 static receiver_log_file diagnostic_log;
 static raop_alac_decoder *decoder;
 static raop_pcm_ring pcm_ring;
+static raop_pcm_gain stream_gain;
 static raop_diagnostic_tone diagnostic_tone;
 static diagnostic_screen screen;
 static int diagnostic_tone_logged;
@@ -64,6 +66,7 @@ static uint8_t decoded_pcm[RAOP_ALAC_PCM_MAX];
 static uint64_t decoded_packet_count;
 static int audio_prebuffer_ready;
 static uint32_t active_sample_rate = 48000;
+static uint32_t logged_volume_updates;
 
 static void on_system_event(u64 status, u64 param, void *userdata)
 {
@@ -178,6 +181,7 @@ static void render_next_audio_block(const audioPortConfig *config)
 	}
 	(void)raop_pcm_ring_render_float(&pcm_ring, active_sample_rate,
 		RAOP_DIAGNOSTIC_TONE_RATE, block, AUDIO_BLOCK_SAMPLES);
+	raop_pcm_gain_apply(&stream_gain, block, AUDIO_BLOCK_SAMPLES);
 }
 
 static void close_audio(int started, int notify_set, int port_open,
@@ -223,6 +227,7 @@ int main(void)
 
 	mdns_service.socket_fd = -1;
 	raop_pcm_ring_init(&pcm_ring, 2);
+	raop_pcm_gain_init(&stream_gain);
 	if (!receiver_log_file_open(&diagnostic_log, RECEIVER_LOG_PATH)) {
 		printf("Cannot open capped log at %s\n", RECEIVER_LOG_PATH);
 		goto cleanup;
@@ -352,6 +357,14 @@ int main(void)
 		if (poll_result < 0) {
 			(void)log_event("RECEIVER_ERROR", poll_result, 0);
 			break;
+		}
+		raop_pcm_gain_set_target(&stream_gain,
+			receiver.session.volume_gain);
+		if (logged_volume_updates != receiver.session.volume_updates) {
+			logged_volume_updates = receiver.session.volume_updates;
+			(void)log_event("AUDIO_VOLUME",
+				receiver.session.volume_millidb,
+				receiver.session.volume_muted ? 1U : 0U);
 		}
 		if (mdns_opened && raop_mdns_service_poll(&mdns_service,
 			(uint64_t)(sysGetSystemTime() / 1000U)) < 0) {

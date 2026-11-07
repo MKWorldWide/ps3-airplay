@@ -33,6 +33,7 @@ PROJECT_CFILES := \
 	../../src/codec/alac.c \
 	../../src/codec/raop_alac.c \
 	../../src/audio/pcm_ring.c \
+	../../src/audio/pcm_gain.c \
 	../../src/audio/diagnostic_tone.c \
 	../../src/observability/receiver_log.c
 INCLUDES := include

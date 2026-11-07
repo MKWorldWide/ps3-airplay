@@ -35,7 +35,8 @@ Portable components cover bounded DNS-SD/mDNS, RTSP/SDP session handling, UDP RT
 
 - AIRPLAY02 v0.1.14 was installed and launched in RPCS3. The fresh capped log reached screen/controller and NetCtl initialization, then `NET_IP_TIMEOUT` and `APP_STOP result=1`. It did not reach crypto, receiver listeners, mDNS, or audio. The package is structurally validated, but its SO_REUSEPORT discovery change was not exercised.
 - AIRPLAY02 v0.1.15 includes bounded RTSP FLUSH propagation across RTP and PCM buffers. Full Lima tests, PPU application build, and package validation passed; RPCS3 installed/booted the package but again timed out at address acquisition (`EADDRNOTAVAIL`) before listeners. FLUSH is host-tested only.
-- Next validation: establish a usable RPCS3 route for one controlled startup check; then retest listeners and discovery only when startup reaches network-ready state. Physical PS3 tests remain gated on reachability and safe recovery. Next package version: 0.1.16.
+- The v0.1.16 source pass now parses RAOP `SET_PARAMETER` volume, clamps output to attenuation only, maps `-144 dB` to mute, and ramps PCM gain across audio blocks. Full Lima host tests, PPU object compilation, standalone link, and CellOS PPC64 ELF validation pass. The canonical PKG and RPCS3 runtime remain pending.
+- Next validation: generate and validate the v0.1.16 PKG from the committed source, then establish a usable RPCS3 route for one controlled launch and inspect the first newly reached startup stage. Physical PS3 tests remain gated on reachability and safe recovery. Current package version remains 0.1.16 (not yet generated).
 ## Explicit boundaries
 
 - A successful build, package inspection, or PRX structural check does not prove hardware compatibility.
