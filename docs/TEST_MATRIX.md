@@ -156,3 +156,20 @@ Review reports and logs for console/account identifiers, network addresses, Wi-F
 ## v0.30 compatibility candidate
 
 Release label 0.30 maps to PS3 SFO 00.30. Packaging uses the preserved v01.01 type-1 debug container. Older three-component SFO values are now rejected. Production RTSP remains 5000; hardware launch/display/exit and actual AirPlay playback require fresh evidence. See the current decision log and memory for validation boundaries.
+
+## Recovered PS3 run (historical app label 0.30; corrected label 0.1.30)
+
+| Check | Result | Evidence |
+|---|---|---|
+| Console app launch | PASS | Maintainer observation and fresh versioned startup log |
+| Diagnostic tone | PASS | Heard by maintainer; tone completion logged |
+| START while idle | PASS (user observation) | Returned to XMB; separate idle-run log was not preserved |
+| PS-button menu | FAIL (user observation) | Did not show XMB; callback stage not instrumented |
+| Discovery / route selection | PASS (user observation) | iPhone sees/selects receiver; mDNS ready in log |
+| TCP / basic OPTIONS | PASS | Accepted client; several OPTIONS 200 responses |
+| Full RAOP session | FAIL / NOT ESTABLISHED | Final OPTIONS has no response; no ANNOUNCE/SETUP/RECORD |
+| RTP / ALAC / streamed music | NOT ESTABLISHED / NO MUSIC | No packet/decode evidence and user heard no music |
+| START during sender attempt | FAIL (user observation) | No USER_EXIT_START event; last log is OPTIONS, so cleanup not implicated yet |
+| Shutdown | Abnormal observed | Three-second power hold, three beeps; cause unknown |
+
+Recovered log hash and provenance are recorded in memory and the hardware follow-up report; raw logs stay private.

@@ -11,7 +11,7 @@ The release path is:
 1. Run `scripts/build-lima-crypto.sh` for portable protocol/audio tests and PPU object checks.
 2. Export the pinned toolchain paths, exact source revision, and next unused `APP_VERSION`.
 3. Run `scripts/build-lima-standalone-receiver.sh`. It builds Mbed TLS, clean-builds the receiver, and validates the resulting ELF against the v01.01 ABI/layout reference. It emits a build manifest with the source revision, compiler/linker versions, PSL1GHT revision, and ELF hash.
-4. Run `scripts/package-lima-standalone-receiver.sh`. It verifies the ELF again, creates the NPDRM SELF and matching SFO/content ID, builds the package under a relative content-ID directory, extracts and checks the unfinalized package (including APP_VER and asset bytes), then finalizes a copy with PSL1GHT's package finalization step and validates its envelope. The bundled `pkg` reader cannot extract finalized NPDRM type `0x80000001`, so extraction is deliberately checked before finalization. The script refuses to overwrite a versioned package or intermediate.
+4. Run `scripts/package-lima-standalone-receiver.sh`. It verifies the ELF again, creates the NPDRM SELF and matching SFO/content ID, builds the package under a relative content-ID directory, extracts and checks the unfinalized package (including APP_VER and asset bytes), then validates a type-1 debug package matching v01.01. Finalized NPDRM format is an explicit optional mode. The bundled `pkg` reader cannot extract finalized NPDRM type `0x80000001`, so extraction is deliberately checked before finalization. The script refuses to overwrite a versioned package or intermediate.
 5. Install and launch only in RPCS3 for the first gate. Keep physical console deployment separate and require the established recovery procedure and user authorization.
 
 Example, with paths adjusted to the local Lima guest:
@@ -20,7 +20,8 @@ Example, with paths adjusted to the local Lima guest:
 export PS3DK_SOURCE="$HOME/ps3-airplay-host/ps3-sdk-src-v0.27.0"
 export PS3DEV="$PS3DK_SOURCE/stage/ps3dev"
 export SOURCE_REVISION="<full SHA of the exact source commit copied into Lima>"
-export APP_VERSION=0.1.21
+export APP_VERSION=0.1.30
+export SFO_VERSION=00.30
 # Optional emulator-only probe when the host's port 5000 is occupied.
 export RTSP_PORT=5001
 bash scripts/build-lima-crypto.sh
@@ -107,3 +108,7 @@ Keep the generated package, build manifest, and test logs outside Git. Record pa
 - Deferred unfinished RNG instrumentation to a private local patch; no protocol behavior changes in this pass. The new SFO validator rejects the actual v0.1.29 metadata and accepts the original v01.01 SFO.
 - Provenance fix: builds require a matching full checkout revision or stamped source archive. Prior exported source files match main, but the older external build manifest carried an incorrect full SHA. Matching source content does not make that old manifest accurate.
 - Build, upload, installation, visible image, tone, START exit and AirPlay remain separate gates. Hardware launch fix is a candidate until the maintainer confirms it.
+
+## Current release identity
+
+APP_VERSION=0.1.30 controls filename and application logging; SFO_VERSION=00.30 controls APP_VER/VERSION. Keep both explicit for every release. The 0.30 artifact was actually tested on hardware before the maintainer corrected its release label; preserve that historical identity in reports. Build from a committed archive stamped with its full SHA. Opening the app truncates the previous diagnostic log, so retrieve evidence before relaunching.

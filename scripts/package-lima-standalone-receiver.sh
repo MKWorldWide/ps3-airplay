@@ -12,7 +12,7 @@ PACKAGE_FORMAT="${PACKAGE_FORMAT:-debug}"
 ELF="${ELF:-$PROJECT_ROOT/build/lima-standalone-receiver/ps3-airplay-receiver.elf}"
 OUT_DIR="${OUT_DIR:-$PROJECT_ROOT/build/lima-standalone-package}"
 APPID=AIRPLAY02
-APP_VERSION="${APP_VERSION:-0.30}"
+APP_VERSION="${APP_VERSION:-0.1.30}"
 CONTENTID="UP0001-${APPID}_00-0000000000000000"
 STAGE="$OUT_DIR/$CONTENTID"
 EXTRACT="$OUT_DIR/extracted"
@@ -22,7 +22,7 @@ ICON0="$PS3DEV/bin/ICON0.PNG"
 BACKGROUND_RGB="${BACKGROUND_RGB:-$PROJECT_ROOT/build/diagnostic-background.rgb}"
 
 # Keep the release label separate from the PS3 fixed-width version fields.
-SFO_VERSION="${SFO_VERSION:-$(python3 -c 'import re,sys; v=sys.argv[1]; m=re.fullmatch(r"([0-9]{1,2})\.([0-9]{1,2})",v); sys.exit("Set SFO_VERSION=XX.YY for a semantic release label") if not m else print("%02d.%02d" % tuple(map(int,m.groups())))' "$APP_VERSION")}"
+SFO_VERSION="${SFO_VERSION:-00.30}"
 if [[ ! "$SFO_VERSION" =~ ^[0-9]{2}\.[0-9]{2}$ ]] ||
    [[ "$PACKAGE_FORMAT" != debug && "$PACKAGE_FORMAT" != finalized ]]; then
  echo "Require SFO_VERSION=XX.YY and PACKAGE_FORMAT=debug or finalized" >&2

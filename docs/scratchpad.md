@@ -1,7 +1,7 @@
 # Active work
 
-- Current task: build/upload release 0.30 using SFO 00.30 and v01.01-style debug package.
-- Proven defect: older release labels were written directly to fixed-format SFO versions. Hardware effect pending.
-- Implementation: package/SFO validators, source-revision guard, production RTSP 5000. Runtime protocol source unchanged; unfinished RNG tracing saved locally.
-- Next: commit sanitized source, archive exact commit, compile/package, verify extracted metadata/assets, upload and download-back comparison, install under standing authorization and verify installed files. Human observation is required for visible image/tone/START exit.
-- Keep original v01.01 and v0.1.29 artifacts for rollback. Boot plugins and firmware untouched.
+- Current release: 0.1.30, SFO 00.30. Correcting the historical 0.30 filename/log label only; runtime source is the recovered hardware-launch baseline.
+- Confirmed hardware: app starts, tone audible, START exits while idle. AirPlay route visible but no music; START/PS unresponsive during attempted sender connection.
+- Preserved failed-run log (2,774 bytes) ends at OPTIONS without response; no ANNOUNCE/SETUP/RECORD/RTP or exit events. Apple-Challenge/RSA blocking is the next hypothesis to instrument, not an established root cause.
+- Next: commit/build/stage corrected-label package, preserve original 0.30 artifact and raw log. Next runtime fix must use a newer release and target OPTIONS responsiveness before extended streaming.
+- No boot-plugin, firmware, or resident-module changes. User authorized automatic standalone package installation.

@@ -416,3 +416,17 @@
 - **Root Cause:** Packaging substituted the human release label into both platform version fields, and checks only compared that same invalid string. This is a concrete defect; its relationship to the launch error requires hardware confirmation.
 - **Fix:** Release 0.30 maps to SFO 00.30. Parse extracted SFO fields, enforce XX.YY, and match the v01.01 debug container format. Reject mismatched revision manifests before compiling.
 - **Prevention Rule:** Validate platform formats independently of application labels. RPCS3 startup and successful installation do not prove the console accepts launch metadata. Derive source revision from the exact exported commit.
+
+## SFO version defect blocked hardware launch
+
+- **Problem:** 0.1.29 installed and appeared in Game but failed to launch with 80028F21.
+- **Root Cause:** The build pipeline wrote a three-component application release label into PS3 SFO version fields, violating their XX.YY syntax. This was a launch-blocking metadata defect missed by earlier self-comparison checks and RPCS3 testing.
+- **Fix:** SFO 00.30 restored hardware startup, diagnostic tone, and idle START-to-XMB in the compatibility build. The package type was also restored to the v01.01 type-1 format in that same build; strict causal isolation between those simultaneous changes was not performed.
+- **Prevention Rule:** Keep release 0.1.30 separate from platform version 00.30. Validate actual extracted SFO syntax independently; installation success and emulator startup do not establish console launch compatibility.
+
+## An iPhone output selection is not a completed AirPlay session
+
+- **Problem:** iPhone selected the PS3 and Spotify showed playing, but no music sounded and controller exit later appeared frozen.
+- **Root Cause:** Not yet established. Saved log stops inside OPTIONS, before any ANNOUNCE/SETUP/RECORD or RTP events; there is no START event or cleanup evidence.
+- **Fix:** Preserve the original log and investigate synchronous OPTIONS challenge handling before touching ALAC/output timing or blaming cleanup. Correct the working build label without changing runtime code.
+- **Prevention Rule:** Confirm each RTSP/RTP/PCM layer in logs. Preserve logs before relaunch (opening the app truncates the log). Avoid repeated streaming attempts that require forced shutdown.
