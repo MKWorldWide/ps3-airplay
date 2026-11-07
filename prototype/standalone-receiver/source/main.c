@@ -172,10 +172,12 @@ int main(void)
 	}
 	(void)log_event("APP_START", 0, 0);
 	screen_result = diagnostic_screen_open(&screen, BACKGROUND_RGB_PATH);
-	if (screen_result == DIAGNOSTIC_SCREEN_OK)
-		(void)log_event("SCREEN_READY", 1, 0);
-	else
+	if (screen_result == DIAGNOSTIC_SCREEN_OK) {
+		(void)log_event("SCREEN_READY", screen.width, 0);
+		(void)log_event("SCREEN_HEIGHT", screen.height, 0);
+	} else {
 		(void)log_event("SCREEN_INIT_FAILED", screen_result, 0);
+	}
 	if (ioPadInit(7) == 0) {
 		pad_initialized = 1;
 		(void)log_event("CONTROLLER_READY", 1, 0);

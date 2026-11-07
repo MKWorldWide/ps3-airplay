@@ -8,3 +8,6 @@ This directory contains project decisions and release evidence suitable for the 
 - [Correct standalone NPDRM package](2026-11-07_0012_fix_npdrm_package.md)
 - [Replace staged PKG](2026-11-07_0017_replace_staged_pkg.md)
 - [Visible diagnostic screen and clean app exit](2026-11-07_0035_visible_diagnostic_screen.md)
+- [Stage the screen-enabled PS3 package](2026-11-07_0040_stage_screen_package.md)
+- [Inspect the receiver startup log](2026-11-07_0042_inspect_startup_log.md)
+- [Improve RSX scanout diagnostics](2026-11-07_0049_display_scanout_diagnostic.md)

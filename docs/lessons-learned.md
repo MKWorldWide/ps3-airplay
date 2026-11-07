@@ -7,6 +7,13 @@
 - **Fix:** Add a bounded-size RSX background framebuffer, a visible START exit prompt, controller polling with ordered cleanup, and screen-stage log codes. Keep the in-game plugin and game mixing questions separate.
 - **Prevention Rule:** Hardware readiness requires visible foreground UI, a documented controller exit, startup/shutdown log events, and a tested recovery path before extended network testing.
 
+## A display-ready event is not proof of visible output
+
+- **Problem:** A capped log snapshot recorded `SCREEN_READY`, while the user had reported a black display; package identity for that snapshot is unknown.
+- **Root Cause:** The event confirms the RSX setup path returned after a flip, but it does not verify the selected framebuffer, pixel format, signal, or actual visible image.
+- **Fix:** Keep hardware rendering marked unresolved; prime scanout with the upstream sample's spare-buffer-first sequence and draw a bright `DISPLAY ACTIVE` overlay so a new run can distinguish valid output from the intentionally dark background. Require a visible screen result tied to the candidate before calling the fix successful.
+- **Prevention Rule:** Treat graphics initialization logs as stage evidence only; require a human-visible image confirmation before calling display output successful. A similar upstream PSL1GHT/Evilnat report is evidence of a compatibility risk, not proof of this project's root cause.
+
 ## Bind the EBOOT NPDRM content ID to the package
 
 - **Problem:** The first standalone package installed but failed to launch with PS3 error `80029530`; no application startup log was created.

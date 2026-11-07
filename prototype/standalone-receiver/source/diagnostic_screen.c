@@ -63,6 +63,18 @@ static void copy_image(uint32_t *buffer, uint32_t pitch, uint16_t width,
 	}
 }
 
+static void fill_band(uint32_t *buffer, uint32_t pitch, uint16_t width,
+	uint16_t top, uint16_t height, uint32_t color)
+{
+	uint32_t y;
+	for (y = top; y < (uint32_t)top + height && y < UINT16_MAX; ++y) {
+		uint32_t *row = (uint32_t *)((uint8_t *)buffer + y * pitch);
+		uint32_t x;
+		for (x = 0; x < width; ++x)
+			row[x] = color;
+	}
+}
+
 static void draw_text(uint32_t *buffer, uint32_t pitch, uint16_t width,
 	uint16_t height, const char *text, uint16_t top, uint32_t scale)
 {
@@ -133,6 +145,25 @@ static int setup_video_mode(gcmContextData *context, videoState *state,
 	return DIAGNOSTIC_SCREEN_OK;
 }
 
+static void draw_diagnostic_overlay(uint32_t *buffer, uint32_t pitch,
+	uint16_t width, uint16_t height)
+{
+	uint16_t top_height = height >= 900 ? 72 : 48;
+	uint16_t bottom_height = height >= 900 ? 64 : 40;
+	uint32_t scale = height >= 900 ? 4U : 2U;
+	uint16_t bottom = height > bottom_height ? height - bottom_height : 0;
+	fill_band(buffer, pitch, width, 0, top_height, 0x000020e0U);
+	fill_band(buffer, pitch, width, bottom, bottom_height, 0x000020e0U);
+	if (top_height >= 3) {
+		fill_band(buffer, pitch, width, top_height - 3, 1, 0x0000ffffU);
+		fill_band(buffer, pitch, width, top_height - 2, 1, 0x00ffffffU);
+		fill_band(buffer, pitch, width, top_height - 1, 1, 0x00ffff00U);
+	}
+	draw_text(buffer, pitch, width, height, "DISPLAY ACTIVE", 8, scale);
+	draw_text(buffer, pitch, width, height, "PRESS START TO EXIT",
+		(uint16_t)(bottom + (bottom_height > 18 ? 8 : 0)), scale);
+}
+
 int diagnostic_screen_open(diagnostic_screen *screen, const char *rgb_path)
 {
 	gcmContextData *context = NULL;
@@ -184,20 +215,20 @@ int diagnostic_screen_open(diagnostic_screen *screen, const char *rgb_path)
 		}
 		copy_image((uint32_t *)screen->buffers[i], screen->pitch,
 			screen->width, screen->height, rgb);
-		{
-			uint32_t scale = screen->height >= 900 ? 3U : 2U;
-			uint32_t line_height = 8U * scale;
-			uint32_t gap = 5U * scale;
-			uint32_t top = screen->height - (2U * line_height + gap + 20U);
-			draw_text((uint32_t *)screen->buffers[i], screen->pitch,
-				screen->width, screen->height, "PRESS START TO EXIT",
-				(uint16_t)top, scale);
-			draw_text((uint32_t *)screen->buffers[i], screen->pitch,
-				screen->width, screen->height, "PS3 AIRPLAY DIAGNOSTIC",
-				(uint16_t)(top + line_height + gap), scale);
-		}
+		draw_diagnostic_overlay((uint32_t *)screen->buffers[i],
+			screen->pitch, screen->width, screen->height);
 	}
 	free(rgb);
+	/* Prime scanout with the spare buffer, matching PSL1GHT videoTest. */
+	if (gcmSetFlip(context, SCREEN_BUFFER_COUNT - 1) != 0) {
+		error = DIAGNOSTIC_SCREEN_FLIP_FAILED;
+		goto error;
+	}
+	rsxFlushBuffer(context);
+	gcmSetWaitFlip(context);
+	while (gcmGetFlipStatus() != 0)
+		usleep(200);
+	gcmResetFlipStatus();
 	if (gcmSetFlip(context, 0) != 0) {
 		error = DIAGNOSTIC_SCREEN_FLIP_FAILED;
 		goto error;

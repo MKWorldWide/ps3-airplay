@@ -20,8 +20,9 @@ Current and planned directories:
 - `src/platform/ps3/`: PS3 GameOS sockets, threads, audio and logger.
 - `experimental/resident/`: opt-in Cobra .sprx plugin experiment; NOT installed by default.
 
-Current gate: stage the screen-enabled package after the new package digest is
-reviewed, then test visible rendering, controller exit, and diagnostic logs.
-Its service TXT remains diagnostic-only until an iPhone session succeeds.
+Current gate: review the revised 01.02 display candidate, then install it only
+after exact package transfer approval. Verify visible rendering and controller
+exit before testing diagnostic logs or AirPlay. Its service TXT remains
+diagnostic-only until an iPhone session succeeds.
 
 See [ROADMAP](../docs/ROADMAP.md).

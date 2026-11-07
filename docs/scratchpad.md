@@ -1,5 +1,6 @@
 # Active work
 
-- **Current task:** Fix the black display and provide a clean XMB exit after the user heard the diagnostic tone but had to force power off.
-- **Verified:** The previous app advertised `ps3-airplay-diagnostic`; iPhone selection failed to connect. Current-run log is not retrieved. New RSX background/START-exit build compiles in Lima and packages with the 1280x720 RGB image.
-- **Next:** Record hardware observations and build evidence; review public diff. Ask approval to replace staged package using the new digest. After user updates from XMB, test displayed image, controller START exit, and inspect the capped log before debugging RAOP.
+- **Current task:** Make the display test unmistakable and reduce RSX scanout startup ambiguity before resuming AirPlay testing.
+- **Evidence:** Previous report and a 350-byte log show a user-heard tone, `SCREEN_READY`, controller/network/audio startup, and a black screen report; the run's package identity is unknown. `SCREEN_READY` is not proof of visible output. A similar PSL1GHT/Evilnat issue exists upstream; this project already uses `-O2`.
+- **This pass:** Primed the spare framebuffer before the primary framebuffer, added a vivid `DISPLAY ACTIVE` banner and color bars over the public background, and logs width/height in separate numeric events. Version 01.02 builds and extracts locally; package SHA-256 is `ddedd7d07fcac3554275b331b821741615019ea2d3a69f9fc9965cbdfbaec94a` (3,223,664 bytes).
+- **Next:** Review privacy-safe candidate metadata; request exact transfer approval before replacing the staged 01.01 package. Require visible banner and START-to-XMB confirmation before trying AirPlay again.
