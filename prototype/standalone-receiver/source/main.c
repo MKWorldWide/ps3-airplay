@@ -5,6 +5,7 @@
 #include "raop_crypto.h"
 #include "raop_mdns_service.h"
 #include "pcm_ring.h"
+#include "diagnostic_tone.h"
 #include "raop_receiver.h"
 
 #include <audio/audio.h>
@@ -44,6 +45,8 @@ static raop_crypto_context crypto_context;
 static receiver_log_file diagnostic_log;
 static raop_alac_decoder *decoder;
 static raop_pcm_ring pcm_ring;
+static raop_diagnostic_tone diagnostic_tone;
+static int diagnostic_tone_logged;
 static uint8_t decoded_pcm[RAOP_ALAC_PCM_MAX];
 static uint64_t decoded_packet_count;
 static int audio_prebuffer_ready;
@@ -104,8 +107,20 @@ static void render_next_audio_block(const audioPortConfig *config)
 	float *audio_data = (float *)(uintptr_t)config->audioDataStart;
 	float *block = audio_data + next_block * config->channelCount *
 		AUDIO_BLOCK_SAMPLES;
-	(void)raop_pcm_ring_render_float(&pcm_ring, active_sample_rate, 48000, block,
-		AUDIO_BLOCK_SAMPLES);
+	if (!raop_diagnostic_tone_complete(&diagnostic_tone)) {
+		(void)raop_diagnostic_tone_render(&diagnostic_tone, block,
+			AUDIO_BLOCK_SAMPLES);
+		if (!diagnostic_tone_logged &&
+			raop_diagnostic_tone_complete(&diagnostic_tone)) {
+			diagnostic_tone_logged = 1;
+			(void)log_event("AUDIO_TEST_TONE_COMPLETE",
+				(int)RAOP_DIAGNOSTIC_TONE_FREQUENCY,
+				RAOP_DIAGNOSTIC_TONE_FRAMES);
+		}
+		return;
+	}
+	(void)raop_pcm_ring_render_float(&pcm_ring, active_sample_rate,
+		RAOP_DIAGNOSTIC_TONE_RATE, block, AUDIO_BLOCK_SAMPLES);
 }
 
 static void close_audio(int started, int notify_set, int port_open,
@@ -243,6 +258,10 @@ int main(void)
 	}
 	audio_port_started = 1;
 	(void)log_event("AUDIO_READY", (int)audio_config.channelCount, 0);
+	raop_diagnostic_tone_init(&diagnostic_tone);
+	(void)log_event("AUDIO_TEST_TONE_START",
+		(int)RAOP_DIAGNOSTIC_TONE_FREQUENCY,
+		RAOP_DIAGNOSTIC_TONE_FRAMES);
 	printf("RAOP diagnostic receiver ready. Log: %s\n", RECEIVER_LOG_PATH);
 
 	while (!exit_requested) {

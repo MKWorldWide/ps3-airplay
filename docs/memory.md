@@ -13,6 +13,8 @@ PS3 AirPlay is an experimental AirPlay 1 / RAOP receiver for PS3 homebrew. The i
 - `src/audio`: bounded PCM ring and conversion.
 - `src/observability`: capped, privacy-conscious diagnostic logging.
 - `prototype/standalone-receiver`: standalone receiver wiring protocol and audio components.
+- The standalone app begins with a bounded five-second 440 Hz diagnostic rendered through the same GameOS audio blocks as receiver PCM; host waveform checks do not establish audible hardware output.
+- Latest verified build: PPU ELF and standalone PKG built in the existing x86_64 Lima guest from the current source; package metadata uses title ID `AIRPLAY02` and Game category. Hardware install, audio, and iPhone tests remain unverified.
 - `experimental/resident`: diagnostic PRX candidate; it does not output PCM.
 
 ## Verified boundary

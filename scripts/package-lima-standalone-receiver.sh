@@ -28,7 +28,7 @@ rm -rf "$STAGE" "$EXTRACT"
 rm -f "$PACKAGE"
 mkdir -p "$STAGE/USRDIR" "$EXTRACT"
 "$PS3DK_TOOLS/fself" "$ELF" "$STAGE/USRDIR/EBOOT.BIN"
-"$PS3DEV/bin/sfo" --title='PS3 AirPlay Diagnostic' --appid="$APPID" \
+"$PS3DEV/bin/sfo" --title='PS3 AirPlay' --appid="$APPID" \
 	--fromxml "$PS3DEV/bin/sfo.xml" "$STAGE/PARAM.SFO"
 "$PS3DK_TOOLS/pkg" --contentid="$CONTENTID" "$STAGE" "$PACKAGE"
 

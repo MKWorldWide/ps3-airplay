@@ -82,7 +82,7 @@ int main(void)
 	}
 	assert(queue.count == RAOP_RTP_QUEUE_CAPACITY);
 	assert(queue.stats.queue_drops == 1);
-	length = make_packet(packet, 217, payload, sizeof(payload));
+	length = make_packet(packet, 10000, payload, sizeof(payload));
 	assert(!raop_rtp_queue_recover(&queue, packet, length));
 	assert(queue.stats.queue_drops == 2);
 	packet[0] = 0x40;

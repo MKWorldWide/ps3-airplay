@@ -37,6 +37,13 @@ single file through FTP. If the package is installed, remove its app entry with
 the XMB Delete action. If it hangs, close it from the existing homebrew manager
 or restart the console; do not add it to boot plugins.
 
+At startup the app emits a five-second, 440 Hz stereo diagnostic through the
+same GameOS audio block queue used for receiver playback. Its level is capped
+at five percent full scale with 50 ms fades at both ends. The capped log records
+`AUDIO_TEST_TONE_START` and `AUDIO_TEST_TONE_COMPLETE`; neither event means the
+sound was actually audible. A PS3 and connected display/audio system are still
+required to verify that.
+
 This runtime behavior is not yet hardware-tested. The mDNS TXT values now
 match the implemented stereo ALAC, no/RSA encryption, 44.1 kHz, 16-bit UDP
 path, but remain diagnostic-only until LAN discovery and iPhone session

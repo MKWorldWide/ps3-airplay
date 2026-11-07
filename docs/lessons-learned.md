@@ -1,5 +1,12 @@
 # Lessons learned
 
+## Keep queue-overflow fixtures distinct from duplicates
+
+- **Problem:** The RTP queue test expected a retransmission of sequence 217 to count as a full-queue drop.
+- **Root Cause:** Sequence 217 was already present in the full queue, so the implementation correctly classified it as a duplicate before checking capacity.
+- **Fix:** Use sequence 10000 for the overflow case so the fixture exercises capacity rejection, not duplicate handling.
+- **Prevention Rule:** Queue-capacity tests must use an item that is not already queued; test duplicate rejection separately.
+
 ## Separate validation claims
 
 - **Problem:** A successful build or package can be mistaken for working console behavior.

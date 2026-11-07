@@ -7,7 +7,7 @@
 | Milestone | Goal | Status |
 |---|---|---|
 | Build foundation | Reproducible PPU build and sample PRX structure check | Host/toolchain work complete; hardware compatibility unknown |
-| Standalone audio | Launch the receiver and verify audible output at the system menu | Not tested on PS3 |
+| Standalone audio | Launch the receiver and verify audible output at the system menu | Five-second GameOS-path tone implemented; PS3 not tested |
 | AirPlay interoperability | Discover the receiver and complete a real iPhone RAOP session | Not tested |
 | Standalone playback | Stable playback, controls, reconnects, and a 30-minute session | Not tested |
 | Resident module | Safely load, receive, stop, and unload a diagnostic PRX | Build checks only; no hardware test |
@@ -16,7 +16,7 @@
 
 ## Current implementation
 
-Portable components cover bounded DNS-SD/mDNS, RTSP/SDP session handling, UDP RTP, timing probes, retransmission requests and validation, RAOP crypto, ALAC decoding, PCM buffering, and capped diagnostics. Host tests and PS3 cross-build/package checks exist. The standalone receiver connects decoded PCM to the GameOS audio path in source, but no console playback test has been performed. The resident candidate decodes supported packets for diagnostics and discards PCM.
+Portable components cover bounded DNS-SD/mDNS, RTSP/SDP session handling, UDP RTP, timing probes, retransmission requests and validation, RAOP crypto, ALAC decoding, PCM buffering, and capped diagnostics. The standalone app now plays a five-second, low-level 440 Hz startup diagnostic through its GameOS audio blocks before normal PCM rendering. Host tests and PS3 cross-build/package checks exist. No console playback test has been performed. The resident candidate decodes supported packets for diagnostics and discards PCM.
 
 ## Next steps
 

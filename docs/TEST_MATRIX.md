@@ -14,6 +14,7 @@ This matrix distinguishes portable host evidence and cross-build evidence from r
 | Crypto | Base64, AES, RSA session-key recovery and challenge helpers | Host vector tests pass; real sender interoperability untested |
 | SDP/ALAC | Bounded format parsing and reference packet decoding | Host tests match the reference samples |
 | PCM ring | Conversion, resampling, overflow and underflow bounds | Host tests pass |
+| Audio diagnostic | Bounded 440 Hz stereo tone, five-second duration, conservative peak and fades | Host unit test; PS3 audibility untested |
 | Discovery | RAOP response serialization and capability consistency | Host wire-format test passes; LAN/iPhone discovery untested |
 | PPU/PRX | Cross-build and PRX structural checks | Build checks pass; console compatibility untested |
 | Standalone package | Package inspection and extraction checks | Host packaging checks pass; console install/launch untested |

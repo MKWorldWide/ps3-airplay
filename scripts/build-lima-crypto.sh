@@ -112,6 +112,12 @@ cc -std=c11 -Wall -Wextra -Werror -g -fsanitize=address,undefined \
 	"$PROJECT_ROOT/tests/audio/pcm_ring_test.c" -o "$PCM_RING_TEST"
 "$PCM_RING_TEST"
 
+TONE_TEST="$PROJECT_ROOT/build/lima-crypto/diagnostic_tone_test"
+cc -std=c11 -Wall -Wextra -Werror -g -fsanitize=address,undefined \
+	-I"$PROJECT_ROOT/src/audio" "$PROJECT_ROOT/src/audio/diagnostic_tone.c" \
+	"$PROJECT_ROOT/tests/audio/diagnostic_tone_test.c" -lm -o "$TONE_TEST"
+"$TONE_TEST"
+
 "$PPU_CC" -std=c11 -Wall -Wextra -Werror -mcpu=cell -mhard-float \
 	-fmodulo-sched $PPU_CFLAGS -I"$PROJECT_ROOT/src/crypto" \
 	-I"$MBEDTLS_INCLUDE" -I"$PS3DK_SOURCE/sdk/include" \
