@@ -14,9 +14,15 @@ MBEDTLS_INCLUDE="$MBEDTLS_SOURCE/include"
 MBEDTLS_CRYPTO_LIBRARY="$MBEDTLS_PPU_BUILD/library/libmbedcrypto.a"
 OUTPUT_DIR="$PROJECT_ROOT/build/lima-standalone-receiver"
 JOBS="${JOBS:-2}"
-APP_VERSION="${APP_VERSION:-0.1.9}"
+APP_VERSION="${APP_VERSION:-0.1.10}"
+RTSP_PORT="${RTSP_PORT:-5000}"
 PROJECT_REV="$(git -C "$PROJECT_ROOT" rev-parse HEAD 2>/dev/null || true)"
 SOURCE_REVISION="${SOURCE_REVISION:-$PROJECT_REV}"
+if [[ ! "$RTSP_PORT" =~ ^[0-9]+$ ]] ||
+	(( 10#$RTSP_PORT < 1 || 10#$RTSP_PORT > 65535 )); then
+	echo "RTSP_PORT must be an integer from 1 through 65535" >&2
+	exit 1
+fi
 if [[ ! "$SOURCE_REVISION" =~ ^[0-9a-f]{7,40}$ ]]; then
 	echo "Set SOURCE_REVISION to the exact source commit being built" >&2
 	exit 1
@@ -33,7 +39,8 @@ cmake --build "$MBEDTLS_PPU_BUILD" --target mbedcrypto --parallel "$JOBS"
 
 make -C "$PROJECT_ROOT/prototype/standalone-receiver" clean
 make -C "$PROJECT_ROOT/prototype/standalone-receiver" \
-	CC=powerpc64-ps3-elf-gcc VERBOSE=1 APP_VERSION="$APP_VERSION"
+	CC=powerpc64-ps3-elf-gcc VERBOSE=1 APP_VERSION="$APP_VERSION" \
+	RTSP_PORT="$RTSP_PORT"
 
 mkdir -p "$OUTPUT_DIR"
 install -m 0644 \
@@ -45,6 +52,7 @@ PSL1GHT_REV="$(git -C "$PSL1GHT" rev-parse HEAD 2>/dev/null || printf 'unavailab
 {
 	printf 'pipeline=PS3DK-v0.27.0-PPU + PSL1GHT\n'
 	printf 'app_version=%s\n' "$APP_VERSION"
+	printf 'rtsp_port=%s\n' "$RTSP_PORT"
 	printf 'project_revision=%s\n' "$SOURCE_REVISION"
 	printf 'psl1ght_revision=%s\n' "$PSL1GHT_REV"
 	printf 'ppu_compiler='; powerpc64-ps3-elf-gcc -dumpfullversion

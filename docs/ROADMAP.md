@@ -1,6 +1,6 @@
 # Roadmap
 
-**Status: experimental; the maintainer reports one earlier AIRPLAY02 startup and five-second tone, but the exact package identity is unknown. AIRPLAY02 v0.1.2 and v0.1.3 later returned XMB error `80028F21`; AIRTEST01 v0.1.0 is parked. RPCS3 rejected v0.1.4–v0.1.6 before app startup. PS3DK-built v0.1.7 and v0.1.8 installed and reached APP_START in RPCS3, then failed at RTSP socket bind with error 112 and stopped. RPCS3 networking was observed disconnected during both runs; causality is unconfirmed. v0.1.9 moves bounded network readiness before socket creation and awaits validation.** See [build pipeline](BUILD_PIPELINE.md) and [versioning policy](VERSIONING.md).
+**Status: experimental; the maintainer reports one earlier AIRPLAY02 startup and five-second tone, but the exact package identity is unknown. AIRPLAY02 v0.1.2 and v0.1.3 later returned XMB error `80028F21`; AIRTEST01 v0.1.0 is parked. RPCS3 rejected v0.1.4–v0.1.6 before app startup. PS3DK-built v0.1.7–v0.1.9 installed and reached APP_START in RPCS3. v0.1.7/v0.1.8 failed RTSP bind with error 112 while emulator network status was disconnected. v0.1.9 then logged a bounded IP timeout while disconnected, and a bind error after route readiness when connected. The host had a wildcard listener on TCP 5000; a port collision remains a hypothesis. v0.1.10 tests port 5001 with default production port unchanged.** See [build pipeline](BUILD_PIPELINE.md) and [versioning policy](VERSIONING.md).
 
 ## Milestones
 
@@ -23,7 +23,7 @@ Portable components cover bounded DNS-SD/mDNS, RTSP/SDP session handling, UDP RT
 ## Next steps
 
 1. Keep AIRTEST01 parked; do not use it as a substitute for the receiver.
-2. Build and validate v0.1.9 after moving bounded IP readiness ahead of receiver socket creation. Install/launch it in RPCS3 and determine whether the bind error changes; inspect emulator networking read-only and do not alter it without authorization.
+2. Build and validate v0.1.10 on port 5001 in RPCS3 to isolate the occupied host port 5000; check whether listener, mDNS, and UDP sockets reach ready. The normal receiver build default remains port 5000.
 3. Before hardware deployment, bound the display's unbounded RSX waits and make sure controller exit remains available if graphics setup stalls.
 4. Once a receiver build is safe to test, the maintainer's standing authorization allows package staging/installation without another approval request. First verify one launch, visible output, tone, and START-to-XMB; stop if launch or clean exit fails.
 5. Retrieve a fresh log tied to the exact package. Attempt one iPhone connection and follow accept, RTSP method/status, session, SDP, and RTP stages.

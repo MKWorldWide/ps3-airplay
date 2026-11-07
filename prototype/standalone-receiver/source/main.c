@@ -37,7 +37,10 @@ mbedtls_ms_time_t mbedtls_ms_time(void)
 
 #define RECEIVER_LOG_PATH "/dev_hdd0/tmp/ps3-airplay.log"
 #define BACKGROUND_RGB_PATH "/dev_hdd0/game/AIRPLAY02/USRDIR/background.rgb"
-#define RTSP_PORT 5000
+#ifndef RAOP_RTSP_PORT
+#define RAOP_RTSP_PORT 5000
+#endif
+#define RTSP_PORT RAOP_RTSP_PORT
 #define RTP_BASE_PORT 6000
 #define AUDIO_PORT_LEVEL 0.25f
 #define NET_IP_WAIT_US 5000000ULL

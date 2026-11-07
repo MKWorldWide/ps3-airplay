@@ -39,7 +39,8 @@ INCLUDES := include
 TITLE := PS3 AirPlay 1 Receiver
 APPID := AIRPLAY02
 CONTENTID := UP0001-$(APPID)_00-0000000000000000
-APP_VERSION ?= 0.1.9
+APP_VERSION ?= 0.1.10
+RTSP_PORT ?= 5000
 
 ifeq ($(LEGACY_RUNTIME),1)
 # The 2020 PSL1GHT headers declare select() through net/select.h. Do not set
@@ -56,7 +57,8 @@ CFLAGS := -O2 -Wall -Wextra -Werror \
 	-mcpu=cell $(MACHDEP) \
 	-DMBEDTLS_NO_PLATFORM_ENTROPY -DMBEDTLS_PLATFORM_MS_TIME_ALT \
 	-DRAOP_USE_PSL1GHT -DRAOP_VERBOSE_LOGGING=1 \
-	-DAPP_VERSION_STRING=\"$(APP_VERSION)\" $(SELECT_HEADER_COMPAT) \
+	-DAPP_VERSION_STRING=\"$(APP_VERSION)\" \
+	-DRAOP_RTSP_PORT=$(RTSP_PORT) $(SELECT_HEADER_COMPAT) \
 	-include $(PS3DK)/ppu/include/sys/select.h \
 	-I$(MBEDTLS_INCLUDE) $(INCLUDE)
 LIBS := -laudio -lgcm_sys -lrsx -lio -lsysutil -lnetctl -lnet -lsysmodule -lrt -lm \

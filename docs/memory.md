@@ -75,12 +75,15 @@ Demonstration target: PS3 with Evilnat 4.93 CFW and Cobra 8.5 observed; the cons
 - PS3DK `package_finalize` successfully changes a package to NPDRM type `0x80000001`. The older bundled `pkg` reader then exits with `Unsupported Type` when asked to extract that finalized type. Correct package validation by extracting/comparing the unfinalized package first, then finalizing a copy and validating its envelope/header.
 - v0.1.7 is consumed. The next distinct package is v0.1.8; the updated script defaults reflect that.
 
-## RPCS3 v0.1.8 and startup ordering (2026-11-07)
+## RPCS3 v0.1.8-v0.1.9 and network boundary (2026-11-07)
 
 - Corrected packaging in v0.1.8 passed extraction checks before finalization and finalized-envelope validation. The 3,225,904-byte PKG installed in RPCS3 and reported APP_VER 0.1.8 in both UI/SFO and the fresh application log.
 - v0.1.8 reached APP_START, screen/controller/network/crypto initialization, then failed RTSP bind with numeric error 112 and exited. RPCS3 networking was observed disconnected; whether this caused the bind failure is unproven. No tone, visible display output, mDNS, RTSP session, RTP, decode, or music was demonstrated in that run.
 - The existing `resolve_local_ipv4()` function performs a route-first lookup, then a bounded five-second NetCtl wait, then one route fallback. Move this check before receiver socket creation so network readiness is established before bind attempts. Preserve the bounded timeout and privacy-safe status-only diagnostics.
-- The next package candidate is v0.1.9. No physical console deployment or emulator network setting change is authorized by this work pass.
+- At the end of the v0.1.8 pass, v0.1.9 was the next candidate. No physical console deployment occurred in either this pass or the subsequent v0.1.9 tests.
+- v0.1.9 moved the existing five-second route-first/NetCtl readiness check ahead of receiver socket creation. In RPCS3 with Internet disabled, it logged `NET_IP_WAIT_START`, `NET_STATE_WAIT`, `NET_IP_TIMEOUT`, and `APP_STOP` rather than attempting a listener bind. With the emulator's Internet status set to Connected for a second test, it logged `NET_IP_ROUTE_READY` but still failed RTSP bind with value 112.
+- During the Connected run, a wildcard host TCP listener occupied port 5000; the candidate's UDP ports 6000-6002 had no host listeners. This suggests a port collision worth testing but does not yet prove that it produced the logged guest errno. The RPCS3 Network tab also showed PSN Disconnected and UPnP disabled. The prior Internet-disabled setting is backed up under ignored local `work/private/` and should be restored after emulator tests.
+- Add a build-time RTSP port input defaulting to 5000. Use a distinct v0.1.10 RPCS3 test package on port 5001, keeping the normal PS3 build default at 5000. RAOP mDNS service publication already receives the listener's actual bound port.
 
 ## Invariants
 

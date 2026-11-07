@@ -1,5 +1,12 @@
 # Lessons learned
 
+## Separate emulator host-port conflicts from receiver failures
+
+- **Problem:** v0.1.9 reached a usable emulated route but still failed the RTSP bind in RPCS3.
+- **Root Cause:** Not proven. A wildcard host listener already occupied TCP 5000 during the run; UDP 6000-6002 were free. RPCS3 can expose socket operations to native host networking, so this is a plausible conflict to isolate with a second port.
+- **Fix:** Add a configurable RTSP port with a default of 5000; test v0.1.10 in RPCS3 on 5001. Keep the standard receiver port and let mDNS advertise the actual selected listener port.
+- **Prevention Rule:** Check host port ownership before interpreting an emulator socket failure as an AirPlay protocol defect. Confirm a suspected conflict with a controlled alternate-port test before calling it the cause.
+
 ## Establish network readiness before binding receiver sockets
 
 - **Problem:** v0.1.8 reached application startup in RPCS3 but failed while opening the RTSP listener with numeric error 112. The emulator's network status was disconnected during the run.
