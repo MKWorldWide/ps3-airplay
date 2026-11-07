@@ -18,6 +18,16 @@ Thanks for helping improve PS3 AirPlay. Contributions and testing reports are we
 - Run `git diff --check` before submitting.
 - Do not claim PS3, iPhone, audible playback, or game compatibility without reporting the exact test that demonstrates it.
 
+## Before committing or pushing
+
+Keep the privacy review brief and repeatable:
+
+1. Inspect the full staged diff, exact staged file list, and all new or changed files. Check that private working files and local instructions remain ignored and unstaged.
+2. Run `git diff --cached --check`, available secret scanners, and targeted searches for personal paths/usernames, machine names, private URLs, email addresses, private IP/MAC addresses, Wi-Fi names, device/account IDs, credentials, and raw logs.
+3. Manually inspect every match and the exact files being committed. Keep normal project details and fabricated examples when useful; sanitize or redact private identifiers, secrets, and unredacted device data, then rerun affected checks. Do not pause for routine sanitation. If safe remediation requires guessing or could change intended meaning, leave only that content out of the commit, report the narrow blocker, and continue independent work.
+
+This is a compact workflow, not a skipped check. If no secret scanner is already available, note that and complete the targeted searches and manual review without installing one just for the commit.
+
 ## Hardware test reports
 
 Use the relevant rows in [the test matrix](docs/TEST_MATRIX.md). Include the artifact revision or checksum, broad hardware/software versions, test steps, result, and concise observations. Redact console serials and account IDs, MAC/IP addresses, Wi-Fi names, credentials, and raw logs that may contain them. Do not upload screenshots or logs before reviewing them for identifiers.

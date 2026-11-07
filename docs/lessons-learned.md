@@ -1,5 +1,12 @@
 # Lessons learned
 
+## Keep commit privacy checks brief and complete
+
+- **Problem:** Repeating broad manual review made routine commits slow and token-heavy; stopping at the first privacy match also added avoidable human intervention.
+- **Root Cause:** The review lacked a compact scan-and-remediate loop with a clear threshold for when human judgment is actually needed.
+- **Fix:** Use one pass over the full staged diff and changed files, run whitespace and already-available secret scans, search for local paths/private identifiers/raw logs, and manually inspect matches. Automatically sanitize or redact findings and rerun affected checks. Do not install a scanner solely for a routine commit.
+- **Prevention Rule:** Keep every privacy gate active and continue the goal after routine sanitation. Only exclude content and report a narrow blocker when safe remediation requires guessing or could change intended meaning. Summarize findings or unavailable scanners briefly.
+
 ## Validate the linked ELF ABI before packaging
 
 - **Problem:** RPCS3 accepted and installed v0.1.4 and v0.1.5 packages but rejected the EBOOT before `main()`. v0.1.5 reached the PPU loader, which reported an invalid ELF OS/ABI.

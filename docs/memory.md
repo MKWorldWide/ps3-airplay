@@ -66,3 +66,4 @@ Demonstration target: PS3 with Evilnat 4.93 CFW and Cobra 8.5 observed; the cons
 - Distinguish host tests and format checks from hardware behavior.
 - Keep boot-time plugin configuration unchanged during build work.
 - Preserve third-party notices and license obligations.
+- Before GitHub commits or pushes, complete one concise privacy review of the full staged diff and exact changed files: whitespace check, available secret scanner, targeted searches for private identifiers and raw logs, then manual review of matches. Automatically sanitize or redact findings and rerun affected checks. If safe remediation requires guessing, exclude only that content from the commit, report the narrow blocker, and continue independent work. If no scanner is already installed, record that and continue with the remaining checks.
