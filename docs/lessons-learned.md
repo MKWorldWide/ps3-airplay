@@ -245,3 +245,10 @@
 - **Root Cause:** Screen and controller initialization precede network address acquisition; the app can render successfully and then terminate before opening its listeners.
 - **Fix:** The fresh capped log was summarized by allowlisted event and numeric fields. It reached `SCREEN_READY`, then `NET_IP_TIMEOUT` and `APP_STOP` result 1, with no crypto, RTSP, RTP, mDNS, or audio-ready event.
 - **Prevention Rule:** Use the earliest missing readiness event to locate startup failure. Screen visibility, title launch, network route, listener readiness, AirPlay session, and audio output are separate test gates.
+
+## Verify the emulator's virtual network before changing receiver code
+
+- **Problem:** AIRPLAY02 v0.1.14 and v0.1.15 both stopped before listener setup in RPCS3.
+- **Root Cause:** The fresh app log reached `NET_IP_TIMEOUT`; RPCS3 logged `EADDRNOTAVAIL`, and its Internet setting is `Disconnected`.
+- **Fix:** No receiver code change. Record the emulator's virtual network state and test one connected run with the setting restored afterward before diagnosing mDNS or RTSP behavior.
+- **Prevention Rule:** Confirm that the emulator guest has a virtual address/route before attributing bind or discovery failures to receiver code. Keep emulator networking separate from the physical console network.

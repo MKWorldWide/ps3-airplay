@@ -20,7 +20,7 @@ Example, with paths adjusted to the local Lima guest:
 export PS3DK_SOURCE="$HOME/ps3-airplay-host/ps3-sdk-src-v0.27.0"
 export PS3DEV="$PS3DK_SOURCE/stage/ps3dev"
 export SOURCE_REVISION="<full SHA of the exact source commit copied into Lima>"
-export APP_VERSION=0.1.14
+export APP_VERSION=0.1.15
 # Optional emulator-only probe when the host's port 5000 is occupied.
 export RTSP_PORT=5001
 bash scripts/build-lima-crypto.sh
@@ -49,4 +49,6 @@ Keep the generated package, build manifest, and test logs outside Git. Record pa
 - v0.1.13 was built from pushed source revision `70fa6654bd2d092a5f674dd526c05a2e5ccd4703` with the normal PS3 RTSP port 5000. All Lima host tests, PPU objects, ABI validation, PKG extraction, SFO/content-ID, asset equality, and finalized envelope checks passed. The package is 3,224,944 bytes; SHA-256 `f7d076e32520a552349ebb973894409d66fd429ff255d0919c66401fabe9f1e9`. Its RPCS3 and physical-console launch gates remain pending.
 - v0.1.14 includes the best-effort SO_REUSEPORT request. The PS3DK header defines the option, and the PPU build compiled it. A host socket probe bound UDP 5353 and received multicast while the system mDNS responder remained active. RPCS3 installed and launched v0.1.14, but its fresh app log reached `NET_IP_TIMEOUT` before receiver startup; mDNS sharing was not exercised in the emulator. The physical PS3 remains untested for this change.
 - v0.1.14 was built from source revision 6d9f28d0f079c445b96203695ea1912e8deed887. The 3,225,008-byte finalized PKG passed ELF, content ID, SFO, assets, and envelope validation; SHA-256 `5994cf4828976245f530b1c90d180fd4f0e80abddcfd0d09d3780c351ad006c1`.
-- Current next package version is 0.1.15, which will include the tested FLUSH propagation fix. Every generated package consumes its version even when it fails a test.
+- v0.1.15 was built from source revision `99abc5b`, including bounded RTSP FLUSH propagation through RTP and PCM buffering. The 2,758,576-byte CellOS PPC64 ELF validated against the v01.01 reference. The finalized PKG is 3,225,648 bytes; SHA-256 `230a2df0db8a7e561f3b048872c1a714ed0eb58f4b741587ee961f71834ffa59`. Package extraction, AIRPLAY02/APP_VER, content ID, assets, and finalized envelope checks passed.
+- RPCS3 installed and booted v0.1.15. Its fresh log reached APP_START, SCREEN_READY, CONTROLLER_READY, NETCTL_READY, then `NET_IP_TIMEOUT` and APP_STOP result 1. RPCS3's own network layer reported no available address. No receiver sockets, mDNS, tone, or FLUSH-over-RAOP behavior was reached. The emulator's Internet setting is currently Disconnected; connected-route retesting is tracked separately from physical PS3 deployment.
+- Current next package version is 0.1.16. Both standalone build and package scripts now default to 0.1.16. Every generated package consumes its version even when it fails a test.
