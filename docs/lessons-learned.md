@@ -1,5 +1,19 @@
 # Lessons learned
 
+## Keep a diagnostic detour separate from the receiver goal
+
+- **Problem:** Work shifted from AIRPLAY02, which had a user-confirmed startup and five-second tone, to a silent AIRTEST01 v0.1.0 launch-control app. The user then reported the same XMB error and no receiver behavior.
+- **Root Cause:** The launch control was intended to isolate PS3DK runtime compatibility, but it displaced the requested receiver path and did not retain the tone or AirPlay capabilities. AIRTEST01 is a separate title and did not replace AIRPLAY02, but pursuing its install was the wrong next priority.
+- **Fix:** Park AIRTEST01. Return to AIRPLAY02 and preserve the earlier successful startup/tone as the baseline, while keeping exact package identity uncertainty explicit.
+- **Prevention Rule:** A diagnostic app must answer a specific blocking question and must not replace the user's working product path without clear evidence that the experiment is the best next step.
+
+## Preserve the route-based startup fallback
+
+- **Problem:** The receiver source had become dependent on NetCtl already reporting `IPObtained` at the first check, even though the earlier code used a UDP route lookup to determine the local address.
+- **Root Cause:** The service-address correction changed startup gating and removed the route-based fallback. Delayed NetCtl readiness could terminate startup before discovery, even if the network route was usable.
+- **Fix:** The v0.1.4 candidate tries the earlier route-based lookup first, polls NetCtl for at most five seconds, and retries the route lookup once. The PPU cross-build succeeds; the PS3 runtime behavior is not yet tested.
+- **Prevention Rule:** Network readiness should be bounded and recoverable. Keep a known-good address discovery path when adding stricter interface checks, and log the selected path without logging the address.
+
 ## Installed package identity does not explain a launch rejection
 
 - **Problem:** The user installed v0.1.2, but selecting AIRPLAY02 returned XMB error `80028F21` and no new diagnostic log appeared.

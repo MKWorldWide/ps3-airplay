@@ -1,13 +1,13 @@
 # Roadmap
 
-**Status: experimental; v0.1.3 is installed and XMB launch returns the same `80028F21` error as v0.1.2. Installed SFO and EBOOT match the extracted package, while the diagnostic log is unchanged. The 2020 PSL1GHT runtime did not solve the launch failure. A separate PS3DK-native launch-control PKG now builds locally, but has not been deployed or hardware-tested.** This roadmap separates build evidence from behavior that still requires a PS3 and an iPhone.
+**Status: experimental; the maintainer confirms an earlier AIRPLAY02 run reached application startup and played the five-second tone, although its exact package identity is not established. AIRPLAY02 v0.1.2 and v0.1.3 later returned XMB error `80028F21` without a fresh log. The separate AIRTEST01 v0.1.0 silent diagnostic also returned the error and is parked. AIRPLAY02 v0.1.4 now builds locally from the earlier 2020 PSL1GHT runtime path with route-first network address selection and a bounded NetCtl fallback; it has not been transferred or hardware-tested.** This roadmap separates build evidence from behavior that still requires a PS3 and an iPhone.
 
 ## Milestones
 
 | Milestone | Goal | Status |
 |---|---|---|
 | Build foundation | Reproducible PPU build and sample PRX structure check | Host/toolchain work complete; hardware compatibility unknown |
-| Standalone audio | Launch the receiver and verify audible output at the system menu | v0.1.2 and v0.1.3 both fail at XMB with `80028F21`. Earlier five-second tone came from an unidentified build. |
+| Standalone audio | Launch the receiver and verify audible output at the system menu | Earlier AIRPLAY02 run reached startup and tone per maintainer; exact build unknown. v0.1.2/v0.1.3 and separate AIRTEST01 v0.1.0 each returned `80028F21`. v0.1.4 built locally; hardware test pending. |
 | AirPlay interoperability | Discover the receiver and complete a real iPhone RAOP session | Earlier iPhone listing followed by connection failure; cause unconfirmed |
 | Standalone playback | Stable playback, controls, reconnects, and a 30-minute session | Not tested |
 | Resident module | Safely load, receive, stop, and unload a diagnostic PRX | Build checks only; no hardware test |
@@ -20,15 +20,14 @@ Portable components cover bounded DNS-SD/mDNS, RTSP/SDP session handling, UDP RT
 
 ## Next steps
 
-1. Request approval to install the staged `AIRTEST01` v0.1.0 through XMB Package Manager; its new PKG has been download-back verified and AIRPLAY02 remains untouched. Test XMB launch, visible colors, START exit, automatic timeout, and fresh local log.
-2. Use the launch-control hardware result to identify whether the PS3DK-native launch/display path works on this console. This does not validate AirPlay receiver dependencies.
-3. Fix the hard-coded `PKG_VERSION_0.1.2` startup event so future receiver logs identify the actual package version.
-4. Check whether a licensed Sony PS3 SDK 4.75 installation and its Windows build VM are available. Thermal Bench documents that workflow; it is a separate, proprietary toolchain and not a drop-in replacement.
-5. After a receiver build launches, verify visible display, five-second tone, and START-to-XMB twice. Stop if output is black or normal exit fails.
-6. Try the iPhone once and retrieve the capped log; use accept, method, status, state, SDP, and RTP events to locate the failure before changing capabilities.
-7. Re-test AirPlay audio after display, clean exit, and RTSP/RTP stage evidence are established.
-8. Repeat the receiver loopback test without tracing; an earlier untraced timing-probe stall remains an intermittent host-test concern.
-9. Consider resident PRX lifecycle testing as a separate, reversible experiment, then test per-title game audio only after standalone output works.
+1. Keep AIRTEST01 parked; do not use it as a substitute for the receiver.
+2. Diagnose the common pre-log XMB launch failure by comparing the earlier tone-producing AIRPLAY02 package/toolchain and exact current v0.1.4 SELF/package metadata. Treat `80028F21` as unresolved; public references reviewed do not map it to a specific cause.
+3. Before deployment, bound the display's unbounded RSX waits and make sure controller exit remains available if graphics setup stalls.
+4. Once a receiver build is safe to test, the maintainer's standing authorization allows package staging/installation without another approval request. First verify one launch, visible output, tone, and START-to-XMB; stop if launch or clean exit fails.
+5. Retrieve a fresh log tied to the exact package. Attempt one iPhone connection and follow accept, RTSP method/status, session, SDP, and RTP stages.
+6. Continue toward audible AirPlay only after fresh hardware evidence establishes the working boundary; keep protocol, decrypt, ALAC, PCM, and GameOS output claims separate.
+7. Diagnose the receiver loopback test's repeated uninstrumented timing-probe hang before using it as a green regression gate.
+8. Evaluate resident PRX lifecycle and per-title game audio only after standalone playback works; keep boot plugin configuration unchanged.
 ## Explicit boundaries
 
 - A successful build, package inspection, or PRX structural check does not prove hardware compatibility.

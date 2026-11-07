@@ -12,6 +12,7 @@ set -euo pipefail
 PROJECT_ROOT="${PROJECT_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}"
 PS3DK="${PS3DK:-$PS3DEV}"
 JOBS="${JOBS:-2}"
+APP_VERSION="${APP_VERSION:-0.1.4}"
 LEGACY_PSL1GHT_COMMIT="${LEGACY_PSL1GHT_COMMIT:-6e565a70e927f55813babe86dc6f64149535f908}"
 ACTUAL_PSL1GHT_COMMIT="$(git -C "$PSL1GHT" rev-parse HEAD)"
 if [[ "$ACTUAL_PSL1GHT_COMMIT" != "$LEGACY_PSL1GHT_COMMIT" ]]; then
@@ -32,6 +33,7 @@ make -C "$PROJECT_ROOT/prototype/standalone-receiver" \
 	LEGACY_RUNTIME=1 BUILD=build-legacy-runtime clean
 make -C "$PROJECT_ROOT/prototype/standalone-receiver" \
 	LEGACY_RUNTIME=1 BUILD=build-legacy-runtime \
+	APP_VERSION="$APP_VERSION" \
 	MBEDTLS_INCLUDE="$MBEDTLS_INCLUDE" \
 	MBEDTLS_CRYPTO_LIBRARY="$MBEDTLS_CRYPTO_LIBRARY"
 

@@ -40,6 +40,12 @@ mbedtls_ms_time_t mbedtls_ms_time(void)
 #define RTSP_PORT 5000
 #define RTP_BASE_PORT 6000
 #define AUDIO_PORT_LEVEL 0.25f
+#define NET_IP_WAIT_US 5000000ULL
+#define NET_IP_POLL_US 100000U
+
+#ifndef APP_VERSION_STRING
+#define APP_VERSION_STRING "unknown"
+#endif
 
 static volatile int exit_requested;
 static raop_receiver receiver;
@@ -73,6 +79,72 @@ static int log_event(const char *event, int value, size_t bytes)
 		"%Y-%m-%dT%H:%M:%SZ", utc) == 0)
 		memcpy(timestamp, "1970-01-01T00:00:00Z", sizeof(timestamp));
 	return receiver_log_file_event(&diagnostic_log, timestamp, event, value, bytes);
+}
+
+static int local_ipv4(uint8_t address[4])
+{
+	struct sockaddr_in multicast = {0};
+	struct sockaddr_in local = {0};
+	socklen_t length = sizeof(local);
+	int fd = socket(AF_INET, SOCK_DGRAM, 0);
+	int result = 0;
+	if (fd < 0)
+		return 0;
+	multicast.sin_family = AF_INET;
+	multicast.sin_addr.s_addr = htonl(0xe00000fbU);
+	multicast.sin_port = htons(5353);
+	if (connect(fd, (struct sockaddr *)&multicast, sizeof(multicast)) == 0 &&
+		getsockname(fd, (struct sockaddr *)&local, &length) == 0 &&
+		local.sin_addr.s_addr != htonl(INADDR_ANY)) {
+		memcpy(address, &local.sin_addr.s_addr, 4);
+		result = 1;
+	}
+	(void)close(fd);
+	return result;
+}
+
+static int netctl_ipv4(union net_ctl_info *ip_info, s32 *state,
+	struct in_addr *address)
+{
+	if (netCtlGetState(state) != 0 || *state != NET_CTL_STATE_IPObtained ||
+		netCtlGetInfo(NET_CTL_INFO_IP_ADDRESS, ip_info) != 0 ||
+		inet_pton(AF_INET, ip_info->ip_address, address) != 1 ||
+		address->s_addr == htonl(INADDR_ANY))
+		return 0;
+	return 1;
+}
+
+static int resolve_local_ipv4(uint8_t ip[4], union net_ctl_info *ip_info,
+	s32 *state, struct in_addr *address)
+{
+	const u64 deadline = (u64)sysGetSystemTime() + NET_IP_WAIT_US;
+	int state_wait_logged = 0;
+	*state = -1;
+
+	/* Preserve the route-based path used by the earlier audible build. */
+	if (local_ipv4(ip)) {
+		(void)log_event("NET_IP_ROUTE_READY", 1, 4);
+		return 1;
+	}
+	(void)log_event("NET_IP_WAIT_START", (int)(NET_IP_WAIT_US / 1000000U), 0);
+	while ((u64)sysGetSystemTime() < deadline) {
+		if (netctl_ipv4(ip_info, state, address)) {
+			memcpy(ip, &address->s_addr, 4);
+			(void)log_event("NET_IP_READY", 1, 4);
+			return 1;
+		}
+		if (!state_wait_logged) {
+			(void)log_event("NET_STATE_WAIT", (int)*state, 0);
+			state_wait_logged = 1;
+		}
+		usleep(NET_IP_POLL_US);
+	}
+	if (local_ipv4(ip)) {
+		(void)log_event("NET_IP_ROUTE_FALLBACK", 1, 4);
+		return 1;
+	}
+	(void)log_event("NET_IP_TIMEOUT", (int)*state, 0);
+	return 0;
 }
 
 static void fill_audio_silence(const audioPortConfig *config)
@@ -152,7 +224,7 @@ int main(void)
 		goto cleanup;
 	}
 	(void)log_event("APP_START", 0, 0);
-	(void)log_event("PKG_VERSION_0.1.2", 0, 0);
+	(void)log_event("PKG_VERSION_" APP_VERSION_STRING, 0, 0);
 	screen_result = diagnostic_screen_open(&screen, BACKGROUND_RGB_PATH);
 	if (screen_result == DIAGNOSTIC_SCREEN_OK) {
 		(void)log_event("SCREEN_READY", screen.width, 0);
@@ -204,19 +276,10 @@ int main(void)
 		(void)log_event("RECEIVER_CRYPTO_FAILED", -1, 0);
 		goto cleanup;
 	}
-	if (netCtlGetState(&network_state) != 0 ||
-		network_state != NET_CTL_STATE_IPObtained) {
-		(void)log_event("NET_STATE_FAILED", (int)network_state, 0);
+	if (!resolve_local_ipv4(ip, &ip_info, &network_state,
+		&network_address)) {
 		goto cleanup;
 	}
-	if (netCtlGetInfo(NET_CTL_INFO_IP_ADDRESS, &ip_info) != 0 ||
-		inet_pton(AF_INET, ip_info.ip_address, &network_address) != 1 ||
-		network_address.s_addr == htonl(INADDR_ANY)) {
-		(void)log_event("NET_IP_FAILED", -1, 0);
-		goto cleanup;
-	}
-	memcpy(ip, &network_address.s_addr, sizeof(ip));
-	(void)log_event("NET_IP_READY", 1, sizeof(ip));
 	(void)snprintf(instance, sizeof(instance),
 		"%02X%02X%02X%02X%02X%02X@PS3-AirPlay-Diagnostic",
 		net_info.ether_addr.data[0], net_info.ether_addr.data[1],

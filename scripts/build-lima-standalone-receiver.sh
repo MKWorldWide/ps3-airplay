@@ -14,6 +14,7 @@ MBEDTLS_INCLUDE="$MBEDTLS_SOURCE/include"
 MBEDTLS_CRYPTO_LIBRARY="$MBEDTLS_PPU_BUILD/library/libmbedcrypto.a"
 OUTPUT_DIR="$PROJECT_ROOT/build/lima-standalone-receiver"
 JOBS="${JOBS:-2}"
+APP_VERSION="${APP_VERSION:-0.1.4}"
 
 export PS3DEV PS3DK PSL1GHT MBEDTLS_INCLUDE MBEDTLS_CRYPTO_LIBRARY
 export PATH="$PS3DEV/bin:$PS3DEV/ppu/bin:$PATH"
@@ -26,7 +27,7 @@ cmake --build "$MBEDTLS_PPU_BUILD" --target mbedcrypto --parallel "$JOBS"
 
 make -C "$PROJECT_ROOT/prototype/standalone-receiver" clean
 make -C "$PROJECT_ROOT/prototype/standalone-receiver" \
-	CC=powerpc64-ps3-elf-gcc VERBOSE=1
+	CC=powerpc64-ps3-elf-gcc VERBOSE=1 APP_VERSION="$APP_VERSION"
 
 mkdir -p "$OUTPUT_DIR"
 install -m 0644 \

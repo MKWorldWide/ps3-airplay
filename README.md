@@ -6,11 +6,11 @@ An open source AirPlay 1 (RAOP) receiver project for PlayStation 3 homebrew, dev
 
 ## Project status
 
-This is experimental software. Host-side protocol and codec checks pass, and the project builds standalone PS3 ELF/PKG and experimental PRX candidates. The user reports hearing the five-second diagnostic tone; a prior run showed a black screen, and an iPhone listed the receiver but could not connect. Version 0.1.2 adds display diagnostics, a NetCtl-derived service address, RTSP compatibility headers and session handling, and verbose capped logs. It builds and extracts locally; it has not been transferred or tested on hardware. AirPlay playback and reliable XMB exit remain unverified.
+This is experimental software. A previous AIRPLAY02 run reached application startup and played the five-second diagnostic tone, according to the maintainer; its exact package identity is not established. Later AIRPLAY02 packages v0.1.2 and v0.1.3 returned XMB error `80028F21` before a fresh log was written. A separate silent launch-control app (AIRTEST01 v0.1.0) also returned that error and is parked. A new AIRPLAY02 v0.1.4 candidate restores the earlier route-based network address lookup, waits up to five seconds for NetCtl as a fallback, and identifies its version in diagnostics. It builds and extracts locally, but has not been transferred or tested on hardware. AirPlay playback, visible display, and reliable XMB exit remain unverified.
 
 The resident PRX currently receives and decodes supported audio packets for diagnostics; it does not output PCM. Game audio coexistence is a separate feasibility question. No universal in-game mixing capability is claimed.
 
-**Demonstration target:** PS3 with Evilnat 4.93 CFW; Cobra 8.5 was observed in the system status. The console model was not recorded. The reported tone and discovery came from an earlier package of unconfirmed version; they do not validate version 0.1.2.
+**Demonstration target:** PS3 with Evilnat 4.93 CFW; Cobra 8.5 was observed in the system status. The console model was not recorded. The reported tone and discovery came from an earlier package of unconfirmed version; they do not validate versions 0.1.2–0.1.4.
 
 ## What is in the repository
 

@@ -1,10 +1,8 @@
 # Active work
 
-- **Task:** Validate the isolated native PS3DK launch-control app on hardware after separate install approval.
-- **Source:** Branch `docs/v012-preflight-review`, commit `dd8225b` contains the app and build report.
-- **AirPlay app:** AIRPLAY02 v0.1.3 remains installed and reportedly fails with `80028F21`; its SFO/EBOOT match the package and the 1,817-byte log is unchanged. No root cause is established.
-- **Launch-control artifact:** `build/native-ps3dk-launch-control/ps3-airplay-native-control.pkg`, 192,688 bytes, SHA-256 `7bb8e2fbc12cc3da8f4b91ff0ae85c4dcb105209dba5d45765b1787d4015b6d2`; APP_VER 0.1.0, title ID `AIRTEST01`, content ID `UP0001-AIRTEST01_00-0000000000000000`.
-- **Staging:** After approval, uploaded as a new file at `/dev_hdd0/packages/ps3-airplay-native-launch-control-0.1.0.pkg`; downloaded-back bytes, size, and hash match exactly. No installation or launch has occurred.
-- **Behavior:** cycles bright full-screen colors; START exits; 20-second frame limit; log path `/dev_hdd0/tmp/ps3-airplay-native-launch.log`. RSX polling is bounded. Hardware behavior is unknown.
-- **Build finding:** PS3DK's reference sample and our app both failed with the old PSL1GHT linker. Building/installing the PS3DK forked `sprxlinker` fixed the local build. This is a Lima toolchain change; it does not modify PS3 firmware or boot plugins.
-- **Next:** Ask separate approval before installing through XMB Package Manager. AIRPLAY02 remains separate; if AIRTEST01 is installed and causes problems, uninstall only AIRTEST01 through XMB Package Manager. Then test launch, color visibility, START exit, timeout, and log independently.
+- **Task:** Resume AIRPLAY02 development from the earlier user-observed app-start/tone result and work toward a real iPhone RAOP session. AIRTEST01 v0.1.0 is parked.
+- **Current candidate:** AIRPLAY02 v0.1.4, locally built with the 2020 PSL1GHT runtime, route-first IPv4 selection, a five-second NetCtl wait/fallback, and a log version marker tied to `APP_VERSION`.
+- **Validation:** PPU ELF and PKG build/extraction passed. Package size 3,183,584 bytes; SHA-256 `0c1e3c74eea71f7b5829201673f4dd5211bcbf704ab00cb55e1b41cb87020ee4`. Host crypto/session/SDP/mDNS, listener/log, ALAC, PCM, and tone tests passed. Direct receiver timing-probe loopback hung again; unresolved.
+- **Hardware:** Prior AIRPLAY02 v0.1.2/v0.1.3 and AIRTEST01 v0.1.0 attempts returned user-reported `80028F21`; the old AIRPLAY log did not change. No cause is established. v0.1.4 has not been transferred, installed, or run.
+- **Next:** Before deployment, bound RSX waits and keep a responsive early START exit path. The maintainer has authorized package installation without another approval request; once the receiver build is safe to test and the user resumes, preflight the console, stage/install it, then test launch, visible screen, tone, and clean exit before any iPhone connection attempt. Do not alter boot plugin configuration.
+- **Current boundary:** This goal is paused by the user. No v0.1.4 transfer/install has happened; do not continue hardware work until the user resumes.
