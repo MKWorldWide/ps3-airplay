@@ -48,4 +48,17 @@ AIRPLAY02 follows conservative pre-1.0 versioning. Increment the patch number fo
 - Build: Existing Lima VM; PS3DK v0.27.0 PPU compiler 16.1.0, GNU ld 2.42, PSL1GHT revision `dd4e8c9be744e3273d665c393fa6d97a87402e2e`.
 - Checks: full Lima host suite, PPU object compilation, standalone link/ELF validation, extracted SFO/title/content ID/assets, EBOOT equality, and finalized NPDRM envelope PASS.
 - RPCS3 install/launch and emitted telemetry verification: pending. No physical hardware or audible playback evidence.
-- The next unused package version is 0.1.19.
+- The next unused package version after the v0.1.18 record was 0.1.19; its build record follows.
+
+## v0.1.19 package record
+
+- Source: `7b451031487aab7dbad147ab0b47ef80a1e22265` on `main` (ALAC negotiated sample-count bounds and composed encrypted RTP-to-PCM host test).
+- Artifact: `ps3-airplay-receiver-0.1.19.pkg`, AIRPLAY02, APP_VER `0.1.19`.
+- Size / SHA-256: 3,230,704 bytes / `41488b9683b901ecc4d71e113565fcdb10c1834c69e1642fbe774f5cdf4a31a5`.
+- ELF: 2,780,120 bytes, CellOS PPC64, five PT_LOAD segments; SHA-256 `beb816b2aed2125a94584e4e820f18de66a98f21260ce47fe1654199322e7ec3`.
+- Build: Existing Lima VM; PS3DK v0.27.0 PPU compiler 16.1.0, GNU ld 2.42, PSL1GHT revision `dd4e8c9be744e3273d665c393fa6d97a87402e2e`.
+- Checks: full Lima host suite under ASan/UBSan, PPU component compilation, standalone link/ELF validator, package extraction, AIRPLAY02/APP_VER/content ID, asset equality, EBOOT equality, relative package paths, and finalized NPDRM envelope PASS.
+- The package and ELF are preserved in the ignored local `work/builds/0.1.19/` directory. RPCS3 install/launch was not performed because Computer Use still reports the Mac desktop locked. No physical-console transfer/install, iPhone session, or audible playback is verified.
+- Next unused package version: 0.1.20.
+
+The standalone receiver `Makefile` and canonical Lima build/package scripts now default to 0.1.20 to prevent accidental reuse of the v0.1.19 artifact version.

@@ -28,14 +28,14 @@ Portable components cover bounded DNS-SD/mDNS, RTSP/SDP session handling, UDP RT
 4. Once a receiver build is safe to test, the maintainer's standing authorization allows package staging/installation without another approval request. First verify one launch, visible output, tone, and START-to-XMB; stop if launch or clean exit fails.
 5. Retrieve a fresh log tied to the exact package. Attempt one iPhone connection and follow accept, RTSP method/status, session, SDP, and RTP stages.
 6. Continue toward audible AirPlay only after fresh hardware evidence establishes the working boundary; keep protocol, decrypt, ALAC, PCM, and GameOS output claims separate.
-7. Diagnose the receiver loopback test's repeated uninstrumented timing-probe hang before using it as a green regression gate.
+7. Repeat the latest uninstrumented receiver loopback/timing pass to confirm the earlier intermittent timing-probe hang is no longer reproducible.
 8. Evaluate resident PRX lifecycle and per-title game audio only after standalone playback works; keep boot plugin configuration unchanged.
 
 ### Current protocol hardening (2026-11-07)
 
 - ASan found and the receiver now guards ALAC in-band frame sample counts against the negotiated maximum before sample-array writes.
 - The new host composition test covers RSA-OAEP key recovery, encrypted RTP payload decryption, ALAC decode, and reference PCM equality in one run. It does not substitute for the existing socket loopback or any iPhone/console test.
-- Package v0.1.19 is the next candidate. Build from the committed source, validate the package, then run in RPCS3 if the desktop is available. The physical PS3 remains a separate gate.
+- AIRPLAY02 v0.1.19 is built from commit `7b451031487aab7dbad147ab0b47ef80a1e22265` and passed ELF/package validation. RPCS3 install/launch is pending because the Mac desktop remains locked. The physical PS3 remains a separate gate.
 
 ## Latest update (2026-11-07)
 
