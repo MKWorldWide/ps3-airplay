@@ -18,6 +18,7 @@
 | Native launch control diverts effort from working receiver | The silent test app does not preserve diagnostic tone or AirPlay behavior and cannot establish receiver playback | AIRTEST01 v0.1.0 is a separate installed app, not an AIRPLAY02 upgrade. It returned `80028F21` and is parked; do not use it as the receiver test path. |
 | Receiver version string drifts from package metadata | Hardware logs could be misattributed to a different package | v0.1.4 makes `APP_VERSION` a build input for both startup log and SFO packaging; the extracted SFO reports 0.1.4. Verify exact installed package before interpreting future logs. |
 | Legacy linker output is structurally unlike the known v01.01 ELF | XMB/RPCS3 may reject an otherwise valid NPDRM package before application startup | New validator compares the CellOS/PPC64 header and PS3-specific load flags against the preserved v01.01 ELF. v0.1.6 fails this layout check; the precise reason RPCS3 rejects it is still unproven. Use the modern PS3DK/Lima pipeline and require RPCS3 launch evidence. |
+| RPCS3 package launches but socket bind fails before receiver readiness | Emulator testing can falsely look like a receiver protocol defect when the emulator has no active network | v0.1.7 reached APP_START, then RTSP bind logged error value 112 and the app stopped. RPCS3 network status was disconnected. Treat the cause as unconfirmed; diagnose emulator networking separately and preserve hardware testing as a separate gate. |
 
 ## Required gates before hardware testing
 

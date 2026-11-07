@@ -67,6 +67,14 @@ Demonstration target: PS3 with Evilnat 4.93 CFW and Cobra 8.5 observed; the cons
 - Current host validation passed protocol crypto/session/SDP/mDNS, RTSP/RTP loopback, capped logging, ALAC reference decoding, PCM ring/resampling, diagnostic tone, and PPU object checks. The PS3DK ELF validated; v0.1.7 still needs packaging and RPCS3 launch before runtime claims.
 - Host/emulator evidence does not establish PS3 display, clean exit, iPhone connection, or audible AirPlay audio. Game-audio coexistence remains a separate Cobra `.sprx` feasibility gate.
 
+## RPCS3 v0.1.7 result and package-reader limitation (2026-11-07)
+
+- The committed PS3DK/Lima build at source revision `95f5924` produced AIRPLAY02 v0.1.7, 3,225,904 bytes, SHA-256 `fc8899dd3f62cbd9678bf3f27bdb542770fe9516ad142d37235ea3f958e09674`. RPCS3 installed it; its title list showed version 0.1.7, and its fresh app log reached `APP_START`.
+- The sanitized log event sequence was APP_START, version marker, SCREEN_READY, controller/network module and crypto initialization, RTSP_BIND_FAIL (value 112), RECEIVER_OPEN_FAILED, APP_STOP. This proves package installation and entry into application startup in RPCS3, not a working receiver, visible pixels, tone, or AirPlay audio.
+- RPCS3 network status was Disconnected during this run. It may explain socket bind error 112, but causation is unproven and network settings were not changed.
+- PS3DK `package_finalize` successfully changes a package to NPDRM type `0x80000001`. The older bundled `pkg` reader then exits with `Unsupported Type` when asked to extract that finalized type. Correct package validation by extracting/comparing the unfinalized package first, then finalizing a copy and validating its envelope/header.
+- v0.1.7 is consumed. The next distinct package is v0.1.8; the updated script defaults reflect that.
+
 ## Invariants
 
 - Keep protocol inputs, sessions, queues, and logs bounded.

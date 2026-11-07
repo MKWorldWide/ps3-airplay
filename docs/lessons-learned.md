@@ -1,5 +1,12 @@
 # Lessons learned
 
+## Extract the debug package before NPDRM finalization
+
+- **Problem:** The v0.1.7 package was successfully finalized, but the packaging script then failed when the bundled PKG reader tried to extract it.
+- **Root Cause:** PSL1GHT's finalizer changes the PKG type to `0x80000001`; this older `pkg` reader can list/extract the debug type but reports `Unsupported Type` for the finalized NPDRM type.
+- **Fix:** Verify paths, SFO identity/version, EBOOT, and assets by extracting the unfinalized package. Finalize a copy afterward and validate its package header, type, content ID, and declared size with a small independent checker.
+- **Prevention Rule:** Treat package creation, pre-finalization extraction, finalization, and final-package envelope validation as separate stages. Do not interpret a tool's unsupported final type as proof that finalization itself failed.
+
 ## Preserve PS3-specific program headers from the known working build
 
 - **Problem:** RPCS3 rejected v0.1.6 before application startup even though its ELF OS/ABI byte had been corrected to CellOS.

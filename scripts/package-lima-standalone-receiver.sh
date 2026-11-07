@@ -11,11 +11,12 @@ PACKAGE_FINALIZE="${PACKAGE_FINALIZE:-$PS3DK_TOOLS/package_finalize}"
 ELF="${ELF:-$PROJECT_ROOT/build/lima-standalone-receiver/ps3-airplay-receiver.elf}"
 OUT_DIR="${OUT_DIR:-$PROJECT_ROOT/build/lima-standalone-package}"
 APPID=AIRPLAY02
-APP_VERSION="${APP_VERSION:-0.1.7}"
+APP_VERSION="${APP_VERSION:-0.1.8}"
 CONTENTID="UP0001-${APPID}_00-0000000000000000"
 STAGE="$OUT_DIR/$CONTENTID"
 EXTRACT="$OUT_DIR/extracted"
 PACKAGE="$OUT_DIR/ps3-airplay-receiver-${APP_VERSION}.pkg"
+UNFINALIZED_PACKAGE="$PACKAGE.unfinalized.pkg"
 ICON0="$PS3DEV/bin/ICON0.PNG"
 BACKGROUND_RGB="${BACKGROUND_RGB:-$PROJECT_ROOT/build/diagnostic-background.rgb}"
 
@@ -34,7 +35,6 @@ if [[ -e "$PACKAGE" ]]; then
 	echo "Refusing to overwrite existing versioned package: $PACKAGE" >&2
 	exit 1
 fi
-UNFINALIZED_PACKAGE="$PACKAGE.gnpdrm.pkg"
 if [[ -e "$UNFINALIZED_PACKAGE" ]]; then
 	echo "Refusing to overwrite existing intermediate package: $UNFINALIZED_PACKAGE" >&2
 	exit 1
@@ -57,12 +57,10 @@ sed "s/01\.00/${APP_VERSION}/g" "$PS3DEV/bin/sfo.xml" > "$OUT_DIR/sfo.xml"
 "$PS3DEV/bin/sfo" --title='PS3 AirPlay' --appid="$APPID" \
 	--fromxml "$OUT_DIR/sfo.xml" "$STAGE/PARAM.SFO"
 "$PKG_TOOL" --contentid="$CONTENTID" "$STAGE" "$UNFINALIZED_PACKAGE"
-"$PACKAGE_FINALIZE" "$UNFINALIZED_PACKAGE"
-mv "$UNFINALIZED_PACKAGE" "$PACKAGE"
 
 (
 	cd "$EXTRACT"
-	"$PKG_TOOL" --extract "$PACKAGE"
+	"$PKG_TOOL" --extract "$UNFINALIZED_PACKAGE"
 )
 EXTRACTED_EBOOT="$EXTRACT/$CONTENTID/USRDIR/EBOOT.BIN"
 EXTRACTED_SFO="$EXTRACT/$CONTENTID/PARAM.SFO"
@@ -73,15 +71,24 @@ if [[ ! -f "$EXTRACTED_EBOOT" || ! -f "$EXTRACTED_SFO" ||
 	echo "PKG extract did not contain EBOOT.BIN, PARAM.SFO, ICON0.PNG, and background.rgb" >&2
 	exit 1
 fi
-"$PS3DEV/bin/sfo" --list "$EXTRACTED_SFO"
+SFO_OUTPUT="$("$PS3DEV/bin/sfo" --list "$EXTRACTED_SFO")"
+printf '%s\n' "$SFO_OUTPUT"
+if ! printf '%s\n' "$SFO_OUTPUT" | grep -F "'APP_VER': '${APP_VERSION}'" >/dev/null; then
+	echo "Extracted SFO does not report APP_VER ${APP_VERSION}" >&2
+	exit 1
+fi
 cmp -n "$(wc -c < "$STAGE/USRDIR/EBOOT.BIN")" \
 	"$STAGE/USRDIR/EBOOT.BIN" "$EXTRACTED_EBOOT"
 cmp "$STAGE/ICON0.PNG" "$EXTRACTED_ICON"
 cmp "$BACKGROUND_RGB" "$EXTRACT/$CONTENTID/USRDIR/background.rgb"
-PKG_LIST="$("$PKG_TOOL" --list "$PACKAGE")"
+PKG_LIST="$("$PKG_TOOL" --list "$UNFINALIZED_PACKAGE")"
 printf '%s\n' "$PKG_LIST"
 if printf '%s\n' "$PKG_LIST" | awk '/(raw data|directory|NPDRM SELF):/ && $NF ~ /^\// { bad=1 } END { exit !bad }'; then
 	echo "PKG contains absolute entry paths; refusing to publish this package" >&2
 	exit 1
 fi
-sha256sum "$PACKAGE" "$STAGE/USRDIR/EBOOT.BIN" "$STAGE/USRDIR/background.rgb" "$STAGE/ICON0.PNG"
+cp "$UNFINALIZED_PACKAGE" "$PACKAGE"
+"$PACKAGE_FINALIZE" "$PACKAGE"
+python3 "$PROJECT_ROOT/scripts/validate-ps3-pkg.py" "$PACKAGE" "$CONTENTID"
+sha256sum "$UNFINALIZED_PACKAGE" "$PACKAGE" \
+	"$STAGE/USRDIR/EBOOT.BIN" "$STAGE/USRDIR/background.rgb" "$STAGE/ICON0.PNG"

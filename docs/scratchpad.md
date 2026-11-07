@@ -1,6 +1,6 @@
 # Active work
 
-- **Current task:** Produce and RPCS3-test AIRPLAY02 v0.1.7 using the recovered PS3DK/Lima pipeline.
-- **Verified:** v01.01 reference ELF and fresh PS3DK ELF share the expected PS3 executable and `PT_LOAD` layout; legacy v0.1.6 fails the layout gate. Host protocol/audio/log suite and PPU object checks passed in Lima.
-- **In progress:** Commit pipeline scripts and docs. Then rebuild from that exact commit with `SOURCE_REVISION`, package v0.1.7 using PSL1GHT finalization and extraction checks, install and launch in RPCS3, and inspect a fresh emulator log.
-- **Boundary:** Do not deploy to physical console or modify boot plugins. RPCS3 evidence is not hardware evidence. No AirPlay playback claim until the iPhone connects and streamed audio is heard.
+- **Current task:** Verify the corrected full package pipeline with AIRPLAY02 v0.1.8, then diagnose RPCS3's socket-bind boundary.
+- **Verified:** v0.1.7 (3,225,904 bytes; SHA-256 `fc8899dd3f62cbd9678bf3f27bdb542770fe9516ad142d37235ea3f958e09674`) installed in RPCS3 and reached APP_START. It then failed RTSP bind with value 112 and logged APP_STOP. RPCS3 network status was Disconnected; causality remains unproven.
+- **In progress:** Extract/verify the unfinalized package before NPDRM finalization; validate finalized envelope separately. Version 0.1.7 is consumed; next package is 0.1.8.
+- **Boundary:** Do not deploy to physical console or modify boot plugins. Do not change RPCS3 network settings without authorization. RPCS3 evidence is not hardware evidence; no AirPlay playback claim until the iPhone connects and streamed audio is heard.
