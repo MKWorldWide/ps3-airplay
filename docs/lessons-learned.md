@@ -1,5 +1,19 @@
 # Lessons learned
 
+## Validate the linked ELF ABI before packaging
+
+- **Problem:** RPCS3 accepted and installed v0.1.4 and v0.1.5 packages but rejected the EBOOT before `main()`. v0.1.5 reached the PPU loader, which reported an invalid ELF OS/ABI.
+- **Root Cause:** The linked big-endian PowerPC64 ELF advertised generic System V OS/ABI (`EI_OSABI=0`) rather than CellOS LV2 (`0x66`). A successful cross-link and SELF/PKG extraction did not make the ELF bootable.
+- **Fix:** Add a guarded post-link patch that validates ELF64, big-endian encoding, and PowerPC64 before changing only `EI_OSABI` to `0x66`; use a new package version for the fix. v0.1.6 applies it, but RPCS3 still reports an invalid ELF type, so this is a partial correction rather than a launch fix.
+- **Prevention Rule:** Inspect the inner ELF header and PS3-specific sections before signing. Treat each loader validation stage separately, and do not call the package fixed until RPCS3 reaches application logging.
+
+## Package entry paths and app boot are separate checks
+
+- **Problem:** An earlier package used absolute entry paths and RPCS3 rejected the archive; corrected relative paths allowed installation but did not guarantee boot.
+- **Root Cause:** Package parser acceptance verifies container layout only. It does not verify the PPU executable contract.
+- **Fix:** Stage files under the content-ID directory, reject absolute package-list paths, and verify installation and launch independently.
+- **Prevention Rule:** Maintain separate gates for archive extraction, SFO identity, EBOOT parse/load, application startup, and functional behavior.
+
 ## Keep a diagnostic detour separate from the receiver goal
 
 - **Problem:** Work shifted from AIRPLAY02, which had a user-confirmed startup and five-second tone, to a silent AIRTEST01 v0.1.0 launch-control app. The user then reported the same XMB error and no receiver behavior.

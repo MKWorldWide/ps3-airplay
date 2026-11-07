@@ -1,13 +1,15 @@
 # Roadmap
 
-**Status: experimental; the maintainer confirms an earlier AIRPLAY02 run reached application startup and played the five-second tone, although its exact package identity is not established. AIRPLAY02 v0.1.2 and v0.1.3 later returned XMB error `80028F21` without a fresh log. The separate AIRTEST01 v0.1.0 silent diagnostic also returned the error and is parked. AIRPLAY02 v0.1.4 now builds locally from the earlier 2020 PSL1GHT runtime path with route-first network address selection and a bounded NetCtl fallback; it has not been transferred or hardware-tested.** This roadmap separates build evidence from behavior that still requires a PS3 and an iPhone.
+**Status: experimental; the maintainer reports one earlier AIRPLAY02 startup and five-second tone, but the exact package identity is unknown. AIRPLAY02 v0.1.2 and v0.1.3 later returned XMB error `80028F21`; AIRTEST01 v0.1.0 is parked. RPCS3 rejects v0.1.4, v0.1.5, and v0.1.6 before application startup. v0.1.5 corrected package entry paths and exposed an incompatible ELF OS/ABI; v0.1.6 patches the PS3 LV2 OS/ABI but still fails RPCS3 ELF loading. None of these tests establishes display output, a fresh app log, AirPlay connection, or audio playback.** See [versioning policy](VERSIONING.md).
 
 ## Milestones
 
 | Milestone | Goal | Status |
 |---|---|---|
 | Build foundation | Reproducible PPU build and sample PRX structure check | Host/toolchain work complete; hardware compatibility unknown |
-| Standalone audio | Launch the receiver and verify audible output at the system menu | Earlier AIRPLAY02 run reached startup and tone per maintainer; exact build unknown. v0.1.2/v0.1.3 and separate AIRTEST01 v0.1.0 each returned `80028F21`. v0.1.4 built locally; hardware test pending. |
+| Standalone audio | Launch the receiver and verify audible output at the system menu | Earlier AIRPLAY02 run reached startup and tone per maintainer; exact build unknown. v0.1.2/v0.1.3 and separate AIRTEST01 v0.1.0 returned `80028F21`; RPCS3 rejects current v0.1.4–v0.1.6 before app startup. |
+| Diagnostic application | Reliable launch/exit, logs, basic settings and diagnostic toggles | Target for v0.2.0; not achieved |
+| Stable AirPlay audio | Discovery, connection, streamed audio, controls, reconnect, and sustained playback on PS3/iPhone | Target for v0.3.0; not achieved |
 | AirPlay interoperability | Discover the receiver and complete a real iPhone RAOP session | Earlier iPhone listing followed by connection failure; cause unconfirmed |
 | Standalone playback | Stable playback, controls, reconnects, and a 30-minute session | Not tested |
 | Resident module | Safely load, receive, stop, and unload a diagnostic PRX | Build checks only; no hardware test |
@@ -21,8 +23,8 @@ Portable components cover bounded DNS-SD/mDNS, RTSP/SDP session handling, UDP RT
 ## Next steps
 
 1. Keep AIRTEST01 parked; do not use it as a substitute for the receiver.
-2. Diagnose the common pre-log XMB launch failure by comparing the earlier tone-producing AIRPLAY02 package/toolchain and exact current v0.1.4 SELF/package metadata. Treat `80028F21` as unresolved; public references reviewed do not map it to a specific cause.
-3. Before deployment, bound the display's unbounded RSX waits and make sure controller exit remains available if graphics setup stalls.
+2. Compare the inner ELF/SELF type and sections from a known launching package against the current PS3DK output. v0.1.6 has the required `EI_OSABI=0x66` byte but RPCS3 still reports an invalid executable type; the exact remaining loader incompatibility is unresolved.
+3. Before hardware deployment, bound the display's unbounded RSX waits and make sure controller exit remains available if graphics setup stalls.
 4. Once a receiver build is safe to test, the maintainer's standing authorization allows package staging/installation without another approval request. First verify one launch, visible output, tone, and START-to-XMB; stop if launch or clean exit fails.
 5. Retrieve a fresh log tied to the exact package. Attempt one iPhone connection and follow accept, RTSP method/status, session, SDP, and RTP stages.
 6. Continue toward audible AirPlay only after fresh hardware evidence establishes the working boundary; keep protocol, decrypt, ALAC, PCM, and GameOS output claims separate.

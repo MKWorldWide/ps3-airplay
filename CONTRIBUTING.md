@@ -5,6 +5,7 @@ Thanks for helping improve PS3 AirPlay. Contributions and testing reports are we
 ## Before starting
 
 - Check the [roadmap](docs/ROADMAP.md), [open issues](https://github.com/MKWorldWide/ps3-airplay/issues), and [architecture](docs/ARCHITECTURE.md).
+- Follow the project's [versioning policy](docs/VERSIONING.md); every new package consumes a unique version, including failed candidates.
 - For substantial changes, open or comment on an issue to agree on scope.
 - Keep protocol parsing, memory use, sessions, queues, and diagnostic output bounded.
 - Keep standalone application work separate from resident PRX work. A PRX build or structural check does not establish Cobra compatibility.

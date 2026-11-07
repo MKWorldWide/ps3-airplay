@@ -39,7 +39,7 @@ INCLUDES := include
 TITLE := PS3 AirPlay 1 Receiver
 APPID := AIRPLAY02
 CONTENTID := UP0001-$(APPID)_00-0000000000000000
-APP_VERSION ?= 0.1.4
+APP_VERSION ?= 0.1.6
 
 ifeq ($(LEGACY_RUNTIME),1)
 # The 2020 PSL1GHT headers declare select() through net/select.h. Do not set

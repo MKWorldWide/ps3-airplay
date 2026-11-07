@@ -2,22 +2,23 @@
 set -euo pipefail
 
 : "${PS3DK_SOURCE:?Set PS3DK_SOURCE to the PS3DK v0.27.0 source tree}"
+: "${PS3DEV:?Set PS3DEV to the same legacy PS3DEV bundle used to build the receiver ELF}"
 PROJECT_ROOT="${PROJECT_ROOT:-$(pwd)}"
-PS3DEV="${PS3DEV:-$PS3DK_SOURCE/stage/ps3dev}"
 PS3DK_TOOLS="${PS3DK_TOOLS:-$HOME/ps3-airplay-host/ps3-sdk-tools-v0.27.0-linux-x86_64/bin}"
+SELF_TOOL="${SELF_TOOL:-$PS3DK_TOOLS/make_self_npdrm}"
+PKG_TOOL="${PKG_TOOL:-$PS3DK_TOOLS/pkg}"
 ELF="${ELF:-$PROJECT_ROOT/build/lima-standalone-receiver/ps3-airplay-receiver.elf}"
 OUT_DIR="${OUT_DIR:-$PROJECT_ROOT/build/lima-standalone-package}"
-STAGE="$OUT_DIR/stage"
-EXTRACT="$OUT_DIR/extracted"
 APPID=AIRPLAY02
-APP_VERSION="${APP_VERSION:-0.1.4}"
-PACKAGE="$OUT_DIR/ps3-airplay-receiver-${APP_VERSION}.pkg"
+APP_VERSION="${APP_VERSION:-0.1.6}"
 CONTENTID="UP0001-${APPID}_00-0000000000000000"
+STAGE="$OUT_DIR/$CONTENTID"
+EXTRACT="$OUT_DIR/extracted"
+PACKAGE="$OUT_DIR/ps3-airplay-receiver-${APP_VERSION}.pkg"
 ICON0="$PS3DEV/bin/ICON0.PNG"
 BACKGROUND_RGB="${BACKGROUND_RGB:-$PROJECT_ROOT/build/diagnostic-background.rgb}"
 
-for tool in "$PS3DK_TOOLS/make_self_npdrm" "$PS3DK_TOOLS/pkg" \
-	"$PS3DEV/bin/sfo"; do
+for tool in "$SELF_TOOL" "$PKG_TOOL" "$PS3DEV/bin/sfo"; do
 	if [[ ! -x "$tool" ]]; then
 		echo "Missing executable: $tool" >&2
 		exit 1
@@ -40,15 +41,15 @@ cp "$ICON0" "$STAGE/ICON0.PNG"
 cp "$BACKGROUND_RGB" "$STAGE/USRDIR/background.rgb"
 sed "s/01\.00/${APP_VERSION}/g" "$PS3DEV/bin/sfo.xml" > "$OUT_DIR/sfo.xml"
 # Bind the EBOOT's NPDRM content ID to the same ID used by PARAM.SFO and PKG.
-"$PS3DK_TOOLS/make_self_npdrm" "$ELF" "$STAGE/USRDIR/EBOOT.BIN" \
+"$SELF_TOOL" "$ELF" "$STAGE/USRDIR/EBOOT.BIN" \
 	"$CONTENTID"
 "$PS3DEV/bin/sfo" --title='PS3 AirPlay' --appid="$APPID" \
 	--fromxml "$OUT_DIR/sfo.xml" "$STAGE/PARAM.SFO"
-"$PS3DK_TOOLS/pkg" --contentid="$CONTENTID" "$STAGE" "$PACKAGE"
+"$PKG_TOOL" --contentid="$CONTENTID" "$STAGE" "$PACKAGE"
 
 (
 	cd "$EXTRACT"
-	"$PS3DK_TOOLS/pkg" --extract "$PACKAGE"
+	"$PKG_TOOL" --extract "$PACKAGE"
 )
 EXTRACTED_EBOOT="$EXTRACT/$CONTENTID/USRDIR/EBOOT.BIN"
 EXTRACTED_SFO="$EXTRACT/$CONTENTID/PARAM.SFO"
@@ -64,5 +65,10 @@ cmp -n "$(wc -c < "$STAGE/USRDIR/EBOOT.BIN")" \
 	"$STAGE/USRDIR/EBOOT.BIN" "$EXTRACTED_EBOOT"
 cmp "$STAGE/ICON0.PNG" "$EXTRACTED_ICON"
 cmp "$BACKGROUND_RGB" "$EXTRACT/$CONTENTID/USRDIR/background.rgb"
-"$PS3DK_TOOLS/pkg" --list "$PACKAGE"
+PKG_LIST="$("$PKG_TOOL" --list "$PACKAGE")"
+printf '%s\n' "$PKG_LIST"
+if printf '%s\n' "$PKG_LIST" | awk '/(raw data|directory|NPDRM SELF):/ && $NF ~ /^\// { bad=1 } END { exit !bad }'; then
+	echo "PKG contains absolute entry paths; refusing to publish this package" >&2
+	exit 1
+fi
 sha256sum "$PACKAGE" "$STAGE/USRDIR/EBOOT.BIN" "$STAGE/USRDIR/background.rgb" "$STAGE/ICON0.PNG"

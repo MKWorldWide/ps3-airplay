@@ -1,8 +1,8 @@
 # Active work
 
-- **Task:** Resume AIRPLAY02 development from the earlier user-observed app-start/tone result and work toward a real iPhone RAOP session. AIRTEST01 v0.1.0 is parked.
-- **Current candidate:** AIRPLAY02 v0.1.4, locally built with the 2020 PSL1GHT runtime, route-first IPv4 selection, a five-second NetCtl wait/fallback, and a log version marker tied to `APP_VERSION`.
-- **Validation:** PPU ELF and PKG build/extraction passed. Package size 3,183,584 bytes; SHA-256 `0c1e3c74eea71f7b5829201673f4dd5211bcbf704ab00cb55e1b41cb87020ee4`. Host crypto/session/SDP/mDNS, listener/log, ALAC, PCM, and tone tests passed. Direct receiver timing-probe loopback hung again; unresolved.
-- **Hardware:** Prior AIRPLAY02 v0.1.2/v0.1.3 and AIRTEST01 v0.1.0 attempts returned user-reported `80028F21`; the old AIRPLAY log did not change. No cause is established. v0.1.4 has not been transferred, installed, or run.
-- **Next:** Before deployment, bound RSX waits and keep a responsive early START exit path. The maintainer has authorized package installation without another approval request; once the receiver build is safe to test and the user resumes, preflight the console, stage/install it, then test launch, visible screen, tone, and clean exit before any iPhone connection attempt. Do not alter boot plugin configuration.
-- **Current boundary:** This goal is paused by the user. No v0.1.4 transfer/install has happened; do not continue hardware work until the user resumes.
+- **Task:** Continue AIRPLAY02 work from the earlier user-reported startup/tone observation. AIRTEST01 remains parked; do not modify PS3 hardware or boot plugin settings during this RPCS3 pass.
+- **Latest candidate:** v0.1.6; 3,183,600 bytes; SHA-256 `c71cf7ee0ec314496971ea32d831c05238746eada6796b017092b3873a2ecc33`.
+- **v0.1.5 result:** Correct relative PKG paths and install identity validated. RPCS3 installed it, then rejected its ELF because OS/ABI was generic System V.
+- **v0.1.6 result:** Post-link patch sets `EI_OSABI=0x66` (CellOS LV2). RPCS3 installed it but still rejected the executable as an invalid ELF type before application startup; no app log was written.
+- **Build evidence:** Lima cross-build and package extraction/SFO/content checks pass. No host regression suite was run in this pass. No PS3, display, tone, iPhone, RTP, or playback test occurred.
+- **Next:** Compare SELF inner ELF type, flags, and headers against an artifact that demonstrably starts in RPCS3; add the required PS3 post-link transformation, then increment to v0.1.7 before building. Keep 0.2.0 for a stable diagnostic app with settings/logging controls and 0.3.0 for stable verified AirPlay audio.

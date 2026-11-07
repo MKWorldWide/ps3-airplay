@@ -6,7 +6,7 @@ An open source AirPlay 1 (RAOP) receiver project for PlayStation 3 homebrew, dev
 
 ## Project status
 
-This is experimental software. A previous AIRPLAY02 run reached application startup and played the five-second diagnostic tone, according to the maintainer; its exact package identity is not established. Later AIRPLAY02 packages v0.1.2 and v0.1.3 returned XMB error `80028F21` before a fresh log was written. A separate silent launch-control app (AIRTEST01 v0.1.0) also returned that error and is parked. A new AIRPLAY02 v0.1.4 candidate restores the earlier route-based network address lookup, waits up to five seconds for NetCtl as a fallback, and identifies its version in diagnostics. It builds and extracts locally, but has not been transferred or tested on hardware. AirPlay playback, visible display, and reliable XMB exit remain unverified.
+This is experimental software. The maintainer reports an earlier AIRPLAY02 launch and five-second diagnostic tone, but the exact package identity is unknown. Later PS3 installs of AIRPLAY02 v0.1.2 and v0.1.3 returned XMB error `80028F21`. RPCS3 rejected local v0.1.4 and v0.1.5 candidates before app startup; v0.1.6 corrects the PPU OS/ABI marker but RPCS3 still rejects its ELF type. No current candidate has reached app logging in RPCS3, and no recent package was installed on the console. Visible output, clean exit, iPhone connection, and AirPlay music remain unverified. See the [roadmap](docs/ROADMAP.md) and [versioning policy](docs/VERSIONING.md).
 
 The resident PRX currently receives and decodes supported audio packets for diagnostics; it does not output PCM. Game audio coexistence is a separate feasibility question. No universal in-game mixing capability is claimed.
 
