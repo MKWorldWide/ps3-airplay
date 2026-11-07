@@ -1,5 +1,19 @@
 # Lessons learned
 
+## Discovery does not prove the advertised address is reachable
+
+- **Problem:** The iPhone listed the receiver but reported that it could not connect; the available old log contained no RTSP accept event and may not match that attempt.
+- **Root Cause:** Not established. Source inspection found the app selected its mDNS A record by routing a UDP socket toward multicast instead of using the PS3 network controller's assigned IPv4 address. Discovery can succeed while a wrong address or another listener problem still prevents TCP connection.
+- **Fix:** Version 0.1.2 uses NetCtl's IP address only after `IPObtained`, records privacy-safe listener readiness/accept/method/status events, and keeps service/protocol compatibility changes separately testable.
+- **Prevention Rule:** Treat the NetCtl change as a likely defect correction, not a proven cause; tie a new hardware log to the exact build and use the next failure stage to choose the next change.
+
+## Make the bounded log rollover visible
+
+- **Problem:** A capped diagnostic file could silently restart, making a retrieved log appear to begin in the middle of a session.
+- **Root Cause:** The logger enforced its byte limit but did not mark a rollover.
+- **Fix:** Add a `LOG_WRAPPED` event with the previous byte count, and test both the cap and marker.
+- **Prevention Rule:** When bounded diagnostic history rolls over, preserve a compact explicit boundary event without exceeding the configured cap.
+
 ## Blank foreground screen and no clean app exit
 
 - **Problem:** The receiver played its five-second tone, but the PS3 screen stayed black and the user needed a long power-button press to return to XMB. The iPhone listed the receiver but could not connect.

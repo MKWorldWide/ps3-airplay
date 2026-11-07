@@ -11,3 +11,4 @@ This directory contains project decisions and release evidence suitable for the 
 - [Stage the screen-enabled PS3 package](2026-11-07_0040_stage_screen_package.md)
 - [Inspect the receiver startup log](2026-11-07_0042_inspect_startup_log.md)
 - [Improve RSX scanout diagnostics](2026-11-07_0049_display_scanout_diagnostic.md)
+- [Correct discovery address and add receiver diagnostics](2026-11-07_0108_raop_diagnostics_012.md)

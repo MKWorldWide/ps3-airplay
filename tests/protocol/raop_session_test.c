@@ -14,6 +14,9 @@ static void request(raop_session *session, const char *message,
 		assert(0);
 	}
 	assert(strstr(response, expected_text) != NULL);
+	assert(strstr(response, "Server: AirTunes/105.1\r\n") != NULL);
+	assert(strstr(response,
+		"Audio-Jack-Status: connected; type=analog\r\n") != NULL);
 	if (expected_status != 0) {
 		char status[32];
 		(void)snprintf(status, sizeof(status), "RTSP/1.0 %d ", expected_status);
@@ -34,6 +37,8 @@ int main(void)
 
 	request(&session, "OPTIONS * RTSP/1.0\r\nCSeq: 1\r\n\r\n",
 		200, "Public: OPTIONS, ANNOUNCE");
+	request(&session, "OPTIONS * RTSP/1.0\r\nCSeq: 1\r\n\r\n",
+		200, "PAUSE");
 	assert(session.state == RAOP_SESSION_IDLE);
 	request(&session, announce, 200, "CSeq: 2");
 	assert(session.state == RAOP_SESSION_ANNOUNCED);
@@ -50,16 +55,24 @@ int main(void)
 		200, "Audio-Latency: 11025");
 	assert(session.state == RAOP_SESSION_RECORDING);
 	request(&session,
-		"GET_PARAMETER rtsp://ps3/stream RTSP/1.0\r\nCSeq: 5\r\n\r\n",
+		"PAUSE rtsp://ps3/stream RTSP/1.0\r\nCSeq: 5\r\n\r\n",
+		200, "Session: PS3AIRPLAY000001");
+	assert(session.state == RAOP_SESSION_PAUSED);
+	request(&session,
+		"RECORD rtsp://ps3/stream RTSP/1.0\r\nCSeq: 6\r\n\r\n",
+		200, "Audio-Latency: 11025");
+	assert(session.state == RAOP_SESSION_RECORDING);
+	request(&session,
+		"GET_PARAMETER rtsp://ps3/stream RTSP/1.0\r\nCSeq: 7\r\n\r\n",
 		200, "Session: PS3AIRPLAY000001");
 	request(&session,
-		"FLUSH rtsp://ps3/stream RTSP/1.0\r\nCSeq: 6\r\n\r\n",
-		200, "CSeq: 6");
+		"FLUSH rtsp://ps3/stream RTSP/1.0\r\nCSeq: 8\r\n\r\n",
+		200, "CSeq: 8");
 	request(&session,
-		"TEARDOWN rtsp://ps3/stream RTSP/1.0\r\nCSeq: 7\r\n\r\n",
+		"TEARDOWN rtsp://ps3/stream RTSP/1.0\r\nCSeq: 9\r\n\r\n",
 		200, "Session: PS3AIRPLAY000001");
 	assert(session.state == RAOP_SESSION_IDLE);
-	assert(session.requests == 7);
+	assert(session.requests == 10);
 
 	raop_session_init(&session, 6000, 6001, 6002);
 	request(&session, announce, 200, "CSeq: 2");

@@ -1,5 +1,18 @@
 # Third-party notices
 
+## AirPort Express RAOP compatibility key
+
+`src/crypto/airport_private_key.h` contains the well-known RSA private key
+extracted from Apple's AirPort Express and published for legacy RAOP receiver
+interoperability. It is not a project, maintainer, console, or account
+credential; the same protocol key is present in established open-source RAOP
+receivers such as [Shairport Sync](https://github.com/mikebrady/shairport-sync)
+and is discussed in the [OpenAirPlay 1 design notes](https://github.com/st3fan/openairplay1/blob/main/notes/design.md).
+It is third-party material and is not covered by this repository's MIT license.
+
+The repository's initial public commit already included this compatibility
+key. Removing it from the current tree would not erase that historical copy.
+
 ## `azarucha/sys-airplay` mDNS reference
 
 The RAOP DNS-SD record layout in `src/discovery/raop_mdns.c` was informed by

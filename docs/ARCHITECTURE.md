@@ -24,7 +24,7 @@ The standalone receiver and resident PRX share portable protocol/codec component
 - `src/crypto`: RAOP challenge response and session-key/audio packet crypto.
 - `src/codec`: bounded ALAC decoder wrapper.
 - `src/audio`: bounded PCM ring, conversion, and resampling.
-- `src/observability`: capped diagnostic logging that avoids stream content and peer identifiers.
+- `src/observability`: 16 KiB capped diagnostic logging that avoids stream content, peer addresses, keys, and track identifiers; wrap events identify when the bounded file rolls over.
 - `prototype/standalone-receiver`: standalone app wiring for discovery, receive, decode, audio output, RSX diagnostic display, and controller-requested exit.
 - `experimental/resident`: diagnostic PRX candidate; decoded PCM is discarded.
 
@@ -32,6 +32,8 @@ The standalone receiver and resident PRX share portable protocol/codec component
 
 - Bound sessions, packet sizes, queue depths, timeouts, decoding work, and log storage.
 - Advertised RAOP capabilities must match implemented behavior. Current host checks do not prove sender interoperability.
+- The standalone app advertises the IPv4 address returned by NetCtl after `IPObtained`; the former multicast-socket route selection could choose an address that did not match the PS3's active network configuration.
+- Verbose package logging records allowlisted RTSP method names, response codes, state changes, selected numeric SDP fields, listener/UDP readiness and errors, and batched RTP counters. It never records request bodies or peer addresses.
 - Keep private keys, credentials, track metadata, peer addresses, and raw requests out of logs.
 - Keep the standalone audio path distinct from the resident module path.
 - Preserve the boundary between structural build checks and PS3 runtime evidence.

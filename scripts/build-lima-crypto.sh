@@ -74,6 +74,17 @@ cc -std=c11 -Wall -Wextra -Werror -g -fsanitize=address,undefined \
 	-o "$HOST_SESSION_TEST"
 "$HOST_SESSION_TEST"
 
+HOST_STATE_TEST="$PROJECT_ROOT/build/lima-crypto/raop_session_test"
+cc -std=c11 -Wall -Wextra -Werror -g -fsanitize=address,undefined \
+	-I"$PROJECT_ROOT/src/crypto" -I"$PROJECT_ROOT/src/protocol" \
+	-I"$MBEDTLS_INCLUDE" -DMBEDTLS_NO_PLATFORM_ENTROPY \
+	"$PROJECT_ROOT/src/crypto/raop_crypto.c" \
+	"$PROJECT_ROOT/src/protocol/raop_sdp.c" \
+	"$PROJECT_ROOT/src/protocol/raop_session.c" \
+	"$PROJECT_ROOT/tests/protocol/raop_session_test.c" "$HOST_LIBRARY" \
+	-o "$HOST_STATE_TEST"
+"$HOST_STATE_TEST"
+
 cc -std=c11 -Wall -Wextra -Werror \
 	-I"$PROJECT_ROOT/src/crypto" -I"$PROJECT_ROOT/src/protocol" \
 	-I"$MBEDTLS_INCLUDE" -DMBEDTLS_NO_PLATFORM_ENTROPY \
@@ -83,6 +94,14 @@ cc -std=c11 -Wall -Wextra -Werror \
 	"$PROJECT_ROOT/tests/protocol/raop_sdp_test.c" "$HOST_LIBRARY" \
 	-o "$HOST_SDP_TEST"
 "$HOST_SDP_TEST"
+
+MDNS_TEST="$PROJECT_ROOT/build/lima-crypto/raop_mdns_test"
+cc -D_DEFAULT_SOURCE -std=c11 -Wall -Wextra -Werror -g -fsanitize=address,undefined \
+	-I"$PROJECT_ROOT/src/discovery" \
+	"$PROJECT_ROOT/src/discovery/raop_mdns.c" \
+	"$PROJECT_ROOT/src/discovery/raop_mdns_service.c" \
+	"$PROJECT_ROOT/tests/discovery/raop_mdns_test.c" -o "$MDNS_TEST"
+"$MDNS_TEST"
 
 cc -std=c11 -Wall -Wextra -Werror -g -fsanitize=address,undefined -pthread \
 	-I"$PROJECT_ROOT/src/crypto" -I"$PROJECT_ROOT/src/protocol" \
@@ -97,6 +116,16 @@ cc -std=c11 -Wall -Wextra -Werror -g -fsanitize=address,undefined -pthread \
 	"$PROJECT_ROOT/tests/protocol/raop_receiver_test.c" "$HOST_LIBRARY" \
 	-o "$PROJECT_ROOT/build/lima-crypto/raop_receiver_test"
 "$PROJECT_ROOT/build/lima-crypto/raop_receiver_test"
+
+RTSP_LOG_TEST="$PROJECT_ROOT/build/lima-crypto/rtsp_listener_test"
+cc -std=c11 -Wall -Wextra -Werror -g -fsanitize=address,undefined -pthread \
+	-I"$PROJECT_ROOT/src/protocol" -I"$PROJECT_ROOT/src/observability" \
+	"$PROJECT_ROOT/src/protocol/rtsp_diagnostic.c" \
+	"$PROJECT_ROOT/src/protocol/rtsp_listener.c" \
+	"$PROJECT_ROOT/src/observability/receiver_log.c" \
+	"$PROJECT_ROOT/tests/protocol/rtsp_listener_test.c" \
+	-o "$RTSP_LOG_TEST"
+"$RTSP_LOG_TEST"
 
 ALAC_TEST="$PROJECT_ROOT/build/lima-crypto/raop_alac_test"
 cc -std=c11 -Wall -Wextra -Werror -g -fsanitize=address,undefined \

@@ -183,6 +183,12 @@ int main(void)
 
 	assert(stat(path, &metadata) == 0);
 	assert((size_t)metadata.st_size <= RECEIVER_LOG_MAX_BYTES);
+	readback = fopen(path, "rb");
+	assert(readback != NULL);
+	amount = fread(log_contents, 1, sizeof(log_contents) - 1, readback);
+	log_contents[amount] = '\0';
+	assert(fclose(readback) == 0);
+	assert(strstr(log_contents, "event=LOG_WRAPPED") != NULL);
 	assert(unlink(path) == 0);
 	puts("rtsp listener and capped log: PASS");
 	return 0;

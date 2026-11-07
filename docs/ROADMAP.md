@@ -1,14 +1,14 @@
 # Roadmap
 
-**Status: experimental; the standalone receiver played its diagnostic tone on PS3 hardware, but showed a black screen and did not complete an iPhone connection. Revised high-visibility version 01.02 builds locally; version 01.01 remains staged, and the observed run's package identity is unknown.** This roadmap separates build evidence from behavior that still requires a PS3 and an iPhone.
+**Status: experimental; an earlier standalone run reportedly played its diagnostic tone but showed a black screen, and the iPhone listed the receiver but did not connect. Version 0.1.2 builds and extracts locally with verbose logging and a NetCtl-derived advertised address; it has not been transferred or tested on hardware.** This roadmap separates build evidence from behavior that still requires a PS3 and an iPhone.
 
 ## Milestones
 
 | Milestone | Goal | Status |
 |---|---|---|
 | Build foundation | Reproducible PPU build and sample PRX structure check | Host/toolchain work complete; hardware compatibility unknown |
-| Standalone audio | Launch the receiver and verify audible output at the system menu | Five-second tone heard on hardware; screen output and clean exit unresolved; version 01.01 package staged |
-| AirPlay interoperability | Discover the receiver and complete a real iPhone RAOP session | iPhone lists `ps3-airplay-diagnostic`; selecting it fails to connect |
+| Standalone audio | Launch the receiver and verify audible output at the system menu | Earlier five-second tone reported; screen output and clean exit unresolved; 0.1.2 local only |
+| AirPlay interoperability | Discover the receiver and complete a real iPhone RAOP session | Earlier iPhone listing followed by connection failure; cause unconfirmed |
 | Standalone playback | Stable playback, controls, reconnects, and a 30-minute session | Not tested |
 | Resident module | Safely load, receive, stop, and unload a diagnostic PRX | Build checks only; no hardware test |
 | Game coexistence | Determine whether audio can coexist with game audio | Separate feasibility gate; no evidence yet |
@@ -21,9 +21,9 @@ Portable components cover bounded DNS-SD/mDNS, RTSP/SDP session handling, UDP RT
 ## Next steps
 
 1. Improve RTP jitter handling and sender-clock scheduling with bounded memory and measurable host tests.
-2. Review the revised high-visibility 01.02 package; install only after the user approves that exact package.
-3. Check the `DISPLAY ACTIVE` banner and controller START exit before another network attempt.
-4. Retrieve the capped log and diagnose the iPhone connection attempt from RTSP/session events before changing advertised capabilities.
+2. Obtain approval for the exact 0.1.2 PKG before replacing the staged package; install it from XMB.
+3. Check the `DISPLAY ACTIVE` banner and controller START exit.
+4. Try the iPhone once and retrieve the capped log; use accept, method, status, state, SDP, and RTP events to locate the failure before changing capabilities.
 5. Re-test audio and iPhone RAOP behavior after the display/exit gate is stable.
 6. Consider resident PRX lifecycle testing as a separate, reversible experiment.
 7. Test audio coexistence per title only after resident lifecycle and standalone output are established.

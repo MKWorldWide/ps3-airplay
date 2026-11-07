@@ -44,7 +44,7 @@ CFLAGS := -O2 -Wall -Wextra -Werror \
 	-Wno-pointer-to-int-cast -Wno-int-to-pointer-cast \
 	-mcpu=cell $(MACHDEP) \
 	-DMBEDTLS_NO_PLATFORM_ENTROPY -DMBEDTLS_PLATFORM_MS_TIME_ALT \
-	-DRAOP_USE_PSL1GHT -D__SELECT_H__ \
+	-DRAOP_USE_PSL1GHT -DRAOP_VERBOSE_LOGGING=1 -D__SELECT_H__ \
 	-include $(PS3DK)/ppu/include/sys/select.h \
 	-I$(MBEDTLS_INCLUDE) $(INCLUDE)
 LIBS := -laudio -lgcm_sys -lrsx -lio -lsysutil -lnetctl -lnet -lsysmodule -lrt -lm \

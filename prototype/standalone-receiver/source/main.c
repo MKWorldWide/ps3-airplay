@@ -75,28 +75,6 @@ static int log_event(const char *event, int value, size_t bytes)
 	return receiver_log_file_event(&diagnostic_log, timestamp, event, value, bytes);
 }
 
-static int local_ipv4(uint8_t address[4])
-{
-	struct sockaddr_in multicast = {0};
-	struct sockaddr_in local = {0};
-	socklen_t length = sizeof(local);
-	int fd = socket(AF_INET, SOCK_DGRAM, 0);
-	int result = 0;
-	if (fd < 0)
-		return 0;
-	multicast.sin_family = AF_INET;
-	multicast.sin_addr.s_addr = htonl(0xe00000fbU);
-	multicast.sin_port = htons(5353);
-	if (connect(fd, (struct sockaddr *)&multicast, sizeof(multicast)) == 0 &&
-		getsockname(fd, (struct sockaddr *)&local, &length) == 0 &&
-		local.sin_addr.s_addr != htonl(INADDR_ANY)) {
-		memcpy(address, &local.sin_addr.s_addr, 4);
-		result = 1;
-	}
-	(void)close(fd);
-	return result;
-}
-
 static void fill_audio_silence(const audioPortConfig *config)
 {
 	float *audio_data = (float *)(uintptr_t)config->audioDataStart;
@@ -157,6 +135,9 @@ int main(void)
 	audioPortParam audio_params = {0};
 	audioPortConfig audio_config = {0};
 	union net_ctl_info net_info;
+	union net_ctl_info ip_info;
+	s32 network_state = NET_CTL_STATE_Disconnected;
+	struct in_addr network_address;
 	uint8_t ip[4];
 	char instance[64], host[64];
 	u64 next_log_us = 0;
@@ -171,6 +152,7 @@ int main(void)
 		goto cleanup;
 	}
 	(void)log_event("APP_START", 0, 0);
+	(void)log_event("PKG_VERSION_0.1.2", 0, 0);
 	screen_result = diagnostic_screen_open(&screen, BACKGROUND_RGB_PATH);
 	if (screen_result == DIAGNOSTIC_SCREEN_OK) {
 		(void)log_event("SCREEN_READY", screen.width, 0);
@@ -189,6 +171,7 @@ int main(void)
 		goto cleanup;
 	}
 	net_started = 1;
+	(void)log_event("NET_READY", 1, 0);
 	if (sysModuleLoad(SYSMODULE_NETCTL) < 0) {
 		(void)log_event("NETCTL_LOAD_FAILED", -1, 0);
 		goto cleanup;
@@ -199,6 +182,7 @@ int main(void)
 		goto cleanup;
 	}
 	netctl_started = 1;
+	(void)log_event("NETCTL_READY", 1, 0);
 	if (netCtlGetInfo(NET_CTL_INFO_ETHER_ADDR, &net_info) != 0) {
 		(void)log_event("NETCTL_INFO_FAILED", -1, 0);
 		goto cleanup;
@@ -208,6 +192,7 @@ int main(void)
 		goto cleanup;
 	}
 	crypto_started = 1;
+	(void)log_event("CRYPTO_READY", 1, 0);
 	if (!raop_receiver_open(&receiver, RTSP_PORT, RTP_BASE_PORT,
 		&diagnostic_log)) {
 		(void)log_event("RECEIVER_OPEN_FAILED", -1, 0);
@@ -219,10 +204,19 @@ int main(void)
 		(void)log_event("RECEIVER_CRYPTO_FAILED", -1, 0);
 		goto cleanup;
 	}
-	if (!local_ipv4(ip)) {
-		(void)log_event("LOCAL_IP_FAILED", -1, 0);
+	if (netCtlGetState(&network_state) != 0 ||
+		network_state != NET_CTL_STATE_IPObtained) {
+		(void)log_event("NET_STATE_FAILED", (int)network_state, 0);
 		goto cleanup;
 	}
+	if (netCtlGetInfo(NET_CTL_INFO_IP_ADDRESS, &ip_info) != 0 ||
+		inet_pton(AF_INET, ip_info.ip_address, &network_address) != 1 ||
+		network_address.s_addr == htonl(INADDR_ANY)) {
+		(void)log_event("NET_IP_FAILED", -1, 0);
+		goto cleanup;
+	}
+	memcpy(ip, &network_address.s_addr, sizeof(ip));
+	(void)log_event("NET_IP_READY", 1, sizeof(ip));
 	(void)snprintf(instance, sizeof(instance),
 		"%02X%02X%02X%02X%02X%02X@PS3-AirPlay-Diagnostic",
 		net_info.ether_addr.data[0], net_info.ether_addr.data[1],

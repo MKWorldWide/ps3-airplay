@@ -256,7 +256,9 @@ static int write_response(char *response, size_t capacity, int status,
 	const char *reason, const request_fields *fields, const char *extra)
 {
 	int count = snprintf(response, capacity,
-		"RTSP/1.0 %d %s\r\nCSeq: %s\r\n%sContent-Length: 0\r\n\r\n",
+		"RTSP/1.0 %d %s\r\nCSeq: %s\r\nServer: AirTunes/105.1\r\n"
+		"Audio-Jack-Status: connected; type=analog\r\n%s"
+		"Content-Length: 0\r\n\r\n",
 		status, reason, fields->cseq, extra == NULL ? "" : extra);
 	return count > 0 && (size_t)count < capacity;
 }
@@ -315,7 +317,7 @@ int raop_session_handle(raop_session *session, const char *request,
 	if (status != 200) {
 		/* Challenge errors are answered below without advancing session state. */
 	} else if (strcmp(fields.method, "OPTIONS") == 0) {
-		extra = "Public: OPTIONS, ANNOUNCE, SETUP, RECORD, FLUSH, TEARDOWN, "
+		extra = "Public: OPTIONS, ANNOUNCE, SETUP, RECORD, PAUSE, FLUSH, TEARDOWN, "
 			"GET_PARAMETER, SET_PARAMETER\r\n";
 	} else if (strcmp(fields.method, "ANNOUNCE") == 0) {
 		const char *sdp = request + fields.body_offset;
@@ -386,7 +388,10 @@ int raop_session_handle(raop_session *session, const char *request,
 			reason = "Unsupported Transport";
 		} else {
 			count = snprintf(response, response_capacity,
-				"RTSP/1.0 200 OK\r\nCSeq: %s\r\n%sSession: PS3AIRPLAY000001\r\n"
+				"RTSP/1.0 200 OK\r\nCSeq: %s\r\n"
+				"Server: AirTunes/105.1\r\n"
+				"Audio-Jack-Status: connected; type=analog\r\n"
+				"%sSession: PS3AIRPLAY000001\r\n"
 				"Transport: RTP/AVP/UDP;unicast;mode=record;server_port=%u;"
 				"control_port=%u;timing_port=%u\r\nContent-Length: 0\r\n\r\n",
 				fields.cseq, apple_header, session->audio_port, session->control_port,
@@ -398,15 +403,25 @@ int raop_session_handle(raop_session *session, const char *request,
 			next_state = RAOP_SESSION_SETUP;
 		}
 	} else if (strcmp(fields.method, "RECORD") == 0) {
-		if (session->state != RAOP_SESSION_SETUP) {
+		if (session->state != RAOP_SESSION_SETUP &&
+			session->state != RAOP_SESSION_PAUSED) {
 			status = 455;
 			reason = "Method Not Valid in This State";
 		} else {
 			next_state = RAOP_SESSION_RECORDING;
 			extra = "Session: PS3AIRPLAY000001\r\nAudio-Latency: 11025\r\n";
 		}
-	} else if (strcmp(fields.method, "FLUSH") == 0) {
+	} else if (strcmp(fields.method, "PAUSE") == 0) {
 		if (session->state != RAOP_SESSION_RECORDING) {
+			status = 455;
+			reason = "Method Not Valid in This State";
+		} else {
+			next_state = RAOP_SESSION_PAUSED;
+			extra = "Session: PS3AIRPLAY000001\r\n";
+		}
+	} else if (strcmp(fields.method, "FLUSH") == 0) {
+		if (session->state != RAOP_SESSION_RECORDING &&
+			session->state != RAOP_SESSION_PAUSED) {
 			status = 455;
 			reason = "Method Not Valid in This State";
 		} else {

@@ -191,6 +191,33 @@ static void log_event(raop_receiver *receiver, const char *event,
 	(void)receiver_log_file_event(receiver->log, timestamp, event, value, bytes);
 }
 
+#ifdef RAOP_VERBOSE_LOGGING
+static const char *rtsp_method_event(const char *request, size_t length)
+{
+	static const struct {
+		const char *method;
+		const char *event;
+	} methods[] = {
+		{"OPTIONS", "RTSP_OPTIONS"}, {"ANNOUNCE", "RTSP_ANNOUNCE"},
+		{"SETUP", "RTSP_SETUP"}, {"RECORD", "RTSP_RECORD"},
+		{"PAUSE", "RTSP_PAUSE"}, {"FLUSH", "RTSP_FLUSH"},
+		{"TEARDOWN", "RTSP_TEARDOWN"},
+		{"GET_PARAMETER", "RTSP_GET_PARAMETER"},
+		{"SET_PARAMETER", "RTSP_SET_PARAMETER"}
+	};
+	const char *space = memchr(request, ' ', length);
+	size_t method_length, i;
+	if (space == NULL)
+		return "RTSP_UNKNOWN";
+	method_length = (size_t)(space - request);
+	for (i = 0; i < sizeof(methods) / sizeof(methods[0]); ++i)
+		if (strlen(methods[i].method) == method_length &&
+			memcmp(request, methods[i].method, method_length) == 0)
+			return methods[i].event;
+	return "RTSP_OTHER";
+}
+#endif
+
 static void disconnect_client(raop_receiver *receiver)
 {
 	if (receiver->client_fd >= 0)
@@ -268,15 +295,30 @@ static int serve_messages(raop_receiver *receiver)
 		int result = message_length(receiver->request,
 			receiver->request_length, &size);
 		char response[RAOP_SESSION_RESPONSE_MAX];
+#ifdef RAOP_VERBOSE_LOGGING
+		const char *method_event;
+		raop_session_state previous_state;
+#endif
 		if (result == 0)
 			return 1;
+#ifdef RAOP_VERBOSE_LOGGING
+		method_event = rtsp_method_event(receiver->request,
+			receiver->request_length);
+		previous_state = receiver->session.state;
+		log_event(receiver, method_event, (int)previous_state,
+			size > 0 ? size : receiver->request_length);
+#endif
 		if (result < 0 || !raop_session_handle(&receiver->session,
 			receiver->request, size, response, sizeof(response))) {
-			log_event(receiver, "RTSP_BAD_FRAME", -1, receiver->request_length);
+			log_event(receiver, "RTSP_BAD_FRAME", result, receiver->request_length);
 			return 0;
 		}
-		if (!send_all(receiver->client_fd, response, strlen(response)))
+		if (!send_all(receiver->client_fd, response, strlen(response))) {
+#ifdef RAOP_VERBOSE_LOGGING
+			log_event(receiver, "RTSP_SEND_FAIL", errno, strlen(response));
+#endif
 			return 0;
+		}
 		if (receiver->session.state != RAOP_SESSION_RECORDING ||
 			(size >= 6 && memcmp(receiver->request, "FLUSH ", 6) == 0) ||
 			(size >= 9 && memcmp(receiver->request, "TEARDOWN ", 9) == 0))
@@ -284,7 +326,24 @@ static int serve_messages(raop_receiver *receiver)
 		{
 			int status = 0;
 			(void)sscanf(response, "RTSP/1.0 %d", &status);
+#ifdef RAOP_VERBOSE_LOGGING
+			log_event(receiver, "RTSP_STATUS", status, size);
+			if (receiver->session.state != previous_state)
+				log_event(receiver, "RAOP_STATE",
+					(int)receiver->session.state, 0);
+			if (status == 200 && strcmp(method_event, "RTSP_ANNOUNCE") == 0) {
+				log_event(receiver, "SDP_RATE",
+					(int)receiver->session.offer.fmtp[10], 0);
+				log_event(receiver, "SDP_CHANNELS",
+					(int)receiver->session.offer.fmtp[6], 0);
+				log_event(receiver, "SDP_BITS",
+					(int)receiver->session.offer.fmtp[2], 0);
+				log_event(receiver, "SDP_ENCRYPTED",
+					receiver->session.has_audio_key, 0);
+			}
+#else
 			log_event(receiver, "RTSP_MESSAGE", status, size);
+#endif
 		}
 		receiver->request_length -= size;
 		if (receiver->request_length > 0)
@@ -307,8 +366,14 @@ static int receive_client(raop_receiver *receiver)
 		receiver->request + receiver->request_length, available, 0);
 	if (amount < 0 && (errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK))
 		return 1;
-	if (amount <= 0)
+	if (amount == 0) {
+		log_event(receiver, "RTSP_PEER_CLOSED", 0, receiver->request_length);
 		return 0;
+	}
+	if (amount < 0) {
+		log_event(receiver, "RTSP_RECV_FAIL", errno, receiver->request_length);
+		return 0;
+	}
 	if (previous_length == 0)
 		receiver->request_started_ms = monotonic_milliseconds();
 	receiver->client_last_activity_ms = monotonic_milliseconds();
@@ -541,10 +606,20 @@ int raop_receiver_open(raop_receiver *receiver, uint16_t rtsp_port,
 	receiver->tcp_fd = bind_socket(SOCK_STREAM, rtsp_port,
 		&receiver->rtsp_port);
 	if (receiver->tcp_fd < 0 || listen(receiver->tcp_fd, 1) < 0)
+	{
+#ifdef RAOP_VERBOSE_LOGGING
+		log_event(receiver, receiver->tcp_fd < 0 ? "RTSP_BIND_FAIL" :
+			"RTSP_LISTEN_FAIL", errno, 0);
+#endif
 		goto fail;
+	}
 	receiver->audio_fd = bind_socket(SOCK_DGRAM, p0, &receiver->audio_port);
-	if (receiver->audio_fd < 0)
+	if (receiver->audio_fd < 0) {
+#ifdef RAOP_VERBOSE_LOGGING
+		log_event(receiver, "RTP_AUDIO_BIND_FAIL", errno, 0);
+#endif
 		goto fail;
+	}
 	if (rtp_base_port != 0) {
 		p1 = (uint16_t)(rtp_base_port + 1);
 		p2 = (uint16_t)(rtp_base_port + 2);
@@ -553,10 +628,26 @@ int raop_receiver_open(raop_receiver *receiver, uint16_t rtsp_port,
 		&receiver->control_port);
 	receiver->timing_fd = bind_socket(SOCK_DGRAM, p2,
 		&receiver->timing_port);
-	if (receiver->control_fd < 0 || receiver->timing_fd < 0)
+	if (receiver->control_fd < 0) {
+#ifdef RAOP_VERBOSE_LOGGING
+		log_event(receiver, "RTP_CONTROL_BIND_FAIL", errno, 0);
+#endif
 		goto fail;
+	}
+	if (receiver->timing_fd < 0) {
+#ifdef RAOP_VERBOSE_LOGGING
+		log_event(receiver, "RTP_TIMING_BIND_FAIL", errno, 0);
+#endif
+		goto fail;
+	}
 	raop_session_init(&receiver->session, receiver->audio_port,
 		receiver->control_port, receiver->timing_port);
+#ifdef RAOP_VERBOSE_LOGGING
+	log_event(receiver, "RTSP_LISTEN_READY", receiver->rtsp_port, 0);
+	log_event(receiver, "RTP_AUDIO_READY", receiver->audio_port, 0);
+	log_event(receiver, "RTP_CONTROL_READY", receiver->control_port, 0);
+	log_event(receiver, "RTP_TIMING_READY", receiver->timing_port, 0);
+#endif
 	return 1;
 fail:
 	raop_receiver_close(receiver);
@@ -612,8 +703,14 @@ int raop_receiver_poll(raop_receiver *receiver, unsigned int timeout_ms)
 	timeout.tv_sec = (long)(timeout_ms / 1000U);
 	timeout.tv_usec = (long)(timeout_ms % 1000U) * 1000L;
 	result = select(max_fd + 1, &read_set, NULL, NULL, &timeout);
-	if (result < 0)
+	if (result < 0) {
+		if (errno != EINTR) {
+#ifdef RAOP_VERBOSE_LOGGING
+			log_event(receiver, "RTSP_SELECT_FAIL", errno, 0);
+#endif
+		}
 		return errno == EINTR ? 0 : -1;
+	}
 	if (result == 0) {
 		send_timing_request_if_due(receiver, monotonic_milliseconds());
 		return 0;
@@ -624,6 +721,9 @@ int raop_receiver_poll(raop_receiver *receiver, unsigned int timeout_ms)
 		int fd = accept(receiver->tcp_fd, (struct sockaddr *)&peer, &length);
 		if (fd >= 0) {
 			if (receiver->client_fd >= 0) {
+#ifdef RAOP_VERBOSE_LOGGING
+				log_event(receiver, "RTSP_BUSY_DROP", 0, 0);
+#endif
 				close_socket(fd);
 			} else {
 				receiver->client_fd = fd;
@@ -641,6 +741,10 @@ int raop_receiver_poll(raop_receiver *receiver, unsigned int timeout_ms)
 					log_event(receiver, "RTSP_CONNECTED", 0, 0);
 				}
 			}
+		} else if (errno != EINTR && errno != EAGAIN && errno != EWOULDBLOCK) {
+#ifdef RAOP_VERBOSE_LOGGING
+			log_event(receiver, "RTSP_ACCEPT_FAIL", errno, 0);
+#endif
 		}
 	}
 	if (receiver->client_fd >= 0 && FD_ISSET(receiver->client_fd, &read_set)) {

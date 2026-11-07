@@ -49,3 +49,13 @@ The retrieved log's `SCREEN_READY` event means the app completed RSX setup and i
 3. Relaunch only if the first check exits normally. Try the iPhone connection once, then return using START.
 4. Retrieve `/dev_hdd0/tmp/ps3-airplay.log` over FTP after a confirmed test run and inspect/redact it locally. Use the RTSP and session events to locate the failed connection stage before adjusting service capabilities.
 5. Keep boot plugin configuration unchanged. Do not repeat a long power-button shutdown unless the console becomes unresponsive and no safe exit is available.
+
+## Version 0.1.2 receiver and diagnostic pass
+
+Version 0.1.2 was built locally after the earlier hardware report. Source inspection identified a plausible discovery/connect mismatch: the old standalone app chose the mDNS address by opening a UDP route toward the multicast group. The new build uses the IPv4 address reported by NetCtl after it reaches `IPObtained`. This is a concrete correction, but not yet a confirmed explanation for the iPhone failure.
+
+The package enables verbose allowlisted RTSP method, response status, state transition, SDP audio-format, listener/UDP socket, accept/receive, and batched RTP diagnostics. The log remains capped at 16 KiB, emits `LOG_WRAPPED` when it rolls over, and excludes request contents, peer addresses, keys, and track metadata. RTSP responses include an AirTunes server identifier and `Audio-Jack-Status`; PAUSE and RECORD resume transitions are handled.
+
+Lima host checks passed for RAOP crypto/SDP/session-crypto, persistent RTSP and UDP RTP loopback, ALAC decode, PCM ring, diagnostic tone, and PRX sample structure. The full PPU receiver cross-build succeeded with warnings treated as errors; PKG extraction confirmed `APP_VER=0.1.2`, NPDRM EBOOT, icon, and exact background size. The local package is 3,225,712 bytes with SHA-256 `923aebf6eca5693b21b494a9a4225c36629f13e8b316b2825d5deb3763226ebf`. It has not been transferred, installed, or hardware-tested. The earlier approval was for a different package hash and does not cover this artifact.
+
+Next, review and approve this exact artifact for staging. After the user installs it from XMB, first confirm visible screen output and START-to-XMB exit. Then attempt one iPhone connection, retrieve the new log, and use the last observed protocol event to distinguish address/reachability, TCP accept, RTSP negotiation, and RTP delivery. No universal game-audio mixing claim is made.

@@ -66,12 +66,27 @@ int receiver_log_file_event(receiver_log_file *log, const char *timestamp,
 		return 0;
 	if (log->bytes_written + (size_t)length > RECEIVER_LOG_MAX_BYTES) {
 		FILE *old_stream = log->stream;
+		size_t old_bytes = log->bytes_written;
 		log->stream = NULL;
 		if (fclose(old_stream) != 0)
 			return 0;
 		log->stream = fopen(log->path, "wb");
 		log->bytes_written = 0;
 		if (log->stream == NULL)
+			return 0;
+		length = snprintf(line, sizeof(line),
+			"%s event=LOG_WRAPPED value=%lu bytes=0\n", timestamp,
+			(unsigned long)old_bytes);
+		if (length <= 0 || (size_t)length >= sizeof(line) ||
+			fwrite(line, 1, (size_t)length, log->stream) != (size_t)length ||
+			fflush(log->stream) != 0)
+			return 0;
+		log->bytes_written = (size_t)length;
+		length = snprintf(line, sizeof(line),
+			"%s event=%s value=%d bytes=%lu\n", timestamp, event, value,
+			(unsigned long)byte_count);
+		if (length <= 0 || (size_t)length >= sizeof(line) ||
+			log->bytes_written + (size_t)length > RECEIVER_LOG_MAX_BYTES)
 			return 0;
 	}
 	if (fwrite(line, 1, (size_t)length, log->stream) != (size_t)length ||
