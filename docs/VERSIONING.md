@@ -86,8 +86,14 @@ The standalone receiver `Makefile` and canonical Lima build/package scripts defa
 - Runtime: RPCS3 Computer Use reports the Mac is locked; no fresh v0.1.21 install/launch or matching log. Physical PS3 was not changed. No iPhone session or audible AirPlay playback is verified.
 - The PKG, ELF, and build metadata are preserved in ignored `work/builds/0.1.21/`. Next unused package version: 0.1.22.
 
-## v0.1.22 source pass
+## v0.1.22 package record
 
+- Source: `7b44acff578ce91d7cfbe963f1156f5157b23063` on `main` (bounded successful-decryption diagnostics).
+- Artifact: `ps3-airplay-receiver-0.1.22.pkg`, AIRPLAY02, APP_VER `0.1.22`.
 - Change: count successfully decrypted audio RTP payloads and log `RTP_DECRYPT_OK` for the first success and each 128-packet milestone. Failed decryptions retain `RTP_DECRYPT_FAILED`; the log contains only a bounded numeric count and payload byte count.
-- Validation: full Lima host/sanitizer suite, composed encrypted RTP-to-PCM test with a new decrypt-counter assertion, and PPU component compilation PASS.
-- Full standalone ELF/PKG build and artifact hashes pending. RPCS3 runtime and physical hardware remain unverified.
+- ELF: 2,780,120 bytes, CellOS PPC64, five PT_LOAD segments; SHA-256 `ecfd3afa2aaafe35e60d8a6fa7540a659a8757bd045232b07a141230279ad2b0`.
+- Size / SHA-256: 3,230,512 bytes / `c7242d47669a4a22090663c969e2b4f5efd4c0cc9a0eb6ef65ad18d730080a2b`.
+- Build: existing Lima VM; PS3DK v0.27.0 PPU compiler 16.1.0, GNU ld 2.42, PSL1GHT revision `dd4e8c9be744e3273d665c393fa6d97a87402e2e`.
+- Checks: full Lima host suite with ASan/UBSan, composed encrypted RTP-to-PCM test, PPU component compilation, standalone link/ELF validation, AIRPLAY02/APP_VER/content ID, asset equality, extraction, EBOOT comparison, relative package paths, and finalized NPDRM envelope PASS.
+- Runtime: RPCS3 still has only the older v0.1.15 app log; the desktop is locked and no fresh v0.1.22 launch/log was obtained. Physical PS3 was not changed. No iPhone session or audible AirPlay playback is verified.
+- The PKG, ELF, and build metadata are preserved in ignored `work/builds/0.1.22/`. Next unused package version: 0.1.23.
