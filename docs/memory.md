@@ -221,3 +221,11 @@ Demonstration target: PS3 with Evilnat 4.93 CFW and Cobra 8.5 observed; the cons
 - Added session callback events for SDP parse start/completion and RSA key-unwrapping start/completion. Added `--remote IPV4 RTSP_PORT` mode to the encrypted RTP-to-PCM host fixture; it sends a bounded RTSP sequence and 128 encrypted RTP fixture packets to port 6000.
 - Fixed a host test evidence issue: its 4 KiB read buffer truncated the 16 KiB capped receiver log and could omit the slow-reader timeout event. The test now reads the full configured cap. Full host/ASan/UBSan and PPU component tests pass.
 - Standalone app version defaults advance to 0.1.26; package not yet built. Production port remains 5000. Do not infer iPhone compatibility or actual audio from the synthetic probe.
+
+
+## v0.1.26 RPCS3 replay and v0.1.27 diagnostics (2026-11-07)
+
+- v0.1.26 was built from pushed source `6f8d6cb6f75e331d989419aaf51bd1d147704cad` with RPCS3-only RTSP port 5001. The 2,780,208-byte CellOS PPC64 ELF SHA-256 is `eda789f1a6a7c3ab9ad3629c1d7acd0af14066f34e1cc3dac5bb198482d9210c`; the 3,231,408-byte AIRPLAY02 package SHA-256 is `82e1407b92a1218ec3085f57bd8f6c35e97255569b92a44249e14239108fc246`.
+- Fresh RPCS3 log verifies startup, route, RTSP/RTP listeners, OPTIONS 200, and SDP parse success on synthetic ANNOUNCE. It produced no response by the three-second client receive deadline. RSA unwrap start was absent, so the exact stall is unknown and RSA is not implicated by this evidence. SETUP/RECORD/RTP were not reached. RPCS3 was stopped by the harness without APP_STOP; display, audible tone, iPhone, and physical console remain unverified.
+- Full Lima host/ASan/UBSan tests, fixture callback assertions, and PPU object compilation pass from the committed source. The package was validated and copied into local RPCS3 title data after a local rollback copy; the desktop remains locked and no physical PS3 files/settings were changed.
+- v0.1.27 adds ANNOUNCE offer-field, validation completion, and response-construction checkpoints to distinguish the remaining boundary. Production RTSP port stays 5000; game audio mixing remains a separate Cobra feasibility gate.

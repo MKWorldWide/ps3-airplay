@@ -112,5 +112,18 @@ Review reports and logs for console/account identifiers, network addresses, Wi-F
 | Test | Result | Evidence and boundary |
 |---|---|---|
 | Synthetic RTSP ANNOUNCE | BLOCKED | v0.1.25 log records OPTIONS 200 and then `RTSP_ANNOUNCE`; the sender timed out waiting for the ANNOUNCE response after three seconds. No later status or error event appeared before the emulator was stopped. The exact blocked operation is not yet proven. |
-| v0.1.26 phase diagnostics | HOST PASS / RPCS3 PENDING | Adds privacy-safe SDP parse start/completion and RSA key-unwrapping start/completion events. Full Lima ASan/UBSan suite, crypto/session assertions, remote probe compilation, and PPU component compilation pass; the v0.1.26 package replay has not run yet. |
+| v0.1.26 phase diagnostics | HOST PASS / RPCS3 PARTIAL | Host assertions pass. RPCS3 confirms SDP parse start/completion but receives no response; RSA key unwrap did not start. Detailed replay is below. |
 | Sender probe | READY | The host utility can perform OPTIONS, ANNOUNCE, SETUP, RECORD, send 128 encrypted RTP fixture packets to UDP 6000, then TEARDOWN. This is synthetic test traffic, not iPhone interoperability. |
+
+
+## RPCS3 v0.1.26 ANNOUNCE replay (2026-11-07)
+
+| Test | Result | Evidence and boundary |
+|---|---|---|
+| v0.1.26 package validation | PASS | AIRPLAY02 package is 3,231,408 bytes, SHA-256 `82e1407b92a1218ec3085f57bd8f6c35e97255569b92a44249e14239108fc246`; ELF, SFO, content ID, extraction, assets, and finalized NPDRM envelope validated. |
+| RPCS3 startup and listeners | PASS | Fresh app log records APP_START, NetCtl route, RTSP 5001, and UDP 6000–6002 readiness. |
+| OPTIONS | PASS | Synthetic sender received 200; the app recorded `RTSP_STATUS=200`. |
+| ANNOUNCE SDP | PASS | App recorded `ANNOUNCE_SDP_PARSE_START` and `ANNOUNCE_SDP_PARSE_DONE value=1`. |
+| ANNOUNCE response | BLOCKED | Sender timed out waiting for the response. No key-unwrapping-start or subsequent RTSP status event appeared. The app was stopped by the test harness; no APP_STOP event was recorded. Exact blocked operation remains unknown. |
+| SETUP/RECORD/RTP | NOT REACHED | Sender stopped at ANNOUNCE; no audio fixture packets were sent. |
+| Display/audio/hardware | NOT VERIFIED | Desktop remained locked; this replay cannot establish visible pixels, audible tone, iPhone compatibility, or physical PS3 behavior. |

@@ -488,6 +488,14 @@ int raop_session_handle(raop_session *session, const char *request,
 		offer_valid = raop_sdp_parse(sdp, fields.body_length, &offer);
 		session_diagnostic(session, "ANNOUNCE_SDP_PARSE_DONE",
 			offer_valid, fields.body_length);
+		session_diagnostic(session, "ANNOUNCE_VALIDATE_START",
+			(int)session->state, offer_valid ? offer.rsa_aes_key_length : 0);
+		session_diagnostic(session, "ANNOUNCE_OFFER_FIELDS",
+			offer_valid ? (int)((offer.has_encryption_type ? 1U : 0U) |
+				((unsigned int)offer.encryption_type << 1) |
+				(offer.has_rsa_aes_key ? 1U << 9 : 0U) |
+				(offer.has_aes_iv ? 1U << 10 : 0U)) : 0,
+			offer_valid ? offer.rsa_aes_key_length : 0);
 		if (session->state != RAOP_SESSION_IDLE &&
 			session->state != RAOP_SESSION_ANNOUNCED) {
 			status = 455;
@@ -529,6 +537,8 @@ int raop_session_handle(raop_session *session, const char *request,
 			}
 			next_state = RAOP_SESSION_ANNOUNCED;
 		}
+		session_diagnostic(session, "ANNOUNCE_VALIDATE_DONE", status,
+			(unsigned int)next_state);
 	} else if (strcmp(fields.method, "SETUP") == 0) {
 		uint16_t peer_control_port = 0;
 		uint16_t peer_timing_port = 0;
@@ -632,9 +642,19 @@ int raop_session_handle(raop_session *session, const char *request,
 			return 0;
 		response_extra = combined_extra;
 	}
+	if (strcmp(fields.method, "ANNOUNCE") == 0)
+		session_diagnostic(session, "ANNOUNCE_RESPONSE_BUILD_START", status,
+			session->requests);
 	if (!write_response(response, response_capacity, status, reason, &fields,
-		response_extra))
+		response_extra)) {
+		if (strcmp(fields.method, "ANNOUNCE") == 0)
+			session_diagnostic(session, "ANNOUNCE_RESPONSE_BUILD_FAIL", status,
+				response_capacity);
 		return 0;
+	}
+	if (strcmp(fields.method, "ANNOUNCE") == 0)
+		session_diagnostic(session, "ANNOUNCE_RESPONSE_BUILD_DONE", status,
+			strlen(response));
 	if (status == 200) {
 		session->state = next_state;
 		if (clear_offer) {

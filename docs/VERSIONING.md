@@ -144,4 +144,14 @@ The standalone receiver `Makefile` and canonical Lima build/package scripts defa
 - Adds allowlisted session diagnostics around SDP parsing and RSA-wrapped session-key processing, and a reusable host-to-RPCS3 test mode that sends a synthetic RAOP session plus 128 encrypted ALAC RTP fixture packets.
 - Full Lima host/ASan/UBSan suite, crypto/session diagnostic assertions, remote probe build, and PPU component compilation pass. The first v0.1.25 remote ANNOUNCE attempt stalled before reply; v0.1.26 runtime replay is pending.
 - Standalone Makefile and canonical Lima build/package script defaults advance to 0.1.26. Keep the standard RTSP port at 5000; only RPCS3 test builds should override it to 5001 when needed.
-- Package not yet built. Next package version remains 0.1.26 until its artifact is generated.
+- The package was subsequently built and replayed; see the v0.1.26 package record below. Next package version: 0.1.27.
+
+
+## v0.1.26 package and RPCS3 replay
+
+- Source revision: `6f8d6cb6f75e331d989419aaf51bd1d147704cad`; emulator-only RTSP port 5001.
+- CellOS PPC64 ELF: 2,780,208 bytes, SHA-256 `eda789f1a6a7c3ab9ad3629c1d7acd0af14066f34e1cc3dac5bb198482d9210c`.
+- AIRPLAY02 PKG: 3,231,408 bytes, SHA-256 `82e1407b92a1218ec3085f57bd8f6c35e97255569b92a44249e14239108fc246`. Package and payload validation passed. Local artifact is retained under ignored `work/builds/0.1.26/`.
+- RPCS3 fresh log confirms startup, route, sockets, OPTIONS 200, and successful SDP parse for ANNOUNCE, followed by no response. RSA unwrap did not start; SETUP/RECORD/RTP were not reached. mDNS still fails in the emulator. No screen, audible tone, iPhone, or physical-console result is claimed.
+- Full Lima host/sanitizer and PPU component checks pass. The direct local title-payload update preserved prior app data for rollback. The GUI desktop remains locked.
+- Next package version: 0.1.27.

@@ -385,3 +385,11 @@
 - **Root Cause:** The test buffer read 4 KiB while the logger permits up to 16 KiB; the timeout event could be beyond the truncated prefix.
 - **Fix:** Size the test read buffer from `RECEIVER_LOG_MAX_BYTES` plus one terminator byte.
 - **Prevention Rule:** Test log assertions must read the full declared cap or parse incrementally; a truncated read can report a false product regression.
+
+
+## Treat parser completion and response completion as separate boundaries
+
+- **Problem:** The v0.1.26 RPCS3 log showed SDP parsing completed successfully, but the remote synthetic sender still received no ANNOUNCE response.
+- **Root Cause:** The first phase instrumentation stopped at SDP parsing and RSA key unwrap; it did not expose validation branches or response construction. The RSA unwrap event was absent, so observed evidence does not identify that operation as the stall.
+- **Fix:** Add bounded allowlisted events for ANNOUNCE field classification, validation completion, and response construction, then replay the same sender fixture.
+- **Prevention Rule:** Instrument entry and completion around synchronous protocol boundaries before changing protocol or crypto behavior based on an emulator timeout.

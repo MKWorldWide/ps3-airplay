@@ -73,4 +73,13 @@ Keep the generated package, build manifest, and test logs outside Git. Record pa
 - A Lima host sender connected to the running v0.1.25 RPCS3 app through the local host bridge. `OPTIONS` received 200 and `ANNOUNCE` reached the receiver's method log, but no RTSP response arrived within the probe's three-second deadline. The app log ended its protocol trace at `RTSP_ANNOUNCE`; the exact blocked operation is unknown.
 - Added a session diagnostic callback for privacy-safe SDP parse and RSA key-unwrapping start/completion events. Added an opt-in remote mode to `raop_audio_pipeline_test` that sends the shared synthetic RAOP fixture through OPTIONS/ANNOUNCE/SETUP/RECORD and then sends 128 encrypted RTP packets.
 - Full Lima host/sanitizer suite, assertions for diagnostic callback behavior, and PPU component compilation pass. A prior run exposed that `raop_receiver_test` read only 4 KiB from a log capped at 16 KiB; its test buffer now uses the configured cap, and the complete suite passes.
-- v0.1.26 is the next package, built from the source commit with `RTSP_PORT=5001` only for RPCS3. The production default is unchanged.
+- The v0.1.26 package and RPCS3 replay are recorded below; the production RTSP default remains unchanged at 5000.
+
+
+## v0.1.26 RPCS3 replay
+
+- Built from pushed source `6f8d6cb6f75e331d989419aaf51bd1d147704cad` with `RTSP_PORT=5001`; the normal production default remains 5000.
+- The 2,780,208-byte CellOS PPC64 ELF passed ELF validation (SHA-256 `eda789f1a6a7c3ab9ad3629c1d7acd0af14066f34e1cc3dac5bb198482d9210c`). The finalized AIRPLAY02 v0.1.26 PKG passed SFO, content ID, extraction, asset equality, and NPDRM checks: 3,231,408 bytes, SHA-256 `82e1407b92a1218ec3085f57bd8f6c35e97255569b92a44249e14239108fc246`.
+- Full Lima host/ASan/UBSan tests and PPU object compilation pass from this exact source snapshot. RPCS3 started, obtained a route, opened RTSP 5001/RTP 6000–6002, and answered OPTIONS 200. For ANNOUNCE it logged SDP parse start and success, then no further session event or response arrived within the sender deadline. The key unwrap start event was absent.
+- The receiver payload was copied into RPCS3 local title data after preserving the prior AIRPLAY02 title directory; this was a direct local payload update, not GUI PKG installation. Prior title data and the capped log are preserved locally. Desktop CUA still reports locked. No physical PS3 changes were made.
+- v0.1.27 source adds events around ANNOUNCE field classification, validation completion, and response generation to isolate the remaining boundary. The exact stall cause is still unknown.
