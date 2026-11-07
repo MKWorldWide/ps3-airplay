@@ -226,4 +226,5 @@ The emitter used a paced diagnostic fixture; target output submission is not pro
 | XMB resume display | FAIL/inconsistent by user report: resumed image is dim/flickering with frozen loading indicator; a later relaunch showed a solid background. |
 | Spotify source-quality causality | UNKNOWN: RAOP's negotiated 44.1 kHz ALAC does not identify whether Spotify delivered lossless FLAC to its AirPlay sender. |
 | Supplied acoustic recording | INCONCLUSIVE: 22.485-second mono 48 kHz sample has no >10 ms interval below -50 dBFS or large waveform discontinuity, but its -40.7 dBFS RMS level limits detection of subtle crackle. The private recording is not in the repository. |
-| PCM intentional-silence accounting | HOST TEST PASS: helper fills a block with silence without changing underflow counters; an active empty ring still increments underflow. Full PPU build and physical v0.1.35 verification pending. |
+| PCM intentional-silence accounting | HOST TEST PASS: helper fills a block with silence without changing underflow counters; an active empty ring still increments underflow. v0.1.35 PPU build passes; physical behavior pending. |
+| AIRPLAY02 v0.1.35 package | PASS: 3,236,016-byte finalized PKG validates with AIRPLAY02 / APP_VER 00.35 and five items; remote staged bytes match local candidate. Not installed because v0.1.33 remains active. |

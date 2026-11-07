@@ -68,3 +68,4 @@ Big-endian PCM bytes and paced target packet/decode/PCM path now validate in RPC
 - Do not install AIRPLAY02 over a still-running title. The live snapshot ended on a heartbeat/display event rather than APP_STOP. Require a clean app exit before staging installation.
 - The supplied MacBook microphone sample is quiet and acoustic; gross-level analysis did not detect hard silence, but it cannot rule out short/subtle dropouts. Do not use it to override packet/underflow telemetry or to claim clean audio.
 - v0.1.35 gates PCM underflow accounting until decoder/prebuffer readiness. Hardware logs must confirm the corrected counters correlate only with active stream output; packet loss can still cause audible gaps even if the PCM ring doesn't empty.
+- v0.1.35 build is validated and staged but not installed. The running v0.1.33 stream must exit before replacing AIRPLAY02; no playback, display, or XMB-resume claim is made for v0.1.35.

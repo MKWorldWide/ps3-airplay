@@ -44,8 +44,8 @@ The receiver log reports the AirPlay transport format (44.1 kHz ALAC), not the S
 | Display resume | FAIL/inconsistent by user report |
 | Clean app exit | Not established by this snapshot; the captured app was running |
 | v0.1.34 hardware behavior | NOT TESTED: staged, not installed |
-| v0.1.35 underflow-accounting change | HOST TEST PASS pending full build; hardware validation pending |
+| v0.1.35 underflow-accounting change | HOST TEST PASS; full Lima/PPU/package validation PASS; hardware validation pending |
 
 ## Next action
 
-Let the current v0.1.33 instance exit cleanly, then install v0.1.35, which includes v0.1.34's RTP resend recovery and corrected active-stream underflow accounting. Compare five-second RTP gap/recovery and PCM-underflow totals during a short stream with XMB idle, then repeat while scrolling. Only after this comparison, lower Spotify's AirPlay source quality for an A/B test if crackling remains. Keep display resume as a separate gate; do not run a long soak yet.
+v0.1.35 is now built and staged: finalized PKG 3,236,016 bytes, SHA-256 `aba1d95124d85ff84c5d2442235968ad00b25e24871a3875f90dd7080ab74c9b`, SFO 00.35. The PS3 was still streaming v0.1.33 at the latest log capture, so the new build was not installed. After v0.1.33 exits cleanly, install v0.1.35 and compare five-second RTP gap/recovery and active-playback PCM-underflow totals with XMB idle, then while scrolling. Only after this comparison, lower Spotify's AirPlay source quality for an A/B test if crackling remains. Keep display resume as a separate gate; do not run a long soak yet.
