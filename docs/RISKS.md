@@ -7,6 +7,7 @@
 | Standalone and resident SDK assumptions differ | Link/load failure or instability | Validate application and PRX paths independently |
 | RAOP behavior varies across senders | Discovery or connection may fail | Keep protocol bounded, log sanitized state, and test actual sender versions |
 | A connected sender stops reading RTSP replies | Blocking writes could stall network/audio/controller polling | Accepted sockets use a two-second send timeout and total response deadline. A host slow-reader backpressure test confirms disconnect within four seconds; PS3 stack/runtime behavior remains pending. |
+| RTP loss or queue pressure is hidden by receive-only telemetry | Audio can fail later in the pipeline without enough evidence to locate packet loss, reordering, late data, or queue saturation | v0.1.24 emits privacy-safe 128-packet aggregate checkpoints; validate the exact event behavior in RPCS3/PS3 and keep logs capped. |
 | Port or multicast conflicts | Service may not start or could disrupt another service | Check port ownership and multicast behavior before a controlled runtime test |
 | Audio buffering/clock behavior is incomplete | Dropouts, latency, or drift | Add timed jitter handling and sender-clock mapping; measure on hardware |
 | Diagnostic service is mistaken for playback-ready software | Silent or failed connections | Label capability accurately and gate claims on iPhone and audible-output evidence |

@@ -357,3 +357,10 @@
 - **Root Cause:** Request deadlines were enforced on receive while response writes had no socket-level or whole-response deadline.
 - **Fix:** Configure a two-second `SO_SNDTIMEO` on accepted clients and check a two-second overall deadline across partial writes. Log write timeout separately from other send errors.
 - **Prevention Rule:** Network deadlines must cover both directions. Keep a per-system-call timeout and a total transaction deadline, and test socket configuration plus the slow-reader path.
+
+## Expose RTP health counters at bounded checkpoints
+
+- **Problem:** The receiver counted missing, reordered, duplicate, late, and dropped packets internally, but logs mainly showed receive batches and resend events. A hardware log could therefore show RTP arrival without revealing queue health.
+- **Root Cause:** The receiver diagnostics were added incrementally at the receive/decrypt boundaries; queue health statistics were not carried through to the capped log.
+- **Fix:** Emit privacy-safe counter deltas and queue depth every 128 parsed packets, omit zero-valued error counters, and reset the log baseline on FLUSH while retaining internal cumulative stats.
+- **Prevention Rule:** For real-time media, log bounded aggregate health counters at a fixed interval and test a discontinuity across stream flush; do not rely on raw per-packet logs.

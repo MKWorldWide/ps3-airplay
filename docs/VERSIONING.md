@@ -61,7 +61,7 @@ AIRPLAY02 follows conservative pre-1.0 versioning. Increment the patch number fo
 - The package and ELF are preserved in the ignored local `work/builds/0.1.19/` directory. RPCS3 install/launch was not performed because Computer Use still reports the Mac desktop locked. No physical-console transfer/install, iPhone session, or audible playback is verified.
 - Next unused package version: 0.1.20.
 
-The standalone receiver `Makefile` and canonical Lima build/package scripts default to 0.1.23.
+The standalone receiver `Makefile` and canonical Lima build/package scripts default to 0.1.24.
 
 ## v0.1.20 package record
 
@@ -112,3 +112,9 @@ The standalone receiver `Makefile` and canonical Lima build/package scripts defa
 - Checks: Lima PS3DK v0.27.0 + PSL1GHT build; ELF validation; finalized package envelope, AIRPLAY02 identity, APP_VER, content ID, EBOOT and embedded background validation pass. The full Lima host/sanitizer and PPU component suite passed in the source pass.
 - Runtime: RPCS3 install/launch could not be performed because desktop access still reports the Mac locked. No fresh v0.1.23 runtime log, iPhone session, or audible AirPlay playback is verified. Physical PS3 was not changed.
 - Artifacts are preserved in ignored `work/builds/0.1.23/`. Next package version: 0.1.24.
+
+## v0.1.24 source pass
+
+- Change: emit bounded RTP health checkpoints every 128 successfully parsed audio packets. Log received packet and payload deltas and queue depth; emit missing, reordered, duplicate, late, and queue-drop deltas only when nonzero. FLUSH resets the checkpoint baseline so old-stream errors are not reported as new-stream health.
+- Validation: full Lima ASan/UBSan suite and PPU component compilation pass. The receiver loopback verifies a 128-packet checkpoint, queue depth, a post-FLUSH sequence gap, and the resulting one-packet missing delta. Standalone ELF/PKG build pending.
+- RPCS3 remains inaccessible because desktop automation reports the Mac locked; no physical console or audible playback claim.

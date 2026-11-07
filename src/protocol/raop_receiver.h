@@ -58,6 +58,12 @@ typedef struct {
 	uint64_t resend_rejected;
 	uint64_t resend_last_send_ms;
 	uint64_t last_audio_log_packets;
+	uint64_t last_audio_log_payload_bytes;
+	uint64_t last_audio_log_missing_packets;
+	uint64_t last_audio_log_out_of_order_packets;
+	uint64_t last_audio_log_duplicate_packets;
+	uint64_t last_audio_log_late_packets;
+	uint64_t last_audio_log_queue_drops;
 	uint64_t flush_generation;
 } raop_receiver;
 

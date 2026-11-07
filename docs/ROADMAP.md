@@ -45,7 +45,8 @@ Portable components cover bounded DNS-SD/mDNS, RTSP/SDP session handling, UDP RT
 - v0.1.22 adds a bounded success checkpoint for RTP payload decryption; the encrypted RTSP/RTP-to-PCM host integration now asserts this stage. The complete Lima host/sanitizer and PPU object suite passes.
 - The v0.1.22 standalone PPU ELF and finalized NPDRM PKG validate from pushed source `7b44acf`; the artifact is preserved locally. The RPCS3 app-data log remains an older v0.1.15 record and the desktop is locked, so runtime validation is pending.
 - v0.1.23 source bounds accepted-client RTSP writes with a two-second socket send timeout and overall response deadline. The full Lima host/sanitizer and PPU component suite passes, including a slow-reader backpressure test that verifies timeout logging and disconnect. Its finalized package also validates in Lima; RPCS3 runtime remains pending because the desktop is locked.
-- Next: install and launch the exact v0.1.23 package in RPCS3 and collect a fresh matching log when desktop access returns, then continue with a controlled iPhone session and classify evidence by RTSP, RTP, decrypt/decode, PCM submission, and audible output. Next package version is v0.1.24.
+- v0.1.24 adds bounded 128-packet RTP health checkpoints for loss, reordering, duplicates, late arrivals, queue drops, payload throughput, and queue depth. The Lima integration suite, including the checkpoint/FLUSH baseline assertions and PPU component compile, passes; package build is pending.
+- Next: install and launch v0.1.23 in RPCS3 when desktop access returns, collect a fresh matching log, then test v0.1.24 and classify any iPhone session by RTSP, RTP, decrypt/decode, PCM submission, and audible output. The latest desktop access retry still reports locked. Next package version is v0.1.24.
 
 ## Latest update (2026-11-07)
 

@@ -229,7 +229,7 @@ int main(void)
 		"CSeq: 2\r\nContent-Type: application/sdp\r\n"
 		"Content-Length: 25\r\n\r\nv=0\r\nm=audio 0 RTP/AVP 96";
 	int fd, peer_udp_fd, wrong_udp_fd;
-	unsigned int wait;
+	unsigned int wait, sequence, previous_packets;
 	assert(receiver_log_file_open(&log, log_path));
 	assert(raop_receiver_open(&receiver, 0, 0, &log));
 	assert(raop_receiver_rtsp_port(&receiver) != 0);
@@ -455,7 +455,32 @@ int main(void)
 	assert(receiver.audio_queue.count == 1);
 	assert(receiver.audio_queue.stats.have_sequence);
 	assert(receiver.audio_queue.stats.last_sequence == 1);
+	{
+		raop_rtp_frame frame;
+		assert(raop_receiver_pop_audio(&receiver, &frame));
+		assert(frame.packet.sequence == 1);
+	}
 	pthread_mutex_unlock(&args.receiver_lock);
+	for (sequence = 2; sequence <= 129; ++sequence) {
+		if (sequence == 3)
+			continue;
+		previous_packets = atomic_load_explicit(&args.audio_packets_seen,
+			memory_order_acquire);
+		send_rtp(raop_receiver_audio_port(&receiver), (uint16_t)sequence);
+		for (wait = 0; wait < 100 &&
+			atomic_load_explicit(&args.audio_packets_seen,
+			memory_order_acquire) == previous_packets; ++wait)
+			(void)nanosleep(&(struct timespec){0, 10000000L}, NULL);
+		assert(atomic_load_explicit(&args.audio_packets_seen,
+			memory_order_acquire) == previous_packets + 1);
+		pthread_mutex_lock(&args.receiver_lock);
+		{
+			raop_rtp_frame frame;
+			assert(raop_receiver_pop_audio(&receiver, &frame));
+			assert(frame.packet.sequence == sequence);
+		}
+		pthread_mutex_unlock(&args.receiver_lock);
+	}
 	send_request(fd, "TEARDOWN rtsp://127.0.0.1/stream RTSP/1.0\r\n"
 		"CSeq: 6\r\n\r\n", response, sizeof(response));
 	assert(strstr(response, "RTSP/1.0 200 OK") != NULL);
@@ -487,6 +512,10 @@ int main(void)
 	assert(strstr(log_contents,
 		"event=RTP_SOCKET_FLUSH value=2 bytes=0") != NULL);
 	assert(strstr(log_contents, "event=RTSP_SEND_TIMEOUT") != NULL);
+	assert(strstr(log_contents, "event=RTP_RX_BATCH value=128") != NULL);
+	assert(strstr(log_contents, "event=RTP_QUEUE_DEPTH value=1 bytes=0") != NULL);
+	assert(strstr(log_contents,
+		"event=RTP_MISSING_BATCH value=1 bytes=0") != NULL);
 	assert(unlink(log_path) == 0);
 	puts("RAOP persistent RTSP + UDP RTP loopback and bounded slow-reader disconnect: PASS");
 	return 0;

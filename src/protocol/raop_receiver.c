@@ -381,6 +381,18 @@ static int serve_messages(raop_receiver *receiver)
 			receiver->resend_last_send_ms = 0;
 			receiver->last_audio_log_packets =
 				receiver->audio_queue.stats.packets;
+			receiver->last_audio_log_payload_bytes =
+				receiver->audio_queue.stats.payload_bytes;
+			receiver->last_audio_log_missing_packets =
+				receiver->audio_queue.stats.missing_packets;
+			receiver->last_audio_log_out_of_order_packets =
+				receiver->audio_queue.stats.out_of_order_packets;
+			receiver->last_audio_log_duplicate_packets =
+				receiver->audio_queue.stats.duplicate_packets;
+			receiver->last_audio_log_late_packets =
+				receiver->audio_queue.stats.late_packets;
+			receiver->last_audio_log_queue_drops =
+				receiver->audio_queue.stats.queue_drops;
 			++receiver->flush_generation;
 			log_event(receiver, "RTP_QUEUE_FLUSH", (int)discarded, 0);
 		}
@@ -457,6 +469,11 @@ static int same_sender(const raop_receiver *receiver,
 {
 	return receiver->client_fd >= 0 &&
 		sender->sin_addr.s_addr == receiver->peer_address.sin_addr.s_addr;
+}
+
+static int bounded_event_count(uint64_t count)
+{
+	return count > INT_MAX ? INT_MAX : (int)count;
 }
 
 static uint16_t read_u16(const uint8_t *data)
@@ -608,24 +625,58 @@ static void receive_udp(raop_receiver *receiver, int fd, int channel)
 	if (amount <= 0 || !same_sender(receiver, &sender))
 		return;
 	if (channel == 0) {
-		uint64_t before;
 		uint64_t now_ms;
+		raop_rtp_stats *stats = &receiver->audio_queue.stats;
 		if (receiver->session.state != RAOP_SESSION_RECORDING)
 			return;
-		before = receiver->audio_queue.stats.packets;
 		(void)raop_rtp_queue_push(&receiver->audio_queue, packet,
 			(size_t)amount);
-		if (receiver->audio_queue.stats.missing_packets != 0) {
+		if (stats->missing_packets != 0) {
 			now_ms = monotonic_milliseconds();
 			request_missing_audio(receiver, now_ms);
 		}
-		if (receiver->audio_queue.stats.packets / 128 > before / 128) {
-			uint64_t delta = receiver->audio_queue.stats.packets -
-				receiver->last_audio_log_packets;
-			log_event(receiver, "RTP_RX_BATCH", (int)delta,
-				(size_t)receiver->audio_queue.stats.payload_bytes);
-			receiver->last_audio_log_packets =
-				receiver->audio_queue.stats.packets;
+		if (stats->packets >= receiver->last_audio_log_packets &&
+			stats->packets - receiver->last_audio_log_packets >= 128U) {
+			uint64_t delta = stats->packets - receiver->last_audio_log_packets;
+			uint64_t payload_delta = stats->payload_bytes -
+				receiver->last_audio_log_payload_bytes;
+			log_event(receiver, "RTP_RX_BATCH",
+				bounded_event_count(delta), (size_t)payload_delta);
+			log_event(receiver, "RTP_QUEUE_DEPTH",
+				(int)receiver->audio_queue.count, 0);
+			if (stats->missing_packets >
+				receiver->last_audio_log_missing_packets)
+				log_event(receiver, "RTP_MISSING_BATCH",
+					bounded_event_count(stats->missing_packets -
+					receiver->last_audio_log_missing_packets), 0);
+			if (stats->out_of_order_packets >
+				receiver->last_audio_log_out_of_order_packets)
+				log_event(receiver, "RTP_REORDER_BATCH",
+					bounded_event_count(stats->out_of_order_packets -
+					receiver->last_audio_log_out_of_order_packets), 0);
+			if (stats->duplicate_packets >
+				receiver->last_audio_log_duplicate_packets)
+				log_event(receiver, "RTP_DUPLICATE_BATCH",
+					bounded_event_count(stats->duplicate_packets -
+					receiver->last_audio_log_duplicate_packets), 0);
+			if (stats->late_packets > receiver->last_audio_log_late_packets)
+				log_event(receiver, "RTP_LATE_BATCH",
+					bounded_event_count(stats->late_packets -
+					receiver->last_audio_log_late_packets), 0);
+			if (stats->queue_drops >
+				receiver->last_audio_log_queue_drops)
+				log_event(receiver, "RTP_QUEUE_DROP_BATCH",
+					bounded_event_count(stats->queue_drops -
+					receiver->last_audio_log_queue_drops), 0);
+			receiver->last_audio_log_packets = stats->packets;
+			receiver->last_audio_log_payload_bytes = stats->payload_bytes;
+			receiver->last_audio_log_missing_packets = stats->missing_packets;
+			receiver->last_audio_log_out_of_order_packets =
+				stats->out_of_order_packets;
+			receiver->last_audio_log_duplicate_packets =
+				stats->duplicate_packets;
+			receiver->last_audio_log_late_packets = stats->late_packets;
+			receiver->last_audio_log_queue_drops = stats->queue_drops;
 		}
 	} else if (channel == 1) {
 		++receiver->control_packets;
@@ -814,6 +865,12 @@ int raop_receiver_poll(raop_receiver *receiver, unsigned int timeout_ms)
 					memset(&receiver->audio_queue, 0,
 						sizeof(receiver->audio_queue));
 					receiver->last_audio_log_packets = 0;
+					receiver->last_audio_log_payload_bytes = 0;
+					receiver->last_audio_log_missing_packets = 0;
+					receiver->last_audio_log_out_of_order_packets = 0;
+					receiver->last_audio_log_duplicate_packets = 0;
+					receiver->last_audio_log_late_packets = 0;
+					receiver->last_audio_log_queue_drops = 0;
 					log_event(receiver, "RTSP_CONNECTED", 0, 0);
 				}
 			}
