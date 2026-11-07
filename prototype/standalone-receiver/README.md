@@ -45,13 +45,13 @@ stays under ignored `build/`.
 The app uses RTSP TCP 5000, UDP 6000–6002, and mDNS UDP 5353. It writes a capped
 16 KiB diagnostic log to `/dev_hdd0/tmp/ps3-airplay.log`; it does not log audio
 payloads, SDP bodies, keys, peer IPs, or track names. XMB exit triggers ordered
-audio/network/crypto cleanup. The screen candidate draws the supplied image
-with `PRESS START TO EXIT`; pressing controller START requests orderly cleanup
-and return to XMB. PS-button XMB exit remains handled through the system utility
-callback. These paths are build-checked but not yet confirmed on hardware. To
-remove the log after an app run, delete that
-single file through FTP. If the package is installed, remove its app entry with
-the XMB Delete action. Do not add it to boot plugins.
+audio/network/crypto cleanup. The screen draws only the supplied background;
+there is no blue diagnostic frame, `DISPLAY ACTIVE` label, or on-screen exit
+prompt. Controller START requests orderly cleanup and return to XMB. PS-button
+XMB exit remains handled through the system utility callback. Clean exit is
+build-checked but not yet confirmed on hardware. To remove the log after an app
+run, delete that single file through FTP. If the package is installed, remove
+its app entry with the XMB Delete action. Do not add it to boot plugins.
 
 `SCREEN_READY` confirms RSX setup and the first screen flip. `SCREEN_INIT_FAILED`
 stores a negative stage code: `-1` argument, `-2` memory, `-3` background file,

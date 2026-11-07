@@ -39,6 +39,7 @@ Portable components cover bounded DNS-SD/mDNS, RTSP/SDP session handling, UDP RT
 - Expanded the sanitizer corpus to mutate a valid ALAC payload after its fixed frame header; 4,096 seeded mutations plus 256 random inputs pass ASan/UBSan halt-on-error. This improves decoder malformed-input coverage but is not AirPlay sender or playback evidence.
 - Added a host integration test that completes fragmented RTSP ANNOUNCE/SETUP/RECORD over TCP, receives encrypted RTP over UDP, decrypts and decodes the fixture frame, and pushes 353 stereo frames into the PCM ring. This is simulated sender evidence only.
 - A direct `--no-gui` launch attempt against the extracted v0.1.20 EBOOT did not refresh the app log or produce `APP_START`; retain it as inconclusive. The installed emulator title remains 0.1.15.
+- Display follow-up: the user reports a visible image and successful app opening but still sees blue framing and `DISPLAY ACTIVE`. The current source and v0.1.20 ancestry already remove blue diagnostics and all text; no duplicate code patch is warranted without matching the observed package. The local desktop bridge continues to report locked.
 - Next: when desktop access is restored, install/run the exact v0.1.20 package in RPCS3 and collect its version-matched log. Then continue with the first controlled iPhone session; classify evidence by RTSP, RTP, decrypt/decode, PCM submission, and audible output. Next package version is 0.1.21 only after a new implementation pass.
 
 ## Latest update (2026-11-07)

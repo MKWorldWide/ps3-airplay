@@ -35,3 +35,11 @@ RPCS3 v0.1.14 remains the next runtime test. Its PKG was already built and hash-
 ## Next action
 
 Check the version shown in the app/log or package metadata for the copy that was just opened. Compare against v0.1.14 and current screen source. RPCS3 runtime validation requires its interactive package/install flow; do not use this report as a substitute for that test.
+
+## Follow-up at 2026-11-07 10:53 EDT
+
+The source lineage was rechecked after the report above. Commits `46fca40` (removes blue bands and `DISPLAY ACTIVE`) and `4a06c2a` (removes the remaining START prompt) are ancestors of the v0.1.20 build source `8a4e641`. Its existing finalized PKG is 3,230,384 bytes with SHA-256 `bfaa3f960de39daf95c2ab405bd361a031ed92bd35c76a99e667d4ffe8d19e87`. The screen renderer copies only the supplied background image.
+
+The user again reports that the app opens and the image is visible, while reporting blue framing and `DISPLAY ACTIVE`. This observed copy still cannot be matched to a package or platform. A fresh Computer Use state check after the user said the Mac was being unlocked continued to report the desktop locked. The last accessible RPCS3 snapshot and log still identify v0.1.15; the v0.1.20 candidate has not been installed or run through that UI. Keep this mismatch unresolved; do not claim that the observed copy has the cleaned screen or make another identical package.
+
+The next useful evidence is a fresh launch with an accessible package version/log and a view of the actual app screen. If the running copy is v0.1.20 or newer and still displays the overlays, inspect the packaged EBOOT/assets and runtime path before changing the renderer.

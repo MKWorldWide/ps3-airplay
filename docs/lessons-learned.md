@@ -329,3 +329,10 @@
 - **Root Cause:** The RPCS3 `--no-gui` invocation produced no stdout and did not update the capped application log.
 - **Fix:** Preserve the previous log, compare its timestamp and package version after an attempted launch, and classify the attempt as inconclusive when no fresh startup event appears.
 - **Prevention Rule:** A running RPCS3 process or elapsed timeout is not a title launch. Require a fresh version marker and startup events before reporting runtime evidence.
+
+## Match the observed display to its package before repeating a UI fix
+
+- **Problem:** The user reports blue framing and a `DISPLAY ACTIVE` label even though the current screen renderer contains neither.
+- **Root Cause:** Unknown; the observed package and platform are not identified, and RPCS3 desktop access is currently unavailable.
+- **Fix:** Verify source ancestry and keep the image-only renderer; record the visual mismatch as unresolved until a fresh, version-matched run can be inspected.
+- **Prevention Rule:** Tie visual observations to the installed APP_VER and build before editing already-removed UI elements or creating another package.
