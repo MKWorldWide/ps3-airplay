@@ -10,14 +10,6 @@
 | RTP loss or queue pressure is hidden by receive-only telemetry | Audio can fail later in the pipeline without enough evidence to locate packet loss, reordering, late data, or queue saturation | v0.1.24 emits privacy-safe 128-packet aggregate checkpoints; validate the exact event behavior in RPCS3/PS3 and keep logs capped. |
 | Port or multicast conflicts | Service may not start or could disrupt another service | Check port ownership and multicast behavior before a controlled runtime test |
 | Audio buffering/clock behavior is incomplete | Dropouts, latency, or drift | Add timed jitter handling and sender-clock mapping; measure on hardware |
-
-## Current RTP recovery candidate (2026-11-07)
-
-- **Resend timing:** an 80 ms hold is a bounded starting point, not tuned to an iPhone/Spotify resend distribution. Too short can still conceal recoverable frames; too long increases jitter/latency and can drain PCM. Measure hardware before tuning.
-- **Silence concealment:** substituting exact ALAC frame-duration silence prevents decoder failures on missing encrypted frames, but sounds like a short dropout; it cannot reconstruct lost music. Gaps over 128 frames skip directly to the next packet to prevent multi-second or minute-scale latency after a sender restart/corrupt sequence jump.
-- **Sequence window:** signed 16-bit ordering is unambiguous only within half the sequence-number space. Existing queue capacity and new 128-frame cap keep normal playout inside that window; test wraparound and restart paths.
-- **Emulator boundary:** RPCS3's 128-packet synthetic fixture passed without loss, so it validates encrypted negotiation/decode/PCM and clean app exit but not the new recovery path under loss. No human-audible emulator output or PS3 acoustic result was established.
-- **Reference tuning:** other receivers retain 512–1024 packets and use sender clock mapping; copying those values wholesale could raise PS3 latency or memory use. Keep current queue/prebuffer values until measured data justifies a change.
 | Diagnostic service is mistaken for playback-ready software | Silent or failed connections | Label capability accurately and gate claims on iPhone and audible-output evidence |
 | Sensitive data enters source, issues, or logs | Privacy exposure | Use the contributor redaction checklist; never publish identifiers, credentials, addresses, or raw logs without review |
 | Third-party licensing is incomplete | Redistribution may violate license terms | Preserve notices and review dependencies before binary releases |
@@ -34,6 +26,15 @@
 | FLUSH drains only a bounded number of pending datagrams | If the socket contains more than 256 queued datagrams, old packets may remain after the single bounded drain | The receiver logs `RTP_FLUSH_DRAIN_LIMIT` when more data remains. Host tests verify normal queue/socket clearing; add a cap-exhaustion test and confirm sender behavior before claiming complete flush under overload. |
 | AirPlay volume transfer is not yet hardware-verified | A correct SET_PARAMETER response may still differ from the PS3 audio port's effective output behavior | v0.1.16 source clamps dB attenuation to -30..0 dB, maps -144 dB to mute, and applies a block-sized gain ramp. Host parser/PCM tests and PPU objects pass; verify level changes and unmute with an iPhone on physical hardware before claiming volume support. |
 | Malformed ALAC frame fields could trigger out-of-bounds writes or undefined arithmetic | A crafted or incompatible packet could corrupt memory or produce unstable decode behavior | Current source bounds frame counts, predictor modes, quantization widths, interlace shifts, and Rice k-modifier; 4,096 seeded valid-frame mutations plus 256 random inputs pass ASan/UBSan halt-on-error. v0.1.20 packages these changes; broader fuzzing and real sender/hardware compatibility remain open. |
+
+## Current RTP recovery candidate (2026-11-07)
+
+- **Resend timing:** an 80 ms hold is a bounded starting point, not tuned to an iPhone/Spotify resend distribution. Too short can still conceal recoverable frames; too long increases jitter/latency and can drain PCM. Measure hardware before tuning.
+- **Silence concealment:** substituting exact ALAC frame-duration silence prevents decoder failures on missing encrypted frames, but sounds like a short dropout; it cannot reconstruct lost music. Gaps over 128 frames skip directly to the next packet to prevent multi-second or minute-scale latency after a sender restart/corrupt sequence jump.
+- **Sequence window:** signed 16-bit ordering is unambiguous only within half the sequence-number space. Existing queue capacity and new 128-frame cap keep normal playout inside that window; test wraparound and restart paths.
+- **Emulator boundary:** RPCS3's 128-packet synthetic fixture passed without loss, so it validates encrypted negotiation/decode/PCM and clean app exit but not the new recovery path under loss. No human-audible emulator output or PS3 acoustic result was established.
+- **Reference tuning:** other receivers retain 512–1024 packets and use sender clock mapping; copying those values wholesale could raise PS3 latency or memory use. Keep current queue/prebuffer values until measured data justifies a change.
+- **v0.1.39 runtime gap:** production and emulator-only packages validate from the pushed source revision, but v0.1.39 has not yet been installed or replayed in RPCS3. The checked-in runtime evidence is still v0.1.38 and has no packet loss. Keep the recovery implementation a candidate until the new target binary emits expected gap counters.
 
 ## Latest emulator findings (2026-11-07)
 

@@ -533,3 +533,10 @@ The v0.1.31 fresh RPCS3 replay verifies the portable-arithmetic correction: the 
 - **Root Cause:** Emulator validation establishes executable protocol stages only. It lacks the PS3 display compositor, HDMI chain, physical network path, and acoustic output conditions. mDNS also failed in this RPCS3 run.
 - **Fix:** Record emulator milestones narrowly (RTSP status, key unwrap, decrypted RTP, ALAC frame, fixture result) and leave hardware display, sustained PCM, and audible quality explicitly pending until a version-matched console run.
 - **Prevention Rule:** Do not promote emulator decode or a single screenshot into hardware playback/display acceptance. Use direct FTP for console files and webMAN for console controls; preserve the installed app when the endpoint cannot be reached.
+
+## A valid package is not an emulator run
+
+- **Problem:** The v0.1.39 package passed ELF, SFO, content-ID, extraction, asset, and NPDRM validation, but the attempted RPCS3 install did not complete.
+- **Root Cause:** The RPCS3 Computer Use accessibility call timed out while opening the package installer, then remained unable to observe the app. The previous log still belongs to v0.1.38.
+- **Fix:** Preserve the v0.1.39 candidate packages and exact hashes, record runtime as pending, and keep the existing emulator installation intact until UI control is available.
+- **Prevention Rule:** Treat compile, package validation, emulator install, app launch, fixture replay, and audio observation as separate gates; never attribute an older log to a newly built PKG.

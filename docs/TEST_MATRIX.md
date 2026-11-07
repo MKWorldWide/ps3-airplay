@@ -36,6 +36,15 @@ This matrix distinguishes portable host evidence and cross-build evidence from r
 | RPCS3-05 | mDNS advertisement in RPCS3 | FAIL/unsupported boundary; logs report mDNS interface setup error 125. No iPhone discovery test in this run. |
 | PS3-01 | Physical audio, image stability, XMB resume, START exit, iPhone/Spotify | NOT TESTED; user has console off. Last known physical log is v0.1.35. |
 
+## v0.1.39 build validation (2026-11-07)
+
+| ID | Scenario | Result |
+|---|---|---|
+| BUILD-39-01 | Build production port-5000 CellOS PPC64 ELF from pushed commit `1a5520d` | PASS; 2,780,936 bytes; ELF validator confirms CellOS PPC64 executable with five PT_LOAD segments. |
+| BUILD-39-02 | Finalize production AIRPLAY02 PKG, SFO 00.39 | PASS; 3,236,976 bytes; SHA-256 `9f67340331eaae9e5ecbe94adaee03a0201e79e652a6bf45fa14cf6922877840`. |
+| BUILD-39-03 | Finalize RPCS3-only port-5001 PKG, SFO 00.39 | PASS; 3,236,976 bytes; SHA-256 `70ada4d72860f43680a7c81d331a10a71b0b5603a2471a2219493f66f7e271f5`. |
+| BUILD-39-04 | Install/replay v0.1.39 in RPCS3 | PENDING; CUA timed out opening package install and then could not read RPCS3 AX state. Latest fresh runtime log remains v0.1.38; do not attribute its events to v0.1.39. |
+
 ## PS3 and iPhone gates
 
 | ID | Scenario | Status |

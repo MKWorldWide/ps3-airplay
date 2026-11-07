@@ -1,6 +1,6 @@
 # Roadmap
 
-**Current status (2026-11-07):** The last physical PS3 evidence remains v0.1.35: 195 RTP gaps, no retained resend recoveries, zero ALAC failures, and 86,106 active-playback PCM underflow frames. In RPCS3, v0.1.38 / SFO 00.38 launched, rendered the image, completed the diagnostic tone, accepted an encrypted synthetic RAOP session, decrypted RTP, decoded ALAC, submitted PCM, and exited cleanly on keyboard START. That fixture had zero RTP gaps and zero ALAC failures; it does not exercise loss recovery or prove audible output. v0.1.39 adds an upper bound for silence concealment after a very large sequence jump. Full Lima sanitizer/PPU tests pass. Its package and emulator replay are the next step; no PS3 files were touched.
+**Current status (2026-11-07):** The last physical PS3 evidence remains v0.1.35: 195 RTP gaps, no retained resend recoveries, zero ALAC failures, and 86,106 active-playback PCM underflow frames. In RPCS3, v0.1.38 / SFO 00.38 launched, rendered the image, completed the diagnostic tone, accepted an encrypted synthetic RAOP session, decrypted RTP, decoded ALAC, submitted PCM, and exited cleanly on keyboard START. That fixture had zero RTP gaps and zero ALAC failures; it does not exercise loss recovery or prove audible output. The v0.1.39 source adds a 128-frame concealment cap, and exact commit `1a5520d` has passed the full Lima sanitizer/PPU suite and built production and RPCS3-only finalized packages. Package hashes are recorded in the hardware follow-up report. RPCS3 v0.1.39 install/replay is pending because the desktop automation interface timed out while opening its package installer; the previous v0.1.38 log remains the latest runtime evidence. The physical console is off and untouched.
 
 ## Milestones
 
@@ -22,10 +22,10 @@ Portable components cover bounded DNS-SD/mDNS, RTSP/SDP session handling, UDP RT
 
 ## Next steps
 
-1. Restore console reachability, then read installed SFO and the current app log over direct FTP/webMAN; only install after confirming the app is safely exited.
-2. Upload the production port-5000 v0.1.37 PKG as a new versioned file over direct FTP, verify its remote bytes, and install through the established webMAN/XMB process. Keep the port-5001 RPCS3 package off-console.
-3. On hardware, verify the background before/after two PS-menu resumes and a clean START-to-XMB exit. Compare RTP gaps, resend recovery, and active PCM underflows against v0.1.35; separately record whether the user hears fewer dropouts.
-4. Retrieve the capped log immediately and verify installed SFO version before attributing counters.
+1. Resume RPCS3 through a working desktop-control path, install the already validated port-5001 v0.1.39 PKG, then run encrypted baseline and controlled-loss fixtures and inspect fresh logs.
+2. Verify the target logs report recovery when a valid resend arrives within 80 ms; verify concealment/skipping counters on unrecovered and large gaps.
+3. When the physical PS3 is back online, verify installed SFO and current log over direct FTP/webMAN before deciding whether to stage the production port-5000 PKG.
+4. Compare the new run's RTP gaps, resend recovery, active PCM underflows, display stability, and clean exit against v0.1.35; separately record user listening results.
 5. Defer soak tests, resident PRX work, and game-audio mixing until short playback, XMB resume, and clean exit are stable.
 
 ### RTP loss handling and interoperability research (2026-11-07)
