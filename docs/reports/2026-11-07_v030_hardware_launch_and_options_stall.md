@@ -12,3 +12,14 @@ The iPhone's selected AirPlay route and Spotify playing indicator did not establ
 Current requested release label is 0.1.30, filename/app logging 0.1.30, SFO APP_VER and VERSION 00.30. Historical 0.30 package remains a distinct preserved artifact. This pass changes the release label only; protocol and runtime logic match the launchable build. Investigate the OPTIONS freeze in the next version before further extended streaming tests.
 
 Historical tested package source: c431ad71dabce678e03f7bd6663fb2b492ccd1bf. Historical package 0.30: 3,231,984 bytes; SHA-256 a4a8a9dabd6a8df94e95abf04f96aec330fcdc935837584b3b6bc952a239ac97. Installed SFO and extracted EBOOT matched that package before the maintainer's launch test. User observations and log stages are distinct evidence. Corrected-label 0.1.30 build results will be recorded after packaging.
+
+## Corrected-label artifact and console installation
+
+- Source: bfca67f63654e55ceeac811e213ccc1be09cdff2, committed archive with exact revision stamp.
+- Release: 0.1.30; PS3 SFO APP_VER/VERSION: 00.30; AIRPLAY02; debug package type 0x00000001; production RTSP 5000.
+- ELF: 2,780,208 bytes; SHA-256 a692ae4ccf3d9f33031673c9c4c31fdec38affab4ed887fcd2fd6c4f7780acdf.
+- PKG: ps3-airplay-receiver-0.1.30.pkg, 3,231,984 bytes; SHA-256 9b2040289d54b71a50c00af8abc2171ada56031071ee1d1464e4ab3620385acf.
+- Clean PPU build, CellOS ELF layout validation, package extraction/entry paths, SFO syntax/identity, content ID and embedded assets PASS.
+- FTP uploaded as a new versioned package and downloaded back byte-for-byte. Remote installation invoked under standing authorization; retrieved installed EBOOT and SFO match the extracted package exactly. Original 0.30 and other rollback packages remain staged.
+- No post-install launch of corrected-label 0.1.30 was performed by the agent. Earlier user startup/tone/idle-exit results refer specifically to the historical 0.30 artifact. Receiver behavior is unchanged, including the unresolved OPTIONS stall.
+- Privacy review: full staged diffs and changed/new files inspected, whitespace and targeted identifier/credential scans clear; no installed secret scanner. Raw logs, artifacts and deferred RNG patch remain ignored and local.

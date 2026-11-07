@@ -1,7 +1,7 @@
 # Active work
 
-- Current release: 0.1.30, SFO 00.30. Correcting the historical 0.30 filename/log label only; runtime source is the recovered hardware-launch baseline.
-- Confirmed hardware: app starts, tone audible, START exits while idle. AirPlay route visible but no music; START/PS unresponsive during attempted sender connection.
-- Preserved failed-run log (2,774 bytes) ends at OPTIONS without response; no ANNOUNCE/SETUP/RECORD/RTP or exit events. Apple-Challenge/RSA blocking is the next hypothesis to instrument, not an established root cause.
-- Next: commit/build/stage corrected-label package, preserve original 0.30 artifact and raw log. Next runtime fix must use a newer release and target OPTIONS responsiveness before extended streaming.
-- No boot-plugin, firmware, or resident-module changes. User authorized automatic standalone package installation.
+- Current installed release: 0.1.30, SFO 00.30, source bfca67f. PKG SHA-256 9b2040289d54b71a50c00af8abc2171ada56031071ee1d1464e4ab3620385acf. Uploaded/downloaded bytes and installed SFO/EBOOT match.
+- Historical 0.30 launch/tone/idle START success is user confirmed. Corrected-label 0.1.30 has identical runtime behavior except version marker; no new launch observation.
+- Preserved failed-run log ends at unanswered OPTIONS; no full RAOP session/RTP/exit events. No audible streamed music. START/PS unresponsive during that sender attempt.
+- Next runtime version: 0.1.31. Instrument Apple-Challenge signing and RNG boundaries; investigate synchronous crypto blocking controller callbacks before another extended sender test. Deferred RNG tracing patch is retained locally.
+- SFO version correction recovered hardware launch; preserve XX.YY platform fields independently of semantic release labels. Boot plugins/firmware/resident module untouched.
