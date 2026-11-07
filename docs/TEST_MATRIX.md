@@ -9,7 +9,7 @@ This matrix distinguishes portable host evidence and cross-build evidence from r
 | Area | Evidence | Status |
 |---|---|---|
 | RTSP | Persistent bounded session, state transitions, malformed input, deadlines, loopback | Host tests pass |
-| RTP | Header validation, peer filtering, sequence ordering, bounded queue, resend request/response validation | Full Lima suite's latest uninstrumented persistent RTSP/RTP loopback passed, including queue, retransmission, and flush assertions; an earlier timing receive stalled once, so repeat uninstrumented passes are still desirable. |
+| RTP | Header validation, peer filtering, sequence ordering, bounded queue, resend request/response validation | Full Lima ASan/UBSan suite now verifies the bounded gap-wait/recovery/silence path and caps large discontinuities at 128 concealed frames. RPCS3 v0.1.38 encrypted 128-packet fixture had zero gaps; emulator loss-recovery behavior remains host-tested, not emulator-tested. |
 | Timing | Bounded timing probe, matching response and RTT diagnostics | Latest uninstrumented full-suite loopback passed timing request/reply checks after one earlier intermittent stall. Sender-clock playback mapping is not implemented. |
 | Crypto | Base64, AES, RSA session-key recovery and challenge helpers | Host vector tests pass; real sender interoperability untested |
 | SDP/ALAC | Bounded format parsing and reference packet decoding | Host tests match reference samples; encrypted RTP-to-PCM integration passes; ASan/UBSan verifies negotiated sample-count bounds and 256 deterministic malformed inputs with halt-on-error |
@@ -24,6 +24,17 @@ This matrix distinguishes portable host evidence and cross-build evidence from r
 | RPCS3 package launch | Install and boot AIRPLAY02, then reach app logging | v0.1.4 original: package parser rejected absolute entry paths. Corrected-path v0.1.4 (SHA-256 `7811cdb221765aaa9e6ac3e57bd875cb8b7409045e6f371ff7a2a7a2d0744a8f`) installed but failed on unsupported EBOOT format. v0.1.5 installed but failed `Invalid ELF OS ABI`. v0.1.6 installed after setting OS/ABI `0x66`, but failed `Invalid ELF type` before app startup. No app log or audio in these v0.1.4-v0.1.6 RPCS3 runs. |
 | Native PS3DK launch control | Cross-build and package a minimal cellGcm/controller standalone app using a unique title ID | Built and staged locally as AIRTEST01 v0.1.0; read-only FTP later found matching installed SFO/EBOOT. User reports XMB `80028F21`; its fresh log was unavailable. Separate from AIRPLAY02 and parked. |
 | Resident PCM output | Plugin audio output | Not implemented; candidate discards decoded PCM |
+
+## Current emulator validation (2026-11-07)
+
+| ID | Scenario | Result |
+|---|---|---|
+| RPCS3-01 | Install and launch v0.1.38 / SFO 00.38 from finalized PKG | PASS; installed EBOOT/SFO hashes match the validated extracted package. |
+| RPCS3-02 | Image and startup tone | PASS in emulator log/screenshot: 1280x720 screen initialized, background visible, 440 Hz tone completed. RPCS3 output does not validate physical HDMI/flicker. |
+| RPCS3-03 | Encrypted RAOP OPTIONS/ANNOUNCE/SETUP/RECORD, RTP, decrypt, ALAC, PCM submit | PASS for the bounded 128-packet fixture. Log: key unwrap complete; 44.1 kHz stereo; RTP decrypt success; ALAC frame; 61,440 output frames submitted. Zero sequence gaps, zero recovery, zero concealment, zero ALAC errors in this fixture. No acoustic confirmation. |
+| RPCS3-04 | Keyboard START to clean app stop | PASS; USER_EXIT_START, CLEANUP_BEGIN, AUDIO_CLOSE_DONE, RECEIVER_CLOSE_DONE, APP_STOP. |
+| RPCS3-05 | mDNS advertisement in RPCS3 | FAIL/unsupported boundary; logs report mDNS interface setup error 125. No iPhone discovery test in this run. |
+| PS3-01 | Physical audio, image stability, XMB resume, START exit, iPhone/Spotify | NOT TESTED; user has console off. Last known physical log is v0.1.35. |
 
 ## PS3 and iPhone gates
 

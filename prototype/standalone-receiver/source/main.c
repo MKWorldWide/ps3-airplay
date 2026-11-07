@@ -292,6 +292,9 @@ int main(void)
 	uint64_t reported_resend_rejected_queue_full = 0;
 	uint64_t reported_resend_rejected_invalid = 0;
 	uint64_t reported_missing_packets = 0;
+	uint64_t reported_gap_waits = 0;
+	uint64_t reported_concealed_packets = 0;
+	uint64_t reported_skipped_gap_packets = 0;
 	uint64_t reported_resend_pending_drops = 0;
 	uint64_t reported_resend_tracking_full = 0;
 	uint64_t handled_flush_generation = 0;
@@ -529,6 +532,24 @@ int main(void)
 				pcm_ring.count <= RAOP_PCM_RING_CAPACITY - RAOP_ALAC_FRAME_MAX &&
 				raop_receiver_pop_audio(&receiver, &frame)) {
 				++drained;
+				if (frame.packet.payload_length == 0) {
+					size_t silence_samples =
+						(size_t)receiver.session.offer.fmtp[0];
+					size_t channels =
+						(size_t)receiver.session.offer.fmtp[6];
+					size_t silence_bytes = silence_samples * channels *
+						sizeof(int16_t);
+					if (silence_samples == 0 || channels == 0 || channels > 2 ||
+						silence_samples > RAOP_ALAC_FRAME_MAX ||
+						silence_bytes > sizeof(decoded_pcm)) {
+						(void)log_event("RTP_GAP_SILENCE_INVALID", -1, 0);
+						continue;
+					}
+					memset(decoded_pcm, 0, silence_bytes);
+					(void)raop_pcm_ring_push_le16(&pcm_ring, decoded_pcm,
+						silence_bytes);
+					continue;
+				}
 				if (decoder != NULL) {
 					size_t pcm_length = 0;
 					uint32_t samples = 0;
@@ -592,6 +613,16 @@ int main(void)
 				(void)log_event("RTP_MISSING_TOTAL",
 					bounded_counter_delta(receiver.audio_queue.stats.missing_packets,
 						reported_missing_packets), receiver.audio_queue.count);
+				(void)log_event("RTP_GAP_WAIT_TOTAL",
+					bounded_counter_delta(receiver.audio_queue.stats.gap_waits,
+						reported_gap_waits), RAOP_RTP_GAP_WAIT_MS);
+				(void)log_event("RTP_GAP_CONCEALED_TOTAL",
+					bounded_counter_delta(receiver.audio_queue.stats.concealed_packets,
+						reported_concealed_packets), 0);
+				(void)log_event("RTP_GAP_SKIPPED_TOTAL",
+					bounded_counter_delta(receiver.audio_queue.stats.skipped_gap_packets,
+						reported_skipped_gap_packets),
+					RAOP_RTP_MAX_CONCEAL_PACKETS);
 				(void)log_event("RTP_RECOVERY_TOTAL",
 					bounded_counter_delta(receiver.resend_recovered,
 						reported_resend_recovered),
@@ -648,6 +679,11 @@ int main(void)
 				reported_resend_rejected_invalid =
 					receiver.resend_rejected_invalid;
 				reported_missing_packets = receiver.audio_queue.stats.missing_packets;
+				reported_gap_waits = receiver.audio_queue.stats.gap_waits;
+				reported_concealed_packets =
+					receiver.audio_queue.stats.concealed_packets;
+				reported_skipped_gap_packets =
+					receiver.audio_queue.stats.skipped_gap_packets;
 				reported_resend_pending_drops = receiver.resend_pending_drops;
 				reported_resend_tracking_full = receiver.resend_tracking_full;
 			}

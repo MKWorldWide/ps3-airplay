@@ -1,6 +1,6 @@
 # Roadmap
 
-**Current status (2026-11-07):** AIRPLAY02 v0.1.35 / SFO 00.35 remains the last confirmed physical install. Its 34-second log recorded 195 RTP gaps, zero recoveries in retained checkpoints, zero ALAC failures, and 86,106 active-stream PCM underflow frames (~1.79 s). v0.1.37 / SFO 00.37 is built and validated; its production PKG is 3,236,528 bytes (SHA-256 `9ee7f1a419fea99a1fcbf40306159db100a665ae7c482f12376b1f18bd9104a3`). RPCS3 installed and launched the emulator-only package on port 5001. A bounded synthetic encrypted RAOP session reached decode; the screen rendered its background and reported no repeated flips. Physical tests remain pending: the console endpoint did not answer direct FTP or webMAN during preflight, so no upload or install occurred.
+**Current status (2026-11-07):** The last physical PS3 evidence remains v0.1.35: 195 RTP gaps, no retained resend recoveries, zero ALAC failures, and 86,106 active-playback PCM underflow frames. In RPCS3, v0.1.38 / SFO 00.38 launched, rendered the image, completed the diagnostic tone, accepted an encrypted synthetic RAOP session, decrypted RTP, decoded ALAC, submitted PCM, and exited cleanly on keyboard START. That fixture had zero RTP gaps and zero ALAC failures; it does not exercise loss recovery or prove audible output. v0.1.39 adds an upper bound for silence concealment after a very large sequence jump. Full Lima sanitizer/PPU tests pass. Its package and emulator replay are the next step; no PS3 files were touched.
 
 ## Milestones
 
@@ -27,6 +27,13 @@ Portable components cover bounded DNS-SD/mDNS, RTSP/SDP session handling, UDP RT
 3. On hardware, verify the background before/after two PS-menu resumes and a clean START-to-XMB exit. Compare RTP gaps, resend recovery, and active PCM underflows against v0.1.35; separately record whether the user hears fewer dropouts.
 4. Retrieve the capped log immediately and verify installed SFO version before attributing counters.
 5. Defer soak tests, resident PRX work, and game-audio mixing until short playback, XMB resume, and clean exit are stable.
+
+### RTP loss handling and interoperability research (2026-11-07)
+
+- The C queue previously released the earliest queued packet immediately even when its sequence skipped the next expected number. A later resend was then rejected as late. It now holds the hole for a bounded 80 ms, accepts a resend during that interval, and emits one zero-payload loss marker per missing ALAC frame after expiry so the app can insert exact-frame silence. Gaps larger than 128 packets skip directly to the next received frame after the same wait, preventing unbounded silence/latency.
+- OpenAirPlay1 uses a 512-slot sequence buffer and forces loss handling after 128 packets of lead (about one second for 352-frame/44.1 kHz packets); it explicitly returns a lost-frame marker and has wraparound/reordering/retransmission tests. Shairport Sync uses a 1,024-packet buffer and documents 512 as its minimum (~4 seconds), reflecting a more latency-tolerant desktop receiver. The PS3's current 256-packet queue and 128-packet startup prebuffer trade lower memory for about one second of startup buffering; do not enlarge it without measuring the actual sender and console latency.
+- Next: build/run v0.1.39 in RPCS3 with the 128-packet encrypted fixture and the deterministic host gap/recovery suite. On hardware when reachable, compare short Spotify sessions with and without XMB scrolling, and validate recovered packets, concealed/skipped gaps, PCM underflows, and user-heard artifacts. Tune the 80 ms wait and one-second prebuffer only from those measurements.
+- Clock synchronization remains incomplete. OpenAirPlay1's clock model selects a low-RTT clock offset and maps an RTP timestamp anchor to the DAC; our current timing probe/RTT diagnostics do not yet provide this playback scheduling model. Keep clock mapping/drift correction as a measured follow-up after hardware RTP recovery tests.
 
 ### Current protocol hardening (2026-11-07)
 

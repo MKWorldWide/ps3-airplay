@@ -28,6 +28,7 @@ int main(void)
 {
 	raop_rtp_queue queue = {0};
 	raop_rtp_queue wrap_queue = {0};
+	raop_rtp_queue gap_queue = {0};
 	raop_rtp_frame frame;
 	raop_rtp_packet parsed;
 	uint8_t packet[12 + RAOP_RTP_PAYLOAD_MAX];
@@ -49,14 +50,72 @@ int main(void)
 	assert(queue.stats.payload_bytes == sizeof(payload) * 3);
 	assert(queue.stats.missing_packets == 1);
 	assert(queue.stats.out_of_order_packets == 1);
-	assert(raop_rtp_queue_pop(&queue, &frame));
+	assert(raop_rtp_queue_pop(&queue, &frame, 0));
 	assert(frame.packet.sequence == 100);
 	assert(memcmp(frame.payload, payload, sizeof(payload)) == 0);
-	assert(raop_rtp_queue_pop(&queue, &frame));
+	assert(raop_rtp_queue_pop(&queue, &frame, 0));
 	assert(frame.packet.sequence == 101);
-	assert(raop_rtp_queue_pop(&queue, &frame));
+	assert(raop_rtp_queue_pop(&queue, &frame, 0));
 	assert(frame.packet.sequence == 102);
-	assert(!raop_rtp_queue_pop(&queue, &frame));
+	assert(!raop_rtp_queue_pop(&queue, &frame, 0));
+
+	/* Keep a sequence hole open long enough for a resend to fill it. */
+	length = make_packet(packet, 100, payload, sizeof(payload));
+	assert(raop_rtp_queue_push(&gap_queue, packet, length));
+	assert(raop_rtp_queue_pop(&gap_queue, &frame, 10) == 1);
+	assert(frame.packet.sequence == 100);
+	length = make_packet(packet, 102, payload, sizeof(payload));
+	assert(raop_rtp_queue_push(&gap_queue, packet, length));
+	assert(raop_rtp_queue_pop(&gap_queue, &frame, 20) == 0);
+	assert(gap_queue.stats.gap_waits == 1);
+	length = make_packet(packet, 101, payload, sizeof(payload));
+	assert(raop_rtp_queue_recover(&gap_queue, packet, length));
+	assert(raop_rtp_queue_pop(&gap_queue, &frame, 40) == 1);
+	assert(frame.packet.sequence == 101);
+	assert(raop_rtp_queue_pop(&gap_queue, &frame, 40) == 1);
+	assert(frame.packet.sequence == 102);
+	assert(gap_queue.stats.concealed_packets == 0);
+
+	/* If retry does not arrive by the deadline, emit bounded loss markers.
+	 * Do not decode them as ALAC; the app converts them to exact-frame silence. */
+	memset(&gap_queue, 0, sizeof(gap_queue));
+	length = make_packet(packet, 200, payload, sizeof(payload));
+	assert(raop_rtp_queue_push(&gap_queue, packet, length));
+	assert(raop_rtp_queue_pop(&gap_queue, &frame, 1000) == 1);
+	length = make_packet(packet, 203, payload, sizeof(payload));
+	assert(raop_rtp_queue_push(&gap_queue, packet, length));
+	assert(raop_rtp_queue_pop(&gap_queue, &frame, 1000) == 0);
+	assert(raop_rtp_queue_pop(&gap_queue, &frame,
+		1000 + RAOP_RTP_GAP_WAIT_MS - 1U) == 0);
+	assert(raop_rtp_queue_pop(&gap_queue, &frame,
+		1000 + RAOP_RTP_GAP_WAIT_MS) == 2);
+	assert(frame.packet.sequence == 201 && frame.packet.payload_length == 0);
+	assert(raop_rtp_queue_pop(&gap_queue, &frame,
+		1000 + RAOP_RTP_GAP_WAIT_MS) == 2);
+	assert(frame.packet.sequence == 202 && frame.packet.payload_length == 0);
+	assert(gap_queue.stats.concealed_packets == 2);
+	length = make_packet(packet, 201, payload, sizeof(payload));
+	assert(!raop_rtp_queue_recover(&gap_queue, packet, length));
+	assert(gap_queue.stats.late_packets == 1);
+	assert(raop_rtp_queue_pop(&gap_queue, &frame,
+		1000 + RAOP_RTP_GAP_WAIT_MS) == 1);
+	assert(frame.packet.sequence == 203);
+
+	/* A corrupted/restarted sequence must not turn into minutes of silence. */
+	memset(&gap_queue, 0, sizeof(gap_queue));
+	length = make_packet(packet, 500, payload, sizeof(payload));
+	assert(raop_rtp_queue_push(&gap_queue, packet, length));
+	assert(raop_rtp_queue_pop(&gap_queue, &frame, 2000) == 1);
+	length = make_packet(packet, 800, payload, sizeof(payload));
+	assert(raop_rtp_queue_push(&gap_queue, packet, length));
+	assert(raop_rtp_queue_pop(&gap_queue, &frame, 2010) == 0);
+	assert(raop_rtp_queue_pop(&gap_queue, &frame,
+		2010 + RAOP_RTP_GAP_WAIT_MS) == 1);
+	assert(frame.packet.sequence == 800);
+	assert(frame.packet.payload_length == sizeof(payload));
+	assert(gap_queue.stats.skipped_gap_packets == 299);
+	assert(gap_queue.stats.concealed_packets == 0);
+
 	length = make_packet(packet, 65534, payload, sizeof(payload));
 	assert(raop_rtp_queue_push(&wrap_queue, packet, length));
 	length = make_packet(packet, 0, payload, sizeof(payload));
@@ -65,14 +124,14 @@ int main(void)
 	assert(raop_rtp_queue_recover(&wrap_queue, packet, length));
 	assert(!raop_rtp_queue_recover(&wrap_queue, packet, length));
 	assert(wrap_queue.stats.duplicate_packets == 1);
-	assert(raop_rtp_queue_pop(&wrap_queue, &frame));
+	assert(raop_rtp_queue_pop(&wrap_queue, &frame, 0));
 	assert(frame.packet.sequence == 65534);
 	length = make_packet(packet, 65534, payload, sizeof(payload));
 	assert(!raop_rtp_queue_recover(&wrap_queue, packet, length));
 	assert(wrap_queue.stats.late_packets == 1);
-	assert(raop_rtp_queue_pop(&wrap_queue, &frame));
+	assert(raop_rtp_queue_pop(&wrap_queue, &frame, 0));
 	assert(frame.packet.sequence == 65535);
-	assert(raop_rtp_queue_pop(&wrap_queue, &frame));
+	assert(raop_rtp_queue_pop(&wrap_queue, &frame, 0));
 	assert(frame.packet.sequence == 0);
 
 	for (i = 0; i < RAOP_RTP_QUEUE_CAPACITY + 1; ++i) {
@@ -97,14 +156,14 @@ int main(void)
 		assert(queue.stats.queue_drops == drops_before);
 		length = make_packet(packet, 9, payload, sizeof(payload));
 		assert(raop_rtp_queue_push(&queue, packet, length));
-		assert(raop_rtp_queue_pop(&queue, &frame));
+		assert(raop_rtp_queue_pop(&queue, &frame, 0));
 		assert(frame.packet.sequence == 9);
 	}
 	packet[0] = 0x40;
 	assert(!raop_rtp_queue_push(&queue, packet, 16));
 	assert(queue.stats.malformed_packets == 1);
-	while (raop_rtp_queue_pop(&queue, &frame)) {}
-	assert(!raop_rtp_queue_pop(&queue, &frame));
+	while (raop_rtp_queue_pop(&queue, &frame, 0)) {}
+	assert(!raop_rtp_queue_pop(&queue, &frame, 0));
 	puts("RAOP bounded RTP queue: PASS");
 	return 0;
 }

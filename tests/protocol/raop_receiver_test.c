@@ -419,6 +419,12 @@ int main(void)
 		assert(raop_receiver_pop_audio(&receiver, &frame));
 		assert(frame.packet.sequence == 43);
 		assert(memcmp(frame.payload, "\xca\xfe\xba\xbe", 4) == 0);
+		assert(!raop_receiver_pop_audio(&receiver, &frame));
+		(void)nanosleep(&(struct timespec){0,
+			(long)(RAOP_RTP_GAP_WAIT_MS + 10U) * 1000000L}, NULL);
+		assert(raop_receiver_pop_audio(&receiver, &frame));
+		assert(frame.packet.sequence == 44);
+		assert(frame.packet.payload_length == 0);
 		assert(raop_receiver_pop_audio(&receiver, &frame));
 		assert(frame.packet.sequence == 45);
 	}
@@ -487,6 +493,14 @@ int main(void)
 		pthread_mutex_lock(&args.receiver_lock);
 		{
 			raop_rtp_frame frame;
+			if (sequence == 4) {
+				assert(!raop_receiver_pop_audio(&receiver, &frame));
+				(void)nanosleep(&(struct timespec){0,
+					(long)(RAOP_RTP_GAP_WAIT_MS + 10U) * 1000000L}, NULL);
+				assert(raop_receiver_pop_audio(&receiver, &frame));
+				assert(frame.packet.sequence == 3);
+				assert(frame.packet.payload_length == 0);
+			}
 			assert(raop_receiver_pop_audio(&receiver, &frame));
 			assert(frame.packet.sequence == sequence);
 		}

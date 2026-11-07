@@ -8,6 +8,8 @@
 #define RAOP_RTP_PAYLOAD_MAX 1400
 #define RAOP_RTP_QUEUE_CAPACITY 256
 #define RAOP_RTP_PREBUFFER_PACKETS 128
+#define RAOP_RTP_GAP_WAIT_MS 80U
+#define RAOP_RTP_MAX_CONCEAL_PACKETS 128U
 
 typedef struct {
 	uint8_t payload_type;
@@ -28,6 +30,9 @@ typedef struct {
 	uint64_t retransmitted_packets;
 	uint64_t duplicate_packets;
 	uint64_t late_packets;
+	uint64_t gap_waits;
+	uint64_t concealed_packets;
+	uint64_t skipped_gap_packets;
 	uint16_t last_sequence;
 	uint16_t last_missing_sequence;
 	uint16_t last_missing_count;
@@ -46,6 +51,9 @@ typedef struct {
 	size_t count;
 	uint16_t last_popped_sequence;
 	int have_popped_sequence;
+	uint64_t gap_started_ms;
+	int gap_waiting;
+	int gap_expired;
 	raop_rtp_stats stats;
 } raop_rtp_queue;
 
@@ -59,7 +67,10 @@ int raop_rtp_queue_push(raop_rtp_queue *queue, const uint8_t *data,
 /* Insert a validated retransmitted RTP packet by sequence into queued audio. */
 int raop_rtp_queue_recover(raop_rtp_queue *queue, const uint8_t *data,
 	size_t length);
-int raop_rtp_queue_pop(raop_rtp_queue *queue, raop_rtp_frame *frame);
+/* Returns 1 for audio, 2 for a timed-out missing packet (zero payload), 0 if
+ * no frame is ready. now_ms must be monotonic and shared with the sender loop. */
+int raop_rtp_queue_pop(raop_rtp_queue *queue, raop_rtp_frame *frame,
+	uint64_t now_ms);
 /* Invalidate queued frames and sequence epoch while retaining cumulative stats. */
 void raop_rtp_queue_flush(raop_rtp_queue *queue);
 

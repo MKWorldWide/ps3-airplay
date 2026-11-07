@@ -77,9 +77,14 @@ SETUP timing port, then records matching replies and RTT in the capped log.
 This is a diagnostic timing exchange; sender-clock alignment and audio
 scheduling are still absent. Forward audio sequence gaps trigger bounded 0xD5
 resend requests through the negotiated peer control port (maximum 16 packets,
-50 ms minimum interval). Returned 0xD6 packets are accepted only from that
-peer port and for sequences in the latest requested range, then inserted by
-sequence into the bounded 256-packet queue. The standalone decoder waits for
-128 queued packets before starting, then drains in batches that preserve room
-for a maximum ALAC frame in the PCM ring. This start buffer is not clock-synced
+50 ms minimum interval). Structurally valid 0xD6 packets from that peer are
+inserted by sequence while they remain within the 256-packet receive window,
+including valid replies that arrive after request bookkeeping expires. The
+playout queue waits up to 80 ms at a sequence hole for a resend; if it remains
+missing, the app inserts one negotiated ALAC-frame of PCM silence. It conceals
+at most 128 missing frames per discontinuity, then skips to the next real
+packet to prevent unbounded latency. Numeric diagnostics distinguish gap waits,
+concealed frames, and skipped frames. The standalone decoder waits for 128
+queued packets before starting, then drains in batches that preserve room for
+a maximum ALAC frame in the PCM ring. This start buffer is not clock-synced
 playback scheduling.

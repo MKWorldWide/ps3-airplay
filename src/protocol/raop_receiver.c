@@ -1043,9 +1043,27 @@ uint16_t raop_receiver_audio_port(const raop_receiver *receiver)
 
 int raop_receiver_pop_audio(raop_receiver *receiver, raop_rtp_frame *frame)
 {
-	if (receiver == NULL || frame == NULL ||
-		!raop_rtp_queue_pop(&receiver->audio_queue, frame))
+	int result;
+	uint64_t skipped_before;
+	if (receiver == NULL || frame == NULL)
 		return 0;
+	skipped_before = receiver->audio_queue.stats.skipped_gap_packets;
+	result = raop_rtp_queue_pop(&receiver->audio_queue, frame,
+		monotonic_milliseconds());
+	if (result == 0)
+		return 0;
+	if (result == 2) {
+		if (receiver->audio_queue.stats.concealed_packets == 1 ||
+			(receiver->audio_queue.stats.concealed_packets % 16U) == 0)
+			log_event(receiver, "RTP_GAP_CONCEALED",
+				frame->packet.sequence, 0);
+		return 1;
+	}
+	if (receiver->audio_queue.stats.skipped_gap_packets != skipped_before)
+		log_event(receiver, "RTP_GAP_SKIPPED",
+			(int)frame->packet.sequence,
+			(size_t)(receiver->audio_queue.stats.skipped_gap_packets -
+				skipped_before));
 	if (!raop_session_decrypt_audio(&receiver->session, frame->payload,
 		frame->packet.payload_length)) {
 		log_event(receiver, "RTP_DECRYPT_FAILED", -1,

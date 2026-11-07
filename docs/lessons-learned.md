@@ -1,5 +1,19 @@
 # Lessons learned
 
+## A sequence-sorted RTP queue still needs playout-gap policy
+
+- **Problem:** RTP packets were inserted in sequence order, but the player popped the head immediately when the next expected sequence was missing. Retransmitted frames arriving afterward were rejected as late; physical logs showed many RTP gaps and no retained recovery.
+- **Root Cause:** Queue ordering alone does not defer playout or give the resend path time to fill a sequence hole.
+- **Fix:** Hold a hole for a bounded 80 ms. If the frame arrives, play in order; otherwise insert exact ALAC frame-duration silence. Cap silence concealment at 128 frames and skip a larger sequence discontinuity after the same bounded wait.
+- **Prevention Rule:** Every jitter queue must define expected sequence, resend deadline, wrap behavior, loss concealment, and maximum forward jump. Test recovery-before-deadline, late recovery, timeout, wraparound, and pathological jumps. Use real sender timing before changing wait/prebuffer values.
+
+## Emulator transport success is not loss-recovery or sound-quality proof
+
+- **Problem:** RPCS3 successfully handled a 128-packet encrypted RAOP fixture, which could be mistaken for proof of improved dropouts.
+- **Root Cause:** That fixture contained no RTP sequence gaps and did not capture sound acoustically.
+- **Fix:** Report zero-gap, encrypted negotiation/decode/PCM separately; exercise gaps in deterministic queue tests and a future explicit lossy sender replay.
+- **Prevention Rule:** Do not call recovery verified unless a resend fills an induced hole or a timed loss marker is observed; do not claim audio quality without listening evidence.
+
 ## Log the failing mDNS setup stage
 
 - **Problem:** RPCS3 v0.1.10 and v0.1.11 logged `MDNS_FAILED` after TCP and RTP sockets became ready, but the event had no failure detail.

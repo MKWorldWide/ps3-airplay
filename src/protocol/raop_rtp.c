@@ -148,13 +148,54 @@ int raop_rtp_queue_push(raop_rtp_queue *queue, const uint8_t *data,
 	return insert_packet(queue, data, &parsed, 0);
 }
 
-int raop_rtp_queue_pop(raop_rtp_queue *queue, raop_rtp_frame *frame)
+int raop_rtp_queue_pop(raop_rtp_queue *queue, raop_rtp_frame *frame,
+	uint64_t now_ms)
 {
+	uint16_t expected;
+	int16_t ahead;
 	if (queue == NULL || frame == NULL || queue->count == 0)
 		return 0;
+	if (queue->have_popped_sequence) {
+		expected = (uint16_t)(queue->last_popped_sequence + 1U);
+		ahead = (int16_t)(uint16_t)(
+			queue->frames[queue->read_index].packet.sequence - expected);
+		if (ahead > 0) {
+			if (!queue->gap_waiting) {
+				queue->gap_waiting = 1;
+				queue->gap_expired = 0;
+				queue->gap_started_ms = now_ms;
+				++queue->stats.gap_waits;
+				return 0;
+			}
+			if (!queue->gap_expired && (now_ms < queue->gap_started_ms ||
+				now_ms - queue->gap_started_ms < RAOP_RTP_GAP_WAIT_MS))
+				return 0;
+			queue->gap_expired = 1;
+			if ((uint16_t)ahead > RAOP_RTP_MAX_CONCEAL_PACKETS) {
+				queue->stats.skipped_gap_packets += (uint16_t)ahead;
+				*frame = queue->frames[queue->read_index];
+				queue->last_popped_sequence = frame->packet.sequence;
+				queue->read_index = (queue->read_index + 1) %
+					RAOP_RTP_QUEUE_CAPACITY;
+				--queue->count;
+				queue->gap_started_ms = 0;
+				queue->gap_waiting = 0;
+				queue->gap_expired = 0;
+				return 1;
+			}
+			memset(frame, 0, sizeof(*frame));
+			frame->packet.sequence = expected;
+			queue->last_popped_sequence = expected;
+			++queue->stats.concealed_packets;
+			return 2;
+		}
+	}
 	*frame = queue->frames[queue->read_index];
 	queue->last_popped_sequence = frame->packet.sequence;
 	queue->have_popped_sequence = 1;
+	queue->gap_started_ms = 0;
+	queue->gap_waiting = 0;
+	queue->gap_expired = 0;
 	queue->read_index = (queue->read_index + 1) % RAOP_RTP_QUEUE_CAPACITY;
 	--queue->count;
 	return 1;
@@ -169,6 +210,9 @@ void raop_rtp_queue_flush(raop_rtp_queue *queue)
 	queue->count = 0;
 	queue->last_popped_sequence = 0;
 	queue->have_popped_sequence = 0;
+	queue->gap_started_ms = 0;
+	queue->gap_waiting = 0;
+	queue->gap_expired = 0;
 	queue->stats.last_sequence = 0;
 	queue->stats.last_missing_sequence = 0;
 	queue->stats.last_missing_count = 0;
