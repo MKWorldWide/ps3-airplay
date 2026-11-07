@@ -1,5 +1,12 @@
 # Lessons learned
 
+## Establish network readiness before binding receiver sockets
+
+- **Problem:** v0.1.8 reached application startup in RPCS3 but failed while opening the RTSP listener with numeric error 112. The emulator's network status was disconnected during the run.
+- **Root Cause:** Not established. The main routine opened receiver sockets before calling the existing bounded local IPv4 resolution path, so a missing route or pending NetCtl state could not be distinguished before socket setup.
+- **Fix:** Move the existing route-first lookup and bounded five-second NetCtl wait before crypto/listener initialization. Preserve the route fallback and emit only state/error codes, never local addresses.
+- **Prevention Rule:** Resolve or explicitly time out network readiness before creating receiver listeners. Treat emulator network status and socket errno as correlated observations, not proof of causation.
+
 ## Extract the debug package before NPDRM finalization
 
 - **Problem:** The v0.1.7 package was successfully finalized, but the packaging script then failed when the bundled PKG reader tried to extract it.

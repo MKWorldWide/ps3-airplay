@@ -1,6 +1,7 @@
 # Active work
 
-- **Current task:** Verify the corrected full package pipeline with AIRPLAY02 v0.1.8, then diagnose RPCS3's socket-bind boundary.
-- **Verified:** v0.1.7 (3,225,904 bytes; SHA-256 `fc8899dd3f62cbd9678bf3f27bdb542770fe9516ad142d37235ea3f958e09674`) installed in RPCS3 and reached APP_START. It then failed RTSP bind with value 112 and logged APP_STOP. RPCS3 network status was Disconnected; causality remains unproven.
-- **In progress:** Extract/verify the unfinalized package before NPDRM finalization; validate finalized envelope separately. Version 0.1.7 is consumed; next package is 0.1.8.
-- **Boundary:** Do not deploy to physical console or modify boot plugins. Do not change RPCS3 network settings without authorization. RPCS3 evidence is not hardware evidence; no AirPlay playback claim until the iPhone connects and streamed audio is heard.
+- **Current task:** Diagnose the v0.1.8 RPCS3 RTSP bind failure and advance the AIRPLAY02 build pipeline on `main`.
+- **Verified:** v0.1.8 installed and reached APP_START in RPCS3, then logged RTSP_BIND_FAIL (112), RECEIVER_OPEN_FAILED, APP_STOP. The RPCS3 network was observed disconnected; causality is unproven. No tone, visible pixels, AirPlay session, RTP, or music was verified.
+- **Current change:** Move the existing bounded route-first/NetCtl IPv4 readiness check before receiver socket creation. This ensures a usable route is established before RTSP/RTP binds, while preserving existing address selection behavior. Advance the next unique package candidate to 0.1.9.
+- **Next:** Commit/push implementation and decision record on `main`; build and validate v0.1.9 in Lima; install/launch in RPCS3 and collect only sanitized log events. Diagnose whether bind failure persists without changing emulator settings.
+- **Boundary:** No physical PS3 writes or boot plugin changes. RPCS3 evidence is not hardware evidence; do not claim AirPlay playback until a real session and audible streamed audio are confirmed.

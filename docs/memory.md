@@ -75,6 +75,13 @@ Demonstration target: PS3 with Evilnat 4.93 CFW and Cobra 8.5 observed; the cons
 - PS3DK `package_finalize` successfully changes a package to NPDRM type `0x80000001`. The older bundled `pkg` reader then exits with `Unsupported Type` when asked to extract that finalized type. Correct package validation by extracting/comparing the unfinalized package first, then finalizing a copy and validating its envelope/header.
 - v0.1.7 is consumed. The next distinct package is v0.1.8; the updated script defaults reflect that.
 
+## RPCS3 v0.1.8 and startup ordering (2026-11-07)
+
+- Corrected packaging in v0.1.8 passed extraction checks before finalization and finalized-envelope validation. The 3,225,904-byte PKG installed in RPCS3 and reported APP_VER 0.1.8 in both UI/SFO and the fresh application log.
+- v0.1.8 reached APP_START, screen/controller/network/crypto initialization, then failed RTSP bind with numeric error 112 and exited. RPCS3 networking was observed disconnected; whether this caused the bind failure is unproven. No tone, visible display output, mDNS, RTSP session, RTP, decode, or music was demonstrated in that run.
+- The existing `resolve_local_ipv4()` function performs a route-first lookup, then a bounded five-second NetCtl wait, then one route fallback. Move this check before receiver socket creation so network readiness is established before bind attempts. Preserve the bounded timeout and privacy-safe status-only diagnostics.
+- The next package candidate is v0.1.9. No physical console deployment or emulator network setting change is authorized by this work pass.
+
 ## Invariants
 
 - Keep protocol inputs, sessions, queues, and logs bounded.

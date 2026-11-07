@@ -259,6 +259,11 @@ int main(void)
 		(void)log_event("NETCTL_INFO_FAILED", -1, 0);
 		goto cleanup;
 	}
+	/* Establish a usable local route before creating receiver sockets. */
+	if (!resolve_local_ipv4(ip, &ip_info, &network_state,
+		&network_address)) {
+		goto cleanup;
+	}
 	if (!raop_crypto_context_init(&crypto_context, raop_crypto_ps3_rng, NULL)) {
 		(void)log_event("CRYPTO_INIT_FAILED", -1, 0);
 		goto cleanup;
@@ -274,10 +279,6 @@ int main(void)
 	if (!raop_receiver_configure_crypto(&receiver, &crypto_context,
 		raop_crypto_ps3_rng, NULL, net_info.ether_addr.data)) {
 		(void)log_event("RECEIVER_CRYPTO_FAILED", -1, 0);
-		goto cleanup;
-	}
-	if (!resolve_local_ipv4(ip, &ip_info, &network_state,
-		&network_address)) {
 		goto cleanup;
 	}
 	(void)snprintf(instance, sizeof(instance),
