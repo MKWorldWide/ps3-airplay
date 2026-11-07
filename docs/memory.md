@@ -245,3 +245,12 @@ Demonstration target: PS3 with Evilnat 4.93 CFW and Cobra 8.5 observed; the cons
 - RPCS3 starts, gets route/listeners, answers OPTIONS 200, parses ANNOUNCE SDP, and logs validation start plus offer flags. No response arrives; `ANNOUNCE_VALIDATE_DONE` is absent. The Content-Type/RSA/response event names were silently rejected because receiver_log limited event names to 24 characters. Their absence is inconclusive and does not prove RSA was skipped. The sender did not reach RTP.
 - v0.1.29 raises the event-name limit to 48, expands the line buffer, and tests a 33-character event through persistent logging. Host/ASan/UBSan and PPU tests pass. Package and RPCS3 replay are next.
 - Desktop is locked; no visible/audio/hardware result. Physical console and boot plugin configuration unchanged.
+
+## v0.30 hardware-launch compatibility pass
+
+- Installed v0.1.29 SFO and EBOOT match the production-port package byte-for-byte. Maintainer confirms installation completes and Game entry fails with 80028F21. The 1,817-byte log remains identical to the old tone run; no fresh startup evidence.
+- Concrete metadata defect: APP_VER and VERSION contained three-component release labels. PS3 version fields require XX.YY; preserved v01.01 uses 01.01. Release v0.30 uses APP_VER/VERSION 00.30 and retains 0.30 in app logs/filename.
+- Packaging defaults to type 0x00000001 matching the preserved v01.01 container; optional finalized mode remains available. NPDRM content ID, title ID, icon/background, runtime source and ABI contract remain intact. Package format and SFO are changed together for a baseline-compatible candidate, so a future success cannot isolate their individual effects.
+- Deferred unfinished RNG instrumentation to a private local patch; no protocol behavior changes in this pass. The new SFO validator rejects the actual v0.1.29 metadata and accepts the original v01.01 SFO.
+- Provenance fix: builds require a matching full checkout revision or stamped source archive. Prior exported source files match main, but the older external build manifest carried an incorrect full SHA. Matching source content does not make that old manifest accurate.
+- Build, upload, installation, visible image, tone, START exit and AirPlay remain separate gates. Hardware launch fix is a candidate until the maintainer confirms it.

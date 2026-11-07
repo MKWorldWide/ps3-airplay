@@ -98,3 +98,12 @@ Keep the generated package, build manifest, and test logs outside Git. Record pa
 - Package and host/ASan/UBSan + PPU checks passed. RPCS3 starts, opens sockets, and answers OPTIONS 200. ANNOUNCE logs SDP success, validation start, and offer flags; the sender receives no response. The app log does not contain the new Content-Type/RSA/response diagnostics because their event names exceed the logger’s 24-character limit and are silently rejected. Absence of those events is not evidence about which operation ran. The short `ANNOUNCE_VALIDATE_DONE` event is also absent.
 - The remote sender did not reach SETUP/RECORD/RTP. Desktop CUA remained locked; no screen/audio observation or physical console change occurred.
 - v0.1.29 increases the permitted event-name length, grows the formatted line buffer accordingly, and tests persistence of a 33-character diagnostic event. Replay .29 before drawing conclusions about ANNOUNCE internals.
+
+## v0.30 hardware-launch compatibility pass
+
+- Installed v0.1.29 SFO and EBOOT match the production-port package byte-for-byte. Maintainer confirms installation completes and Game entry fails with 80028F21. The 1,817-byte log remains identical to the old tone run; no fresh startup evidence.
+- Concrete metadata defect: APP_VER and VERSION contained three-component release labels. PS3 version fields require XX.YY; preserved v01.01 uses 01.01. Release v0.30 uses APP_VER/VERSION 00.30 and retains 0.30 in app logs/filename.
+- Packaging defaults to type 0x00000001 matching the preserved v01.01 container; optional finalized mode remains available. NPDRM content ID, title ID, icon/background, runtime source and ABI contract remain intact. Package format and SFO are changed together for a baseline-compatible candidate, so a future success cannot isolate their individual effects.
+- Deferred unfinished RNG instrumentation to a private local patch; no protocol behavior changes in this pass. The new SFO validator rejects the actual v0.1.29 metadata and accepts the original v01.01 SFO.
+- Provenance fix: builds require a matching full checkout revision or stamped source archive. Prior exported source files match main, but the older external build manifest carried an incorrect full SHA. Matching source content does not make that old manifest accurate.
+- Build, upload, installation, visible image, tone, START exit and AirPlay remain separate gates. Hardware launch fix is a candidate until the maintainer confirms it.

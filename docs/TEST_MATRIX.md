@@ -152,3 +152,7 @@ Review reports and logs for console/account identifiers, network addresses, Wi-F
 | ANNOUNCE | BLOCKED | SDP parse, validation start, and offer fields log. The client gets no response; short validation-completion event is absent. Newly added Content-Type/RSA/response names exceed the logger’s 24-character limit and are silently dropped. Their absence is inconclusive. |
 | SETUP/RECORD/RTP | NOT REACHED | Probe aborts at ANNOUNCE timeout. |
 | v0.1.29 logger fix | HOST PASS / RPCS3 PENDING | Event-name limit raised and a 33-character event persistence assertion passes in the full Lima suite; package/runtime replay pending. |
+
+## v0.30 compatibility candidate
+
+Release label 0.30 maps to PS3 SFO 00.30. Packaging uses the preserved v01.01 type-1 debug container. Older three-component SFO values are now rejected. Production RTSP remains 5000; hardware launch/display/exit and actual AirPlay playback require fresh evidence. See the current decision log and memory for validation boundaries.

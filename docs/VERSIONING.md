@@ -173,3 +173,7 @@ The standalone receiver `Makefile` and canonical Lima build/package scripts defa
 - Package validation, Lima ASan/UBSan suite, and PPU component compilation passed. RPCS3 starts and answers OPTIONS 200; ANNOUNCE SDP and fields parse, but no response arrives. New Content-Type/RSA/response event names were filtered by the 24-character logger limit, so their absence is inconclusive. The short validation-completion event is absent. No SETUP/RECORD/RTP or audio evidence.
 - Local title payload was staged after preserving v0.1.27 data. Desktop remains locked; physical PS3 and boot plugins unchanged.
 - v0.1.29 fixes the logger event-name limit and adds a regression test.
+
+## v0.30 compatibility candidate
+
+Release label 0.30 maps to PS3 SFO 00.30. Packaging uses the preserved v01.01 type-1 debug container. Older three-component SFO values are now rejected. Production RTSP remains 5000; hardware launch/display/exit and actual AirPlay playback require fresh evidence. See the current decision log and memory for validation boundaries.

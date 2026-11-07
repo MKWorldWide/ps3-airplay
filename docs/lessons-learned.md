@@ -409,3 +409,10 @@
 - **Root Cause:** `receiver_log` silently rejected event names longer than 24 characters, although several new names were 25–33 characters. The session callback ignored the logger's failure result.
 - **Fix:** Raise the explicit event-name bound to 48 characters, enlarge the formatted-line buffer, and assert that a 33-character event is actually written and retrievable.
 - **Prevention Rule:** Add a logger persistence test whenever diagnostic event vocabulary changes; verify the maximum event length is compatible with the storage filter and line buffer. Never use absence of an event as evidence until logger acceptance is verified.
+
+## Release labels and PS3 SFO versions are different formats
+
+- **Problem:** Packages installed but failed to launch with 80028F21. SFO fields contained 0.1.29 instead of XX.YY.
+- **Root Cause:** Packaging substituted the human release label into both platform version fields, and checks only compared that same invalid string. This is a concrete defect; its relationship to the launch error requires hardware confirmation.
+- **Fix:** Release 0.30 maps to SFO 00.30. Parse extracted SFO fields, enforce XX.YY, and match the v01.01 debug container format. Reject mismatched revision manifests before compiling.
+- **Prevention Rule:** Validate platform formats independently of application labels. RPCS3 startup and successful installation do not prove the console accepts launch metadata. Derive source revision from the exact exported commit.

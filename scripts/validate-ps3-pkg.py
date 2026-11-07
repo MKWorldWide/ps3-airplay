@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check the finalized NPDRM package envelope without unpacking it."""
+"""Check a debug or finalized PS3 package envelope without unpacking it."""
 
 from __future__ import annotations
 
@@ -12,16 +12,20 @@ def fail(message: str) -> None:
 
 
 def main() -> None:
-    if len(sys.argv) != 3:
-        fail("usage: validate-ps3-pkg.py PATH EXPECTED_CONTENT_ID")
+    if len(sys.argv) not in (3, 4):
+        fail("usage: validate-ps3-pkg.py PATH EXPECTED_CONTENT_ID [debug|finalized]")
 
     path = Path(sys.argv[1])
     expected_content_id = sys.argv[2].encode("ascii")
+    package_format = sys.argv[3] if len(sys.argv) == 4 else "finalized"
+    if package_format not in ("debug", "finalized"):
+        fail("unknown package format")
+    expected_type = 1 if package_format == "debug" else 0x80000001
     data = path.read_bytes()
     if len(data) < 0xC0 or data[:4] != b"\x7fPKG":
         fail("missing or truncated PKG header")
-    if int.from_bytes(data[4:8], "big") != 0x80000001:
-        fail("expected finalized NPDRM package type 0x80000001")
+    if int.from_bytes(data[4:8], "big") != expected_type:
+        fail(f"expected {package_format} package type {expected_type:#010x}")
     declared_size = int.from_bytes(data[24:32], "big")
     data_offset = int.from_bytes(data[32:40], "big")
     data_size = int.from_bytes(data[40:48], "big")
@@ -35,7 +39,7 @@ def main() -> None:
 
     print(
         f"PKG validation passed: {path.name}, {len(data)} bytes, "
-        f"finalized NPDRM, {item_count} items"
+        f"{package_format}, {item_count} items"
     )
 
 

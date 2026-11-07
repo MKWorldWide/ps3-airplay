@@ -8,10 +8,11 @@ PS3DK_TOOLS="${PS3DK_TOOLS:-$HOME/ps3-airplay-host/ps3-sdk-tools-v0.27.0-linux-x
 SELF_TOOL="${SELF_TOOL:-$PS3DK_TOOLS/make_self_npdrm}"
 PKG_TOOL="${PKG_TOOL:-$PS3DK_TOOLS/pkg}"
 PACKAGE_FINALIZE="${PACKAGE_FINALIZE:-$PS3DK_TOOLS/package_finalize}"
+PACKAGE_FORMAT="${PACKAGE_FORMAT:-debug}"
 ELF="${ELF:-$PROJECT_ROOT/build/lima-standalone-receiver/ps3-airplay-receiver.elf}"
 OUT_DIR="${OUT_DIR:-$PROJECT_ROOT/build/lima-standalone-package}"
 APPID=AIRPLAY02
-APP_VERSION="${APP_VERSION:-0.1.29}"
+APP_VERSION="${APP_VERSION:-0.30}"
 CONTENTID="UP0001-${APPID}_00-0000000000000000"
 STAGE="$OUT_DIR/$CONTENTID"
 EXTRACT="$OUT_DIR/extracted"
@@ -20,7 +21,14 @@ UNFINALIZED_PACKAGE="$PACKAGE.unfinalized.pkg"
 ICON0="$PS3DEV/bin/ICON0.PNG"
 BACKGROUND_RGB="${BACKGROUND_RGB:-$PROJECT_ROOT/build/diagnostic-background.rgb}"
 
-for tool in "$SELF_TOOL" "$PKG_TOOL" "$PACKAGE_FINALIZE" "$PS3DEV/bin/sfo"; do
+# Keep the release label separate from the PS3 fixed-width version fields.
+SFO_VERSION="${SFO_VERSION:-$(python3 -c 'import re,sys; v=sys.argv[1]; m=re.fullmatch(r"([0-9]{1,2})\.([0-9]{1,2})",v); sys.exit("Set SFO_VERSION=XX.YY for a semantic release label") if not m else print("%02d.%02d" % tuple(map(int,m.groups())))' "$APP_VERSION")}"
+if [[ ! "$SFO_VERSION" =~ ^[0-9]{2}\.[0-9]{2}$ ]] ||
+   [[ "$PACKAGE_FORMAT" != debug && "$PACKAGE_FORMAT" != finalized ]]; then
+ echo "Require SFO_VERSION=XX.YY and PACKAGE_FORMAT=debug or finalized" >&2
+ exit 1
+fi
+for tool in "$SELF_TOOL" "$PKG_TOOL" "$PS3DEV/bin/sfo"; do
 	if [[ ! -x "$tool" ]]; then
 		echo "Missing executable: $tool" >&2
 		exit 1
@@ -50,7 +58,7 @@ rm -rf "$STAGE" "$EXTRACT"
 mkdir -p "$STAGE/USRDIR" "$EXTRACT"
 cp "$ICON0" "$STAGE/ICON0.PNG"
 cp "$BACKGROUND_RGB" "$STAGE/USRDIR/background.rgb"
-sed "s/01\.00/${APP_VERSION}/g" "$PS3DEV/bin/sfo.xml" > "$OUT_DIR/sfo.xml"
+sed "s/01\.00/${SFO_VERSION}/g" "$PS3DEV/bin/sfo.xml" > "$OUT_DIR/sfo.xml"
 # Bind the EBOOT's NPDRM content ID to the same ID used by PARAM.SFO and PKG.
 "$SELF_TOOL" "$ELF" "$STAGE/USRDIR/EBOOT.BIN" \
 	"$CONTENTID"
@@ -73,8 +81,8 @@ if [[ ! -f "$EXTRACTED_EBOOT" || ! -f "$EXTRACTED_SFO" ||
 fi
 SFO_OUTPUT="$("$PS3DEV/bin/sfo" --list "$EXTRACTED_SFO")"
 printf '%s\n' "$SFO_OUTPUT"
-if ! printf '%s\n' "$SFO_OUTPUT" | grep -F "'APP_VER': '${APP_VERSION}'" >/dev/null; then
-	echo "Extracted SFO does not report APP_VER ${APP_VERSION}" >&2
+if ! printf '%s\n' "$SFO_OUTPUT" | grep -F "'APP_VER': '${SFO_VERSION}'" >/dev/null; then
+	echo "Extracted SFO does not report APP_VER ${SFO_VERSION}" >&2
 	exit 1
 fi
 cmp -n "$(wc -c < "$STAGE/USRDIR/EBOOT.BIN")" \
@@ -87,8 +95,11 @@ if printf '%s\n' "$PKG_LIST" | awk '/(raw data|directory|NPDRM SELF):/ && $NF ~ 
 	echo "PKG contains absolute entry paths; refusing to publish this package" >&2
 	exit 1
 fi
+python3 "$PROJECT_ROOT/scripts/validate-ps3-sfo.py" "$EXTRACTED_SFO" "$SFO_VERSION"
 cp "$UNFINALIZED_PACKAGE" "$PACKAGE"
-"$PACKAGE_FINALIZE" "$PACKAGE"
-python3 "$PROJECT_ROOT/scripts/validate-ps3-pkg.py" "$PACKAGE" "$CONTENTID"
+if [[ "$PACKAGE_FORMAT" == finalized ]]; then
+ "$PACKAGE_FINALIZE" "$PACKAGE"
+fi
+python3 "$PROJECT_ROOT/scripts/validate-ps3-pkg.py" "$PACKAGE" "$CONTENTID" "$PACKAGE_FORMAT"
 sha256sum "$UNFINALIZED_PACKAGE" "$PACKAGE" \
 	"$STAGE/USRDIR/EBOOT.BIN" "$STAGE/USRDIR/background.rgb" "$STAGE/ICON0.PNG"

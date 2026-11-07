@@ -14,16 +14,23 @@ MBEDTLS_INCLUDE="$MBEDTLS_SOURCE/include"
 MBEDTLS_CRYPTO_LIBRARY="$MBEDTLS_PPU_BUILD/library/libmbedcrypto.a"
 OUTPUT_DIR="$PROJECT_ROOT/build/lima-standalone-receiver"
 JOBS="${JOBS:-2}"
-APP_VERSION="${APP_VERSION:-0.1.29}"
+APP_VERSION="${APP_VERSION:-0.30}"
 RTSP_PORT="${RTSP_PORT:-5000}"
 PROJECT_REV="$(git -C "$PROJECT_ROOT" rev-parse HEAD 2>/dev/null || true)"
+if [[ -z "$PROJECT_REV" && -f "$PROJECT_ROOT/.source-revision" ]]; then
+ PROJECT_REV="$(cat "$PROJECT_ROOT/.source-revision")"
+fi
 SOURCE_REVISION="${SOURCE_REVISION:-$PROJECT_REV}"
+if [[ -z "$PROJECT_REV" || "$SOURCE_REVISION" != "$PROJECT_REV" ]]; then
+ echo "Source revision must match checkout HEAD or the archive .source-revision stamp" >&2
+ exit 1
+fi
 if [[ ! "$RTSP_PORT" =~ ^[0-9]+$ ]] ||
 	(( 10#$RTSP_PORT < 1 || 10#$RTSP_PORT > 65535 )); then
 	echo "RTSP_PORT must be an integer from 1 through 65535" >&2
 	exit 1
 fi
-if [[ ! "$SOURCE_REVISION" =~ ^[0-9a-f]{7,40}$ ]]; then
+if [[ ! "$SOURCE_REVISION" =~ ^[0-9a-f]{40}$ ]]; then
 	echo "Set SOURCE_REVISION to the exact source commit being built" >&2
 	exit 1
 fi

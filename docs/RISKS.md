@@ -41,3 +41,7 @@
 3. Begin with a reversible standalone test.
 4. Keep boot-time plugin settings unchanged unless a separately reviewed recovery plan explicitly requires otherwise.
 5. Test resident lifecycle without audio before evaluating game coexistence.
+
+## v0.30 compatibility candidate
+
+Release label 0.30 maps to PS3 SFO 00.30. Packaging uses the preserved v01.01 type-1 debug container. Older three-component SFO values are now rejected. Production RTSP remains 5000; hardware launch/display/exit and actual AirPlay playback require fresh evidence. See the current decision log and memory for validation boundaries.
