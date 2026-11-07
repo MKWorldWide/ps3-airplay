@@ -95,8 +95,12 @@ int main(void)
 		assert(ring.phase == 0 && !ring.have_current && !ring.have_next);
 		assert(ring.frames_written == written && ring.frames_read == read);
 		assert(ring.output_underflows == underflows && ring.frames_dropped == dropped);
+		raop_pcm_ring_render_silence(output, 1);
+		assert(output[0] == 0.0f && output[1] == 0.0f);
+		assert(ring.output_underflows == underflows);
 		assert(raop_pcm_ring_render_float(&ring, 48000, 48000, output, 1) == 1);
 		assert(output[0] == 0.0f && output[1] == 0.0f);
+		assert(ring.output_underflows == underflows + 1);
 	}
 
 	puts("bounded PCM ring, stereo conversion and 44.1-to-48 kHz resampling: PASS");

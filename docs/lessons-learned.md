@@ -468,3 +468,24 @@ The v0.1.31 fresh RPCS3 replay verifies the portable-arithmetic correction: the 
 - **Root Cause:** Not fully established. The log proves encrypted RTP, successful ALAC frames and PCM submissions, and also shows sequence gaps; it does not include enough history for exact loss/recovery accounting. The display callbacks and no-error log do not prove stable scanout.
 - **Fix:** Record this as first audible playback, not stable playback. Target the measured resend weakness independently and retain frequent aggregate counters; keep XMB resume as its own hardware gate.
 - **Prevention Rule:** Report success by layer and quality separately. A decoded PCM path and a human-heard song do not imply clean audio, accurate timing, stable display, or a passing soak test.
+
+## Verify package identity before attributing live audio diagnostics
+
+- **Problem:** A newly staged receiver build was easy to confuse with the currently running app when evaluating crackling.
+- **Root Cause:** The v0.1.34 install request timed out, while the PS3 continued running v0.1.33. The live log cadence (128-packet checkpoints) also differed from v0.1.34's 512-packet cadence.
+- **Fix:** Retrieved installed SFO and EBOOT over FTP and compared both byte-for-byte with local candidates; v0.1.33 matched, v0.1.34 did not. The staged v0.1.34 PKG independently matched its local file.
+- **Prevention Rule:** Identify the installed binary before interpreting its telemetry. Confirm an app has exited before replacing the same title.
+
+## Select the intended microphone before recording diagnostic audio
+
+- **Problem:** An attempted short capture used the iPhone microphone rather than the MacBook's built-in microphone.
+- **Root Cause:** The AVFoundation input was selected by device index instead of verified by name; device index zero was not the intended local microphone.
+- **Fix:** Discarded that capture as evidence and analyzed only the user's supplied MacBook recording. The supplied file's gross level analysis found no hard silence or large sample discontinuity, but does not exclude subtle crackle.
+- **Prevention Rule:** Enumerate and explicitly select the MacBook microphone, confirm its identity before recording, and keep the sample private. Never assume the default input is local.
+
+## Exclude intentional startup silence from stream underrun telemetry
+
+- **Problem:** The PS3 log reported 51,200 PCM underflow frames, which looked like a large playback dropout.
+- **Root Cause:** The audio callback rendered the empty PCM ring after the diagnostic tone and during RAOP's 128-packet prebuffer. Those frames are intentional silence, but the ring counted them as underruns. Counter baselines could also carry stale values across recording sessions.
+- **Fix:** v0.1.35 renders intentional silence without touching ring statistics until the decoder and prebuffer are ready, and resets underflow/drop report baselines at session boundaries. A host regression asserts silence rendering does not increment underflows while a true empty active render does.
+- **Prevention Rule:** Count an audio underrun only after the stream is in a state where PCM is expected. Separate intentional lead-in/prebuffer silence from starvation during active playback.

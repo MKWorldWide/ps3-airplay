@@ -46,6 +46,12 @@ Portable components cover bounded DNS-SD/mDNS, RTSP/SDP session handling, UDP RT
 - v0.1.24 adds bounded 128-packet RTP health checkpoints for loss, reordering, duplicates, late arrivals, queue drops, payload throughput, and queue depth. The Lima integration/sanitizer suite, PPU component compile, standalone ELF, and finalized PKG validate. RPCS3 runtime remains pending because desktop access still reports locked.
 - Historical next-validation note above is superseded by the current RPCS3 probe below.
 
+### Audio-quality follow-up (2026-11-07)
+
+- A fresh live log and byte comparison identify the active PS3 build as v0.1.33. The receiver obtained 44.1 kHz encrypted ALAC and decoded without reported ALAC failures; the retained log has 88 missing RTP sequence numbers in 1,664 received packets. User reports crackling increases while scrolling XMB. Source inspection found its 51,200-frame underflow counter includes intentional startup prebuffer silence.
+- v0.1.35 combines v0.1.34's bounded resend recovery with corrected active-playback underflow accounting. The current title was still running during the log snapshot. Install after clean exit, then compare RTP gaps/recovery and valid underflow deltas on one short stream. Keep display resume separate.
+- Do not attribute the crackling to Spotify's Lossless option yet. The RAOP log reports the AirPlay transport format, not Spotify's source format. If v0.1.35 still crackles, A/B Spotify quality with the same track and network while correlating RTP gaps and PCM underflows.
+
 ## Latest update (2026-11-07)
 
 - AIRPLAY02 v0.1.14 was installed and launched in RPCS3. The fresh capped log reached screen/controller and NetCtl initialization, then `NET_IP_TIMEOUT` and `APP_STOP result=1`. It did not reach crypto, receiver listeners, mDNS, or audio. The package is structurally validated, but its SO_REUSEPORT discovery change was not exercised.

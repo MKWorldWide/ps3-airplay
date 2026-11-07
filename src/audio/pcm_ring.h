@@ -32,5 +32,7 @@ size_t raop_pcm_ring_push_le16(raop_pcm_ring *ring, const uint8_t *pcm,
 /* Outputs stereo float frames, linearly resampling 44.1/48 kHz to 48 kHz. */
 size_t raop_pcm_ring_render_float(raop_pcm_ring *ring, uint32_t input_rate,
 	uint32_t output_rate, float *output, size_t output_frames);
+/* Fill output with intentional silence without counting stream underflows. */
+void raop_pcm_ring_render_silence(float *output, size_t output_frames);
 
 #endif

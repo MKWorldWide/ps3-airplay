@@ -209,7 +209,8 @@ static void fill_audio_silence(const audioPortConfig *config)
 		(size_t)config->channelCount * AUDIO_BLOCK_SAMPLES * sizeof(float));
 }
 
-static void render_next_audio_block(const audioPortConfig *config)
+static void render_next_audio_block(const audioPortConfig *config,
+	int stream_ready)
 {
 	volatile u64 *read_index = (volatile u64 *)(uintptr_t)config->readIndex;
 	u32 next_block = (u32)((*read_index + 1U) % config->numBlocks);
@@ -226,6 +227,10 @@ static void render_next_audio_block(const audioPortConfig *config)
 				(int)RAOP_DIAGNOSTIC_TONE_FREQUENCY,
 				RAOP_DIAGNOSTIC_TONE_FRAMES);
 		}
+		return;
+	}
+	if (!stream_ready) {
+		raop_pcm_ring_render_silence(block, AUDIO_BLOCK_SAMPLES);
 		return;
 	}
 	(void)raop_pcm_ring_render_float(&pcm_ring, active_sample_rate,
@@ -453,6 +458,8 @@ int main(void)
 				receiver.session.offer.fmtp[10];
 			raop_pcm_ring_init(&pcm_ring,
 				decoder == NULL ? 2 : (uint8_t)receiver.session.offer.fmtp[6]);
+			reported_underflows = 0;
+			reported_drops = 0;
 			audio_port_frames_submitted = 0;
 			reported_pcm_frames_written = 0;
 			reported_pcm_frames_read = 0;
@@ -473,6 +480,8 @@ int main(void)
 			active_sample_rate = 48000;
 			memset(decoded_pcm, 0, sizeof(decoded_pcm));
 			raop_pcm_ring_init(&pcm_ring, 2);
+			reported_underflows = 0;
+			reported_drops = 0;
 			audio_port_frames_submitted = 0;
 			reported_pcm_frames_written = 0;
 			reported_pcm_frames_read = 0;
@@ -532,7 +541,8 @@ int main(void)
 		{
 			sys_event_t event;
 			if (sysEventQueueReceive(audio_queue, &event, 1000) == 0)
-				render_next_audio_block(&audio_config);
+				render_next_audio_block(&audio_config,
+					decoder != NULL && audio_prebuffer_ready);
 		}
 		sysUtilCheckCallback();
 		if ((u64)sysGetSystemTime() >= next_log_us) {

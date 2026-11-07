@@ -195,4 +195,8 @@ Installed from source e34cbce. Corrects ALAC host byte order; adds regular nonbl
 
 - Source `7352a77cbaa7d13d57ad93a2788bdc0ba26e4fd2`; AIRPLAY02 PKG 3,235,056 bytes, SHA-256 `aa3b456caa983b85b26fa63a43289b2a301a262a2d9d5f8748783897ddea79f5`. Installed EBOOT/SFO matched the candidate.
 - Maintainer confirms multiple AirPlay Spotify songs were audible. Audio crackled and remained unstable/low fidelity; the display flickered after XMB resume. The retained hardware log confirms RTP/decrypt/ALAC/PCM activity, with 106 sequence gaps in the visible 1,792-packet window and zero sampled ALAC failures. The log wrapped and exact session-wide counts are unavailable.
-- v0.1.34 / SFO 00.34 adds bounded pending/outstanding RTP resend state and less noisy aggregate logging. Full Lima host suite and PPU component checks pass; the full ELF/package and hardware results remain pending.
+- v0.1.34 / SFO 00.34 adds bounded pending/outstanding RTP resend state and less noisy aggregate logging. Source commit `f5f28c4c0e505722fc689947955da8f57fab1c9e`; validated 2,780,832-byte PPU ELF SHA-256 `e4e5367f41341018ebcf825a68a33880346dee3666aa7a0e0cd50da43bc9f4bc`, and 3,236,016-byte finalized PKG SHA-256 `8828e032fea57ab1ce4e0041f0c802c45940f3c7abe93caf3d9969fa9f01e80f`. Lima ASan/UBSan suite, PPU components/application link, SFO/ELF/content/package validation passed. PKG is staged on PS3 and byte-verified; latest installed SFO/EBOOT still match v0.1.33. v0.1.34 hardware behavior is not yet tested.
+
+## v0.1.35 / SFO 00.35 candidate
+
+Combines v0.1.34's bounded RTP resend-range recovery with valid PCM underflow accounting: intentional silence before decoder/prebuffer readiness no longer increments stream underruns, and session counters reset at recording boundaries. A host regression covers intentional silence versus a true active empty-ring render. Release source/package build and PS3 hardware result are pending.

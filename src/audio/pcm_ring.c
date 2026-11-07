@@ -142,3 +142,10 @@ size_t raop_pcm_ring_render_float(raop_pcm_ring *ring, uint32_t input_rate,
 	}
 	return rendered;
 }
+
+void raop_pcm_ring_render_silence(float *output, size_t output_frames)
+{
+	if (output == NULL)
+		return;
+	memset(output, 0, output_frames * 2U * sizeof(*output));
+}

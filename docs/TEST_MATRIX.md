@@ -213,3 +213,17 @@ The emitter used a paced diagnostic fixture; target output submission is not pro
 | HW-033-03 | Receive/decrypt/decode/output pipeline | Log segment confirms encrypted 44.1 kHz stereo RTP, ALAC frame decode and PCM submissions. It shows at least 1,792 packets in the visible receive batches, 106 RTP sequence gaps, and zero ALAC failures in sampled totals. Log wrapped; initial RTSP/SDP context and exact whole-session counts are missing. |
 | HW-033-04 | PS menu resume | FAIL/inconsistent: earlier resume stuck at a loading view; subsequent resume returned to app but the background flickered. |
 | BUILD-034 | Bounded resend queue and delayed recovery | Host/Lima validation PASS: preserves gaps queued during the send throttle, tracks multiple outstanding ranges, and accepts delayed retransmission packets. Full PPU app/package and physical behavior pending. |
+
+## Follow-up live stream evidence (2026-11-07)
+
+| Test | Result |
+|---|---|
+| Installed build identity | PASS: FTP copies of installed PARAM.SFO and EBOOT.BIN both byte-match local v0.1.33; neither matches v0.1.34. |
+| v0.1.34 staged artifact | PASS: 3,236,016-byte staged PKG byte-matches local package; install remains pending. |
+| RTP continuity on v0.1.33 | DEGRADED: 1,664 received packets, 88 sequence gaps, and five resend-recovery events in the retained live snapshot. |
+| Decrypt and ALAC | PASS in sampled interval: encrypted 44.1 kHz stream and zero ALAC failures. This does not prove every frame was rendered. |
+| PCM/output continuity | INCONCLUSIVE on v0.1.33: user reports audible crackle, but code counted intentional startup prebuffer silence as underflow; corrected telemetry is in v0.1.35. |
+| XMB resume display | FAIL/inconsistent by user report: resumed image is dim/flickering with frozen loading indicator; a later relaunch showed a solid background. |
+| Spotify source-quality causality | UNKNOWN: RAOP's negotiated 44.1 kHz ALAC does not identify whether Spotify delivered lossless FLAC to its AirPlay sender. |
+| Supplied acoustic recording | INCONCLUSIVE: 22.485-second mono 48 kHz sample has no >10 ms interval below -50 dBFS or large waveform discontinuity, but its -40.7 dBFS RMS level limits detection of subtle crackle. The private recording is not in the repository. |
+| PCM intentional-silence accounting | HOST TEST PASS: helper fills a block with silence without changing underflow counters; an active empty ring still increments underflow. Full PPU build and physical v0.1.35 verification pending. |
