@@ -8,7 +8,7 @@ Documented a controlled RPCS3 retry with the Lima VM stopped and the emulator ne
 
 ## Why this pass was needed
 
-v0.1.12 exposed an mDNS bind-stage failure, but the initial run had both RPCS3 and Lima sharing the Mac host. A second run was needed to distinguish the Lima proxy from the operating system's standard mDNS listener.
+v0.1.12 exposed an mDNS bind-stage failure, but the initial run had both RPCS3 and Lima sharing the host. A second run was needed to distinguish the Lima proxy from the operating system's standard mDNS listener.
 
 ## Files changed
 
@@ -23,7 +23,7 @@ v0.1.12 exposed an mDNS bind-stage failure, but the initial run had both RPCS3 a
 
 ## Architecture / logic changes
 
-None. The documentation now attributes the RPCS3 mDNS bind failure to macOS `mDNSResponder`, which still held wildcard UDP 5353 after Lima was stopped. Lima's host-side proxy remains an additional conflict when the VM is running.
+None. The documentation now attributes the RPCS3 mDNS bind failure to the host's system mDNS responder, which still held wildcard UDP 5353 after Lima was stopped. Lima's host-side proxy remains an additional conflict when the VM is running.
 
 ## Runtime behavior changes
 
@@ -34,7 +34,7 @@ None. No operating system service or application configuration was changed as pa
 - Repeated the v0.1.12 launch in RPCS3 with Internet Connected while Lima was stopped.
 - Confirmed RTSP 5001 and RTP UDP 6000–6002 readiness followed by mDNS stage 4 / errno 112.
 - Confirmed a host wildcard UDP 5353 bind probe failed with `EADDRINUSE`.
-- Inspected the UDP table and identified macOS `mDNSResponder` on wildcard IPv4 and IPv6 UDP 5353.
+- Inspected the UDP table and identified the system mDNS responder on wildcard IPv4 and IPv6 UDP 5353.
 - Verified Lima returned to Running and has at least 8 GiB free in the guest.
 - `git diff --check` passed before this decision record was added.
 
@@ -48,7 +48,7 @@ The next decisive test is a native PS3 run with the receiver bound to UDP 5353, 
 
 ## Risks introduced
 
-No runtime risk introduced. Do not stop or alter macOS `mDNSResponder` to accommodate an emulator test.
+No runtime risk introduced. Do not stop or alter the host's system mDNS responder to accommodate an emulator test.
 
 ## Decision record
 
@@ -58,7 +58,7 @@ Treat the RPCS3 UDP 5353 failure as a host limitation and use a native PS3 run t
 
 ### Context
 
-The exact bind-stage failure persisted with Lima stopped, and the Mac's UDP table identified the system mDNS responder as the wildcard listener.
+The exact bind-stage failure persisted with Lima stopped, and the host UDP table identified the system mDNS responder as the wildcard listener.
 
 ### Options considered
 
@@ -72,7 +72,7 @@ AirPlay DNS-SD conventionally uses UDP 5353, while stopping the host resolver is
 
 ### Tradeoffs accepted
 
-RPCS3 cannot currently validate mDNS on this Mac. Discovery must be established with the actual console or a separate controlled host configuration.
+RPCS3 cannot currently validate mDNS on this host. Discovery must be established with the actual console or a separate controlled host configuration.
 
 ## Next recommended step
 

@@ -207,6 +207,13 @@
 ## Attribute RPCS3 mDNS bind failures to the host
 
 - **Problem:** v0.1.12 reached its RTSP and RTP listeners in RPCS3 but failed to bind UDP 5353, preventing discovery.
-- **Root Cause:** The same failure reproduced with Lima stopped. macOS `mDNSResponder` owns wildcard UDP 5353; Lima's host proxy can be an additional holder while Lima runs.
+- **Root Cause:** The same failure reproduced with Lima stopped. The host's system mDNS responder owns wildcard UDP 5353; Lima's host proxy can be an additional holder while Lima runs.
 - **Fix:** Keep the system mDNS service untouched and record the RPCS3 limitation. Validate mDNS on the PS3 separately before changing receiver behavior.
 - **Prevention Rule:** Isolate emulator networking from host services before changing protocol code; a host bind failure does not establish a target-console failure.
+
+## Reuse generated package assets only after matching their source
+
+- **Problem:** A fresh Lima checkout could not regenerate the diagnostic RGB background because Pillow was not installed in the guest.
+- **Root Cause:** The image conversion script has an optional Python dependency that is not part of the pinned PS3DK toolchain.
+- **Fix:** Reused the existing generated RGB file only after confirming the source JPEG hashes matched and the copied RGB bytes compared exactly.
+- **Prevention Rule:** Keep generated image assets out of source control; when reusing one, verify both its source asset identity and byte-for-byte output. Install the documented Pillow dependency when a new conversion is actually required.
