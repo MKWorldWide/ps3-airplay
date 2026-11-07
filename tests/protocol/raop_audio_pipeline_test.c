@@ -3,13 +3,16 @@
 #include "../../src/codec/raop_alac.h"
 #include "../../src/crypto/raop_crypto.h"
 #include "../../src/protocol/raop_receiver.h"
+#include "../../src/audio/pcm_ring.h"
 
+#include <arpa/inet.h>
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/socket.h>
 #include <unistd.h>
 
 #include <mbedtls/aes.h>
@@ -80,6 +83,163 @@ static uint32_t next_random(uint32_t *state)
 	value ^= value << 5;
 	*state = value;
 	return value;
+}
+
+static void send_all_fd(int fd, const char *data, size_t length)
+{
+	size_t sent = 0;
+	while (sent < length) {
+		ssize_t amount = send(fd, data + sent, length - sent, 0);
+		assert(amount > 0);
+		sent += (size_t)amount;
+	}
+}
+
+static void send_request_and_pump(raop_receiver *receiver, int fd,
+	const char *request, char *response, size_t response_capacity)
+{
+	size_t total = 0;
+	unsigned int attempt;
+	send_all_fd(fd, request, strlen(request));
+	for (attempt = 0; attempt < 100 && total + 1 < response_capacity;
+		++attempt) {
+		ssize_t amount;
+		(void)raop_receiver_poll(receiver, 20);
+		amount = recv(fd, response + total, response_capacity - total - 1,
+			MSG_DONTWAIT);
+		if (amount > 0) {
+			total += (size_t)amount;
+			response[total] = '\0';
+			if (strstr(response, "\r\n\r\n") != NULL)
+				return;
+		} else if (amount < 0 && errno != EAGAIN && errno != EWOULDBLOCK &&
+			errno != EINTR) {
+			assert(0 && "RTSP socket receive failed");
+		}
+	}
+	assert(0 && "timed out waiting for RTSP response");
+}
+
+static void verify_socket_audio_pipeline(raop_crypto_context *crypto,
+	const uint8_t mac[6], const char *wrapped_b64, const char *iv_b64,
+	const uint8_t *encoded, size_t encoded_length, const uint8_t *expected,
+	size_t expected_length, const uint8_t *encrypted_rtp, size_t rtp_length)
+{
+	raop_receiver receiver = {0};
+	raop_rtp_frame frame;
+	raop_alac_decoder *decoder;
+	raop_pcm_ring ring;
+	struct sockaddr_in address;
+	uint8_t pcm[RAOP_ALAC_PCM_MAX];
+	uint8_t rtp_packet[12 + RAOP_RTP_PAYLOAD_MAX] = {0x80, 96};
+	char sdp[1024], request[2048], response[RAOP_SESSION_RESPONSE_MAX];
+	int client_fd, sender_fd, request_length;
+	size_t pcm_length = 0;
+	uint32_t samples = 0;
+	unsigned int attempt;
+	static const char setup_transport[] =
+		"RTP/AVP/UDP;unicast;mode=record;control_port=40000;timing_port=40001";
+
+	assert(encoded_length == rtp_length - 12U);
+	assert(raop_receiver_open(&receiver, 0, 0, NULL));
+	assert(raop_receiver_configure_crypto(&receiver, crypto, host_rng, NULL, mac));
+	client_fd = socket(AF_INET, SOCK_STREAM, 0);
+	assert(client_fd >= 0);
+	memset(&address, 0, sizeof(address));
+	address.sin_family = AF_INET;
+	address.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+	address.sin_port = htons(raop_receiver_rtsp_port(&receiver));
+	assert(connect(client_fd, (struct sockaddr *)&address, sizeof(address)) == 0);
+	(void)raop_receiver_poll(&receiver, 20); /* accept the TCP control peer */
+
+	send_request_and_pump(&receiver, client_fd,
+		"OPTIONS * RTSP/1.0\r\nCSeq: 1\r\n\r\n", response, sizeof(response));
+	assert(strstr(response, "RTSP/1.0 200 OK") != NULL);
+	assert(strstr(response, "Public: OPTIONS, ANNOUNCE") != NULL);
+
+	snprintf(sdp, sizeof(sdp),
+		"v=0\r\n"
+		"m=audio 0 RTP/AVP 96\r\n"
+		"a=rtpmap:96 AppleLossless/44100/2\r\n"
+		"a=fmtp:96 4096 0 16 40 10 14 2 255 0 0 44100\r\n"
+		"a=rsaaeskey:%s\r\na=aesiv:%s\r\na=et:1\r\n",
+		wrapped_b64, iv_b64);
+	request_length = snprintf(request, sizeof(request),
+		"ANNOUNCE rtsp://127.0.0.1/stream RTSP/1.0\r\n"
+		"CSeq: 2\r\nContent-Type: application/sdp\r\n"
+		"Content-Length: %zu\r\n\r\n%s", strlen(sdp), sdp);
+	assert(request_length > 0 && (size_t)request_length < sizeof(request));
+	{
+		size_t first_part = (size_t)request_length / 2U;
+		send_all_fd(client_fd, request, first_part);
+		(void)raop_receiver_poll(&receiver, 20);
+		send_all_fd(client_fd, request + first_part,
+			(size_t)request_length - first_part);
+		response[0] = '\0';
+		{
+			size_t total = 0;
+			unsigned int poll;
+			for (poll = 0; poll < 100 && total + 1 < sizeof(response); ++poll) {
+				ssize_t amount;
+				(void)raop_receiver_poll(&receiver, 20);
+				amount = recv(client_fd, response + total,
+					sizeof(response) - total - 1, MSG_DONTWAIT);
+				if (amount > 0) {
+					total += (size_t)amount;
+					response[total] = '\0';
+					if (strstr(response, "\r\n\r\n") != NULL)
+						break;
+				} else if (amount < 0 && errno != EAGAIN &&
+					errno != EWOULDBLOCK && errno != EINTR) {
+					assert(0 && "fragmented ANNOUNCE receive failed");
+				}
+			}
+			assert(strstr(response, "RTSP/1.0 200 OK") != NULL);
+		}
+	}
+	assert(receiver.session.has_audio_key && receiver.session.offer.has_fmtp);
+
+	request_length = snprintf(request, sizeof(request),
+		"SETUP rtsp://127.0.0.1/stream RTSP/1.0\r\nCSeq: 3\r\n"
+		"Transport: %s\r\n\r\n", setup_transport);
+	assert(request_length > 0 && (size_t)request_length < sizeof(request));
+	send_request_and_pump(&receiver, client_fd, request, response, sizeof(response));
+	assert(strstr(response, "RTSP/1.0 200 OK") != NULL);
+	assert(strstr(response, "server_port=") != NULL);
+	send_request_and_pump(&receiver, client_fd,
+		"RECORD rtsp://127.0.0.1/stream RTSP/1.0\r\nCSeq: 4\r\n\r\n",
+		response, sizeof(response));
+	assert(strstr(response, "RTSP/1.0 200 OK") != NULL);
+	assert(receiver.session.state == RAOP_SESSION_RECORDING);
+
+	memcpy(rtp_packet + 12, encrypted_rtp + 12, encoded_length);
+	memcpy(rtp_packet, encrypted_rtp, 12);
+	sender_fd = socket(AF_INET, SOCK_DGRAM, 0);
+	assert(sender_fd >= 0);
+	address.sin_port = htons(raop_receiver_audio_port(&receiver));
+	assert(sendto(sender_fd, rtp_packet, rtp_length, 0,
+		(struct sockaddr *)&address, sizeof(address)) == (ssize_t)rtp_length);
+	for (attempt = 0; attempt < 100 && receiver.audio_queue.count == 0;
+		++attempt)
+		(void)raop_receiver_poll(&receiver, 20);
+	assert(receiver.audio_queue.count == 1);
+	assert(raop_receiver_pop_audio(&receiver, &frame));
+	assert(frame.packet.sequence == 1 && frame.packet.payload_length == encoded_length);
+	assert(memcmp(frame.payload, encoded, encoded_length) == 0);
+	decoder = raop_alac_create(&receiver.session.offer);
+	assert(decoder != NULL);
+	assert(raop_alac_decode(decoder, frame.payload, frame.packet.payload_length,
+		pcm, sizeof(pcm), &pcm_length, &samples));
+	assert(samples == 353 && pcm_length == expected_length);
+	assert(memcmp(pcm, expected, expected_length) == 0);
+	raop_pcm_ring_init(&ring, 2);
+	assert(raop_pcm_ring_push_le16(&ring, pcm, pcm_length) == samples);
+	assert(ring.frames_written == samples && ring.count == samples);
+	raop_alac_destroy(decoder);
+	close(sender_fd);
+	close(client_fd);
+	raop_receiver_close(&receiver);
+	puts("RAOP TCP RTSP + UDP RTP + decrypt + ALAC + PCM ring loopback: PASS");
 }
 
 static void malformed_smoke(raop_alac_decoder *decoder,
@@ -181,6 +341,20 @@ int main(void)
 		&iv_length, aes_iv, sizeof(aes_iv)) == 0);
 	iv_b64[iv_length] = '\0';
 
+	mbedtls_aes_init(&aes);
+	assert(mbedtls_aes_setkey_enc(&aes, aes_key, 128) == 0);
+	memcpy(packet_iv, aes_iv, sizeof(packet_iv));
+	assert(mbedtls_aes_crypt_cbc(&aes, MBEDTLS_AES_ENCRYPT, encoded_length,
+		packet_iv, encoded, rtp + 12) == 0);
+	mbedtls_aes_free(&aes);
+	rtp[2] = 0;
+	rtp[3] = 1;
+	rtp[7] = 1;
+	rtp[11] = 1;
+	verify_socket_audio_pipeline(&crypto, mac, wrapped_b64, iv_b64,
+		encoded, encoded_length, expected, expected_length, rtp,
+		12 + encoded_length);
+
 	raop_session_init(&receiver.session, 6000, 6001, 6002);
 	assert(raop_session_configure_crypto(&receiver.session, &crypto, host_rng,
 		NULL, ipv4, mac));
@@ -201,16 +375,6 @@ int main(void)
 	assert(receiver.session.has_audio_key);
 	assert(receiver.session.offer.has_fmtp);
 
-	mbedtls_aes_init(&aes);
-	assert(mbedtls_aes_setkey_enc(&aes, aes_key, 128) == 0);
-	memcpy(packet_iv, aes_iv, sizeof(packet_iv));
-	assert(mbedtls_aes_crypt_cbc(&aes, MBEDTLS_AES_ENCRYPT, encoded_length,
-		packet_iv, encoded, rtp + 12) == 0);
-	mbedtls_aes_free(&aes);
-	rtp[2] = 0;
-	rtp[3] = 1;
-	rtp[7] = 1;
-	rtp[11] = 1;
 	assert(raop_rtp_queue_push(&receiver.audio_queue, rtp,
 		12 + encoded_length));
 	assert(raop_receiver_pop_audio(&receiver, &frame));

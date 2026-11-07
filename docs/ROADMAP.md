@@ -37,6 +37,8 @@ Portable components cover bounded DNS-SD/mDNS, RTSP/SDP session handling, UDP RT
 - The new host composition test covers RSA-OAEP key recovery, encrypted RTP payload decryption, ALAC decode, and reference PCM equality in one run. It does not substitute for the existing socket loopback or any iPhone/console test.
 - AIRPLAY02 v0.1.20 is built from commit `8a4e641d114e1a613421b9ffb51f8615ad851827`; Lima host sanitizer tests, PPU link, ELF validation, and finalized package checks pass. RPCS3 UI remains inaccessible while the Mac is locked. Physical PS3 remains a separate, approval-gated test.
 - Expanded the sanitizer corpus to mutate a valid ALAC payload after its fixed frame header; 4,096 seeded mutations plus 256 random inputs pass ASan/UBSan halt-on-error. This improves decoder malformed-input coverage but is not AirPlay sender or playback evidence.
+- Added a host integration test that completes fragmented RTSP ANNOUNCE/SETUP/RECORD over TCP, receives encrypted RTP over UDP, decrypts and decodes the fixture frame, and pushes 353 stereo frames into the PCM ring. This is simulated sender evidence only.
+- A direct `--no-gui` launch attempt against the extracted v0.1.20 EBOOT did not refresh the app log or produce `APP_START`; retain it as inconclusive. The installed emulator title remains 0.1.15.
 - Next: when desktop access is restored, install/run the exact v0.1.20 package in RPCS3 and collect its version-matched log. Then continue with the first controlled iPhone session; classify evidence by RTSP, RTP, decrypt/decode, PCM submission, and audible output. Next package version is 0.1.21 only after a new implementation pass.
 
 ## Latest update (2026-11-07)

@@ -120,7 +120,8 @@ cc -std=c11 -Wall -Wextra -Werror -g -fsanitize=address,undefined -pthread \
 RAOP_PIPELINE_TEST="$PROJECT_ROOT/build/lima-crypto/raop_audio_pipeline_test"
 cc -std=c11 -Wall -Wextra -Werror -g -fsanitize=address,undefined \
 	-I"$PROJECT_ROOT/src/crypto" -I"$PROJECT_ROOT/src/protocol" \
-	-I"$PROJECT_ROOT/src/codec" -I"$PROJECT_ROOT/src/observability" \
+	-I"$PROJECT_ROOT/src/codec" -I"$PROJECT_ROOT/src/audio" \
+	-I"$PROJECT_ROOT/src/observability" \
 	-I"$MBEDTLS_INCLUDE" -DMBEDTLS_NO_PLATFORM_ENTROPY \
 	"$PROJECT_ROOT/src/crypto/raop_crypto.c" \
 	"$PROJECT_ROOT/src/protocol/raop_sdp.c" \
@@ -129,6 +130,7 @@ cc -std=c11 -Wall -Wextra -Werror -g -fsanitize=address,undefined \
 	"$PROJECT_ROOT/src/protocol/raop_receiver.c" \
 	"$PROJECT_ROOT/src/codec/alac.c" \
 	"$PROJECT_ROOT/src/codec/raop_alac.c" \
+	"$PROJECT_ROOT/src/audio/pcm_ring.c" \
 	"$PROJECT_ROOT/src/observability/receiver_log.c" \
 	"$PROJECT_ROOT/tests/protocol/raop_audio_pipeline_test.c" \
 	"$HOST_LIBRARY" -lm -pthread -o "$RAOP_PIPELINE_TEST"

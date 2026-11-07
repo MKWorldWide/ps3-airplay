@@ -322,3 +322,10 @@
 - **Root Cause:** The initial sanitizer smoke generated only unconstrained random payloads, most of which did not resemble a valid ALAC frame.
 - **Fix:** Keep a valid reference payload, preserve its fixed 54-bit header, and apply deterministic mutations to compressed bits; also test truncated variants and retain the random-byte corpus.
 - **Prevention Rule:** For binary codec hardening, combine malformed random input with structure-aware mutations of a valid fixture under sanitizers.
+
+## Require a fresh app log for headless emulator evidence
+
+- **Problem:** A long-lived emulator process can be mistaken as evidence that a directly invoked title ran.
+- **Root Cause:** The RPCS3 `--no-gui` invocation produced no stdout and did not update the capped application log.
+- **Fix:** Preserve the previous log, compare its timestamp and package version after an attempted launch, and classify the attempt as inconclusive when no fresh startup event appears.
+- **Prevention Rule:** A running RPCS3 process or elapsed timeout is not a title launch. Require a fresh version marker and startup events before reporting runtime evidence.
