@@ -61,7 +61,7 @@ AIRPLAY02 follows conservative pre-1.0 versioning. Increment the patch number fo
 - The package and ELF are preserved in the ignored local `work/builds/0.1.19/` directory. RPCS3 install/launch was not performed because Computer Use still reports the Mac desktop locked. No physical-console transfer/install, iPhone session, or audible playback is verified.
 - Next unused package version: 0.1.20.
 
-The standalone receiver `Makefile` and canonical Lima build/package scripts default to 0.1.22.
+The standalone receiver `Makefile` and canonical Lima build/package scripts default to 0.1.23.
 
 ## v0.1.20 package record
 
@@ -97,3 +97,9 @@ The standalone receiver `Makefile` and canonical Lima build/package scripts defa
 - Checks: full Lima host suite with ASan/UBSan, composed encrypted RTP-to-PCM test, PPU component compilation, standalone link/ELF validation, AIRPLAY02/APP_VER/content ID, asset equality, extraction, EBOOT comparison, relative package paths, and finalized NPDRM envelope PASS.
 - Runtime: RPCS3 still has only the older v0.1.15 app log; the desktop is locked and no fresh v0.1.22 launch/log was obtained. Physical PS3 was not changed. No iPhone session or audible AirPlay playback is verified.
 - The PKG, ELF, and build metadata are preserved in ignored `work/builds/0.1.22/`. Next unused package version: 0.1.23.
+
+## v0.1.23 source pass
+
+- Change: configure a two-second `SO_SNDTIMEO` for each accepted RTSP client and enforce a two-second overall deadline across response writes. Timeout/setup failures are logged without peer details.
+- Validation: full Lima host/sanitizer suite and PPU component compilation pass; the RTSP socket integration forces a slow-reader backpressure condition, verifies the timeout event, and confirms disconnect within four seconds.
+- Full standalone ELF/PKG build and runtime validation pending. RPCS3 is still inaccessible while the desktop is locked.

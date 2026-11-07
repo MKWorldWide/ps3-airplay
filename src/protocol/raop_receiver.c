@@ -11,6 +11,7 @@
 #include <limits.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/time.h>
 #include <time.h>
 
 #include <mbedtls/platform_util.h>
@@ -40,6 +41,7 @@
 #define RAOP_UDP_PACKET_MAX 2048
 #define RAOP_MAX_MESSAGES_PER_POLL 4
 #define RAOP_REQUEST_DEADLINE_MS 2000U
+#define RAOP_RESPONSE_DEADLINE_MS 2000U
 #define RAOP_CLIENT_IDLE_MS 60000U
 #define RAOP_RESEND_MAX_PACKETS 16U
 #define RAOP_RESEND_MIN_INTERVAL_MS 50U
@@ -311,7 +313,14 @@ static int initialize_client_session(raop_receiver *receiver, int client_fd)
 static int send_all(int fd, const char *data, size_t length)
 {
 	size_t sent = 0;
+	uint64_t started_ms = monotonic_milliseconds();
 	while (sent < length) {
+		uint64_t now_ms = monotonic_milliseconds();
+		if (started_ms != 0 && now_ms >= started_ms &&
+			now_ms - started_ms >= RAOP_RESPONSE_DEADLINE_MS) {
+			errno = ETIMEDOUT;
+			return 0;
+		}
 		int result = (int)send(fd, data + sent, length - sent, 0);
 		if (result < 0 && errno == EINTR)
 			continue;
@@ -320,6 +329,15 @@ static int send_all(int fd, const char *data, size_t length)
 		sent += (size_t)result;
 	}
 	return 1;
+}
+
+static int configure_client_send_timeout(int fd)
+{
+	struct timeval timeout;
+	timeout.tv_sec = (long)(RAOP_RESPONSE_DEADLINE_MS / 1000U);
+	timeout.tv_usec = (long)(RAOP_RESPONSE_DEADLINE_MS % 1000U) * 1000L;
+	return setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &timeout,
+		sizeof(timeout)) == 0;
 }
 
 static int serve_messages(raop_receiver *receiver)
@@ -368,7 +386,9 @@ static int serve_messages(raop_receiver *receiver)
 		}
 		if (!send_all(receiver->client_fd, response, strlen(response))) {
 #ifdef RAOP_VERBOSE_LOGGING
-			log_event(receiver, "RTSP_SEND_FAIL", errno, strlen(response));
+			const char *event = errno == ETIMEDOUT || errno == EAGAIN ||
+				errno == EWOULDBLOCK ? "RTSP_SEND_TIMEOUT" : "RTSP_SEND_FAIL";
+			log_event(receiver, event, errno, strlen(response));
 #endif
 			return 0;
 		}
@@ -777,6 +797,9 @@ int raop_receiver_poll(raop_receiver *receiver, unsigned int timeout_ms)
 #ifdef RAOP_VERBOSE_LOGGING
 				log_event(receiver, "RTSP_BUSY_DROP", 0, 0);
 #endif
+				close_socket(fd);
+			} else if (!configure_client_send_timeout(fd)) {
+				log_event(receiver, "RTSP_SEND_TIMEOUT_SETUP_FAILED", errno, 0);
 				close_socket(fd);
 			} else {
 				receiver->client_fd = fd;

@@ -31,6 +31,7 @@ The standalone receiver and resident PRX share portable protocol/codec component
 ## Constraints
 
 - Bound sessions, packet sizes, queue depths, timeouts, decoding work, and log storage.
+- Accepted RTSP client sockets have a two-second send timeout, and each complete response has a two-second overall deadline. Slow or stalled readers are disconnected rather than allowed to stall the receiver loop indefinitely.
 - Advertised RAOP capabilities must match implemented behavior. Current host checks do not prove sender interoperability.
 - The standalone app advertises the IPv4 address returned by NetCtl after `IPObtained`; the former multicast-socket route selection could choose an address that did not match the PS3's active network configuration.
 - Verbose package logging records allowlisted RTSP method names, response codes, state changes, selected numeric SDP fields, listener/UDP readiness and errors, and batched RTP counters. It never records request bodies or peer addresses.

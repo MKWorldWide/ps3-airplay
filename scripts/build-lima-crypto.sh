@@ -106,7 +106,7 @@ cc -D_DEFAULT_SOURCE -std=c11 -Wall -Wextra -Werror -g -fsanitize=address,undefi
 cc -std=c11 -Wall -Wextra -Werror -g -fsanitize=address,undefined -pthread \
 	-I"$PROJECT_ROOT/src/crypto" -I"$PROJECT_ROOT/src/protocol" \
 	-I"$PROJECT_ROOT/src/observability" -I"$MBEDTLS_INCLUDE" \
-	-DMBEDTLS_NO_PLATFORM_ENTROPY \
+	-DMBEDTLS_NO_PLATFORM_ENTROPY -DRAOP_VERBOSE_LOGGING=1 \
 	"$PROJECT_ROOT/src/crypto/raop_crypto.c" \
 	"$PROJECT_ROOT/src/protocol/raop_sdp.c" \
 	"$PROJECT_ROOT/src/protocol/raop_session.c" \

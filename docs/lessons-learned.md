@@ -350,3 +350,10 @@
 - **Root Cause:** Success was represented only by `raop_receiver_pop_audio()` returning a frame to its caller.
 - **Fix:** Count successful decryptions and log the first packet plus each 128-packet checkpoint, with only the bounded count and payload length. Assert the counter in the encrypted RTP-to-PCM integration test.
 - **Prevention Rule:** Instrument receiver pipelines at both success and failure boundaries, aggregate high-frequency success logs, and keep packet contents and peer identity out of diagnostics.
+
+## Bound RTSP reply writes as well as request reads
+
+- **Problem:** The RTSP parser bounded incomplete requests, but replies used a blocking `send()` loop with no timeout; a peer that stopped reading could hold the receiver loop.
+- **Root Cause:** Request deadlines were enforced on receive while response writes had no socket-level or whole-response deadline.
+- **Fix:** Configure a two-second `SO_SNDTIMEO` on accepted clients and check a two-second overall deadline across partial writes. Log write timeout separately from other send errors.
+- **Prevention Rule:** Network deadlines must cover both directions. Keep a per-system-call timeout and a total transaction deadline, and test socket configuration plus the slow-reader path.

@@ -198,3 +198,9 @@ Demonstration target: PS3 with Evilnat 4.93 CFW and Cobra 8.5 observed; the cons
 - `raop_receiver_pop_audio` now counts successful audio-payload decryptions and emits `RTP_DECRYPT_OK` for the first success and each 128th success. Failure events remain distinct. The checkpoint records only a bounded packet count and payload length, without peer addresses or media data.
 - The composed encrypted RTP-to-PCM loopback asserts the receiver counter. Full Lima host tests including ASan/UBSan and PPU object compilation pass. This improves layer diagnosis but does not establish iPhone interoperability or audible output.
 - Package defaults advance to v0.1.22 for this fix. The full AIRPLAY02 v0.1.22 build passes in Lima: ELF SHA-256 `ecfd3afa2aaafe35e60d8a6fa7540a659a8757bd045232b07a141230279ad2b0`; 3,230,512-byte PKG SHA-256 `c7242d47669a4a22090663c969e2b4f5efd4c0cc9a0eb6ef65ad18d730080a2b`. Artifacts are in ignored `work/builds/0.1.22/`. RPCS3 app-data remains v0.1.15 and no fresh v0.1.22 runtime log exists; physical PS3 is unchanged.
+
+## Bounded RTSP response writes (2026-11-07)
+
+- Each accepted RTSP client gets a two-second `SO_SNDTIMEO`; `send_all` also checks a two-second overall response deadline between writes. Timeout and timeout-configuration failures have distinct privacy-safe events.
+- The socket integration test forces response backpressure by shrinking the test socket buffers and withholding reads; it verifies `RTSP_SEND_TIMEOUT` and receiver disconnect within four seconds. Full Lima host/ASan/UBSan and PPU receiver compilation pass. RPCS3/PS3 behavior remains unverified.
+- Package defaults advance to v0.1.23. RPCS3 remains inaccessible; its latest local log is still from v0.1.15.

@@ -43,8 +43,9 @@ Portable components cover bounded DNS-SD/mDNS, RTSP/SDP session handling, UDP RT
 - Research found the RAOP TXT `vs` value is the receiver server version. The service advertised stale `vs=0.1.2` while RTSP identifies `AirTunes/105.1`; the v0.1.21 source now advertises `vs=105.1`, with a wire-format regression assertion.
 - The full Lima host/sanitizer and PPU component suite passes after this metadata fix. The v0.1.21 standalone ELF/PKG also validates in Lima; the exact package is preserved locally. RPCS3 installation/launch remains pending because desktop automation reports the Mac is locked.
 - v0.1.22 adds a bounded success checkpoint for RTP payload decryption; the encrypted RTSP/RTP-to-PCM host integration now asserts this stage. The complete Lima host/sanitizer and PPU object suite passes.
-- The v0.1.22 standalone PPU ELF and finalized NPDRM PKG now validate from pushed source `7b44acf`; the artifact is preserved locally. The RPCS3 app-data log remains an older v0.1.15 record and the desktop is locked, so runtime validation is pending.
-- Next: run the exact v0.1.22 package in RPCS3 and capture a fresh matching log when desktop access returns. Then continue with a controlled iPhone session and classify evidence by RTSP, RTP, decrypt/decode, PCM submission, and audible output.
+- The v0.1.22 standalone PPU ELF and finalized NPDRM PKG validate from pushed source `7b44acf`; the artifact is preserved locally. The RPCS3 app-data log remains an older v0.1.15 record and the desktop is locked, so runtime validation is pending.
+- v0.1.23 source bounds accepted-client RTSP writes with a two-second socket send timeout and overall response deadline. The full Lima host/sanitizer and PPU component suite passes, including a slow-reader backpressure test that verifies timeout logging and disconnect; standalone packaging remains pending.
+- Next: finish v0.1.23 packaging. Run it in RPCS3 and collect a fresh matching log when desktop access returns, then continue with a controlled iPhone session and classify evidence by RTSP, RTP, decrypt/decode, PCM submission, and audible output.
 
 ## Latest update (2026-11-07)
 

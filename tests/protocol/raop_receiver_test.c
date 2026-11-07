@@ -4,6 +4,8 @@
 
 #include <arpa/inet.h>
 #include <assert.h>
+#include <errno.h>
+#include <fcntl.h>
 #include <pthread.h>
 #include <stdatomic.h>
 #include <stdio.h>
@@ -90,6 +92,69 @@ static void send_request(int fd, const char *request, char *response,
 {
 	write_request(fd, request);
 	receive_response(fd, request, response, capacity);
+}
+
+static uint64_t receiver_test_milliseconds(void)
+{
+	struct timespec now;
+	assert(clock_gettime(CLOCK_MONOTONIC, &now) == 0);
+	return (uint64_t)now.tv_sec * 1000U + (uint64_t)now.tv_nsec / 1000000U;
+}
+
+static int receiver_has_client(receiver_thread_args *args)
+{
+	int connected;
+	pthread_mutex_lock(&args->receiver_lock);
+	connected = args->receiver->client_fd >= 0;
+	pthread_mutex_unlock(&args->receiver_lock);
+	return connected;
+}
+
+static void verify_slow_reader_disconnect(receiver_thread_args *args,
+	uint16_t rtsp_port)
+{
+	static const char request[] = "OPTIONS * RTSP/1.0\r\nCSeq: 7\r\n\r\n";
+	struct sockaddr_in target = {0};
+	struct timespec pause = {0, 1000000L};
+	uint64_t started_ms, elapsed_ms;
+	size_t offset = 0;
+	unsigned int attempt;
+	int client_fd, small_buffer = 256, flags, disconnected = 0;
+	client_fd = socket(AF_INET, SOCK_STREAM, 0);
+	assert(client_fd >= 0);
+	assert(setsockopt(client_fd, SOL_SOCKET, SO_RCVBUF, &small_buffer,
+		sizeof(small_buffer)) == 0);
+	target.sin_family = AF_INET;
+	target.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+	target.sin_port = htons(rtsp_port);
+	assert(connect(client_fd, (struct sockaddr *)&target, sizeof(target)) == 0);
+	for (attempt = 0; attempt < 100 && !receiver_has_client(args); ++attempt)
+		(void)nanosleep(&pause, NULL);
+	assert(receiver_has_client(args));
+	pthread_mutex_lock(&args->receiver_lock);
+	assert(setsockopt(args->receiver->client_fd, SOL_SOCKET, SO_SNDBUF,
+		&small_buffer, sizeof(small_buffer)) == 0);
+	pthread_mutex_unlock(&args->receiver_lock);
+	flags = fcntl(client_fd, F_GETFL, 0);
+	assert(flags >= 0 && fcntl(client_fd, F_SETFL, flags | O_NONBLOCK) == 0);
+	started_ms = receiver_test_milliseconds();
+	for (attempt = 0; attempt < 5000 && receiver_has_client(args); ++attempt) {
+		ssize_t amount = send(client_fd, request + offset,
+			sizeof(request) - 1U - offset, MSG_DONTWAIT | MSG_NOSIGNAL);
+		if (amount > 0) {
+			offset += (size_t)amount;
+			if (offset == sizeof(request) - 1U)
+				offset = 0;
+		} else if (errno != EAGAIN && errno != EWOULDBLOCK && errno != EINTR) {
+			break;
+		}
+		(void)nanosleep(&pause, NULL);
+	}
+	disconnected = !receiver_has_client(args);
+	elapsed_ms = receiver_test_milliseconds() - started_ms;
+	close(client_fd);
+	assert(disconnected);
+	assert(elapsed_ms <= 4000U);
 }
 
 static void send_rtp(uint16_t port, uint16_t sequence)
@@ -213,6 +278,16 @@ int main(void)
 	send_request(fd, "OPTIONS * RTSP/1.0\r\nCSeq: 1\r\n\r\n",
 		response, sizeof(response));
 	assert(strstr(response, "RTSP/1.0 200 OK") != NULL);
+	{
+		struct timeval send_timeout = {0, 0};
+		socklen_t timeout_length = (socklen_t)sizeof(send_timeout);
+		pthread_mutex_lock(&args.receiver_lock);
+		assert(receiver.client_fd >= 0);
+		assert(getsockopt(receiver.client_fd, SOL_SOCKET, SO_SNDTIMEO,
+			&send_timeout, &timeout_length) == 0);
+		pthread_mutex_unlock(&args.receiver_lock);
+		assert(send_timeout.tv_sec == 2 && send_timeout.tv_usec == 0);
+	}
 	send_request(fd, announce, response, sizeof(response));
 	assert(strstr(response, "RTSP/1.0 200 OK") != NULL);
 	snprintf(setup, sizeof(setup), "SETUP rtsp://127.0.0.1/stream RTSP/1.0\r\n"
@@ -385,6 +460,10 @@ int main(void)
 		"CSeq: 6\r\n\r\n", response, sizeof(response));
 	assert(strstr(response, "RTSP/1.0 200 OK") != NULL);
 	close(fd);
+	for (wait = 0; wait < 100 && receiver_has_client(&args); ++wait)
+		(void)nanosleep(&(struct timespec){0, 1000000L}, NULL);
+	assert(!receiver_has_client(&args));
+	verify_slow_reader_disconnect(&args, raop_receiver_rtsp_port(&receiver));
 	close(peer_udp_fd);
 	close(wrong_udp_fd);
 	atomic_store(&args.stop, 1);
@@ -407,7 +486,8 @@ int main(void)
 		"event=RTP_QUEUE_FLUSH value=1 bytes=0") != NULL);
 	assert(strstr(log_contents,
 		"event=RTP_SOCKET_FLUSH value=2 bytes=0") != NULL);
+	assert(strstr(log_contents, "event=RTSP_SEND_TIMEOUT") != NULL);
 	assert(unlink(log_path) == 0);
-	puts("RAOP persistent RTSP + UDP RTP loopback: PASS");
+	puts("RAOP persistent RTSP + UDP RTP loopback and bounded slow-reader disconnect: PASS");
 	return 0;
 }
