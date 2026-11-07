@@ -8,6 +8,7 @@
 #include "raop_receiver.h"
 
 #include <errno.h>
+#include <limits.h>
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
@@ -838,6 +839,14 @@ int raop_receiver_pop_audio(raop_receiver *receiver, raop_rtp_frame *frame)
 		mbedtls_platform_zeroize(frame->payload, sizeof(frame->payload));
 		return 0;
 	}
+	if (receiver->decrypted_audio_packets != UINT64_MAX)
+		++receiver->decrypted_audio_packets;
+	if (receiver->decrypted_audio_packets == 1 ||
+		receiver->decrypted_audio_packets % 128U == 0)
+		log_event(receiver, "RTP_DECRYPT_OK",
+			receiver->decrypted_audio_packets > (uint64_t)INT_MAX ? INT_MAX :
+			(int)receiver->decrypted_audio_packets,
+			frame->packet.payload_length);
 	return 1;
 }
 

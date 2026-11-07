@@ -224,6 +224,7 @@ static void verify_socket_audio_pipeline(raop_crypto_context *crypto,
 		(void)raop_receiver_poll(&receiver, 20);
 	assert(receiver.audio_queue.count == 1);
 	assert(raop_receiver_pop_audio(&receiver, &frame));
+	assert(receiver.decrypted_audio_packets == 1);
 	assert(frame.packet.sequence == 1 && frame.packet.payload_length == encoded_length);
 	assert(memcmp(frame.payload, encoded, encoded_length) == 0);
 	decoder = raop_alac_create(&receiver.session.offer);

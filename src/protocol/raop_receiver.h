@@ -34,6 +34,7 @@ typedef struct {
 	uint8_t crypto_configured;
 	raop_rtp_queue audio_queue;
 	receiver_log_file *log;
+	uint64_t decrypted_audio_packets;
 	uint64_t control_packets;
 	uint64_t timing_packets;
 	uint64_t timing_requests;

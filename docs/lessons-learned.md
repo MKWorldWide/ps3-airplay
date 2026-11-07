@@ -343,3 +343,10 @@
 - **Root Cause:** The TXT version was hard-coded from the early app/package version instead of the RAOP server protocol identity.
 - **Fix:** Advertise `vs=105.1` and assert the exact TXT capability list in the discovery serializer test.
 - **Prevention Rule:** Treat service TXT fields as protocol metadata; keep the RAOP server version consistent with the RTSP `Server` response and cover it in wire-format tests.
+
+## Log successful decryption as a separate receive boundary
+
+- **Problem:** RTP receipt and decrypt failures were visible, but a successful payload decryption had no explicit event, leaving logs unable to distinguish that stage from ALAC decode.
+- **Root Cause:** Success was represented only by `raop_receiver_pop_audio()` returning a frame to its caller.
+- **Fix:** Count successful decryptions and log the first packet plus each 128-packet checkpoint, with only the bounded count and payload length. Assert the counter in the encrypted RTP-to-PCM integration test.
+- **Prevention Rule:** Instrument receiver pipelines at both success and failure boundaries, aggregate high-frequency success logs, and keep packet contents and peer identity out of diagnostics.

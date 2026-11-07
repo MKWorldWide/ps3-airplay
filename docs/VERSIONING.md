@@ -61,7 +61,7 @@ AIRPLAY02 follows conservative pre-1.0 versioning. Increment the patch number fo
 - The package and ELF are preserved in the ignored local `work/builds/0.1.19/` directory. RPCS3 install/launch was not performed because Computer Use still reports the Mac desktop locked. No physical-console transfer/install, iPhone session, or audible playback is verified.
 - Next unused package version: 0.1.20.
 
-The standalone receiver `Makefile` and canonical Lima build/package scripts default to 0.1.21.
+The standalone receiver `Makefile` and canonical Lima build/package scripts default to 0.1.22.
 
 ## v0.1.20 package record
 
@@ -85,3 +85,9 @@ The standalone receiver `Makefile` and canonical Lima build/package scripts defa
 - Checks: RAOP TXT serializer assertion, full Lima host suite with ASan/UBSan, PPU component checks, standalone ELF validation/link, AIRPLAY02/APP_VER/content ID, asset equality, extraction, EBOOT comparison, relative package paths, and finalized NPDRM envelope PASS.
 - Runtime: RPCS3 Computer Use reports the Mac is locked; no fresh v0.1.21 install/launch or matching log. Physical PS3 was not changed. No iPhone session or audible AirPlay playback is verified.
 - The PKG, ELF, and build metadata are preserved in ignored `work/builds/0.1.21/`. Next unused package version: 0.1.22.
+
+## v0.1.22 source pass
+
+- Change: count successfully decrypted audio RTP payloads and log `RTP_DECRYPT_OK` for the first success and each 128-packet milestone. Failed decryptions retain `RTP_DECRYPT_FAILED`; the log contains only a bounded numeric count and payload byte count.
+- Validation: full Lima host/sanitizer suite, composed encrypted RTP-to-PCM test with a new decrypt-counter assertion, and PPU component compilation PASS.
+- Full standalone ELF/PKG build and artifact hashes pending. RPCS3 runtime and physical hardware remain unverified.
