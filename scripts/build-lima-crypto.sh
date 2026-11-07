@@ -117,6 +117,23 @@ cc -std=c11 -Wall -Wextra -Werror -g -fsanitize=address,undefined -pthread \
 	-o "$PROJECT_ROOT/build/lima-crypto/raop_receiver_test"
 "$PROJECT_ROOT/build/lima-crypto/raop_receiver_test"
 
+RAOP_PIPELINE_TEST="$PROJECT_ROOT/build/lima-crypto/raop_audio_pipeline_test"
+cc -std=c11 -Wall -Wextra -Werror -g -fsanitize=address,undefined \
+	-I"$PROJECT_ROOT/src/crypto" -I"$PROJECT_ROOT/src/protocol" \
+	-I"$PROJECT_ROOT/src/codec" -I"$PROJECT_ROOT/src/observability" \
+	-I"$MBEDTLS_INCLUDE" -DMBEDTLS_NO_PLATFORM_ENTROPY \
+	"$PROJECT_ROOT/src/crypto/raop_crypto.c" \
+	"$PROJECT_ROOT/src/protocol/raop_sdp.c" \
+	"$PROJECT_ROOT/src/protocol/raop_session.c" \
+	"$PROJECT_ROOT/src/protocol/raop_rtp.c" \
+	"$PROJECT_ROOT/src/protocol/raop_receiver.c" \
+	"$PROJECT_ROOT/src/codec/alac.c" \
+	"$PROJECT_ROOT/src/codec/raop_alac.c" \
+	"$PROJECT_ROOT/src/observability/receiver_log.c" \
+	"$PROJECT_ROOT/tests/protocol/raop_audio_pipeline_test.c" \
+	"$HOST_LIBRARY" -lm -pthread -o "$RAOP_PIPELINE_TEST"
+(cd "$PROJECT_ROOT" && "$RAOP_PIPELINE_TEST")
+
 RTSP_LOG_TEST="$PROJECT_ROOT/build/lima-crypto/rtsp_listener_test"
 cc -std=c11 -Wall -Wextra -Werror -g -fsanitize=address,undefined -pthread \
 	-I"$PROJECT_ROOT/src/protocol" -I"$PROJECT_ROOT/src/observability" \

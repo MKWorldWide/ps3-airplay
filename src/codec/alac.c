@@ -166,7 +166,7 @@ static uint32_t readbits_16(alac_file *alac, int bits) {
 
 /* supports reading 1 to 32 bits, in big endian format */
 static uint32_t readbits(alac_file *alac, int bits) {
-  int32_t result = 0;
+  uint32_t result = 0;
 
   if (bits > 16) {
     bits -= 16;
@@ -706,7 +706,13 @@ void alac_decode_frame(alac_file *alac, unsigned char *inbuffer, void *outbuffer
     if (hassize) {
       /* now read the number of samples,
        * as a 32bit integer */
-      outputsamples = readbits(alac, 32);
+      uint32_t declared_samples = readbits(alac, 32);
+      if (declared_samples == 0 ||
+          declared_samples > alac->setinfo_max_samples_per_frame) {
+        *outputsize = 0;
+        return;
+      }
+      outputsamples = (int32_t)declared_samples;
       *outputsize = outputsamples * alac->bytespersample;
       if (*outputsize > outbuffer_allocation_size) {
         fprintf(stderr, "FIXME: Not enough space if the output buffer for audio frame - E2.\n");
@@ -861,7 +867,13 @@ void alac_decode_frame(alac_file *alac, unsigned char *inbuffer, void *outbuffer
     if (hassize) {
       /* now read the number of samples,
        * as a 32bit integer */
-      outputsamples = readbits(alac, 32);
+      uint32_t declared_samples = readbits(alac, 32);
+      if (declared_samples == 0 ||
+          declared_samples > alac->setinfo_max_samples_per_frame) {
+        *outputsize = 0;
+        return;
+      }
+      outputsamples = (int32_t)declared_samples;
       *outputsize = outputsamples * alac->bytespersample;
       if (*outputsize > outbuffer_allocation_size) {
         fprintf(stderr, "FIXME: Not enough space if the output buffer for audio frame - E3.\n");

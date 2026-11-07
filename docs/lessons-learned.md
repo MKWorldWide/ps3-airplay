@@ -294,3 +294,10 @@
 - **Root Cause:** The implementation pass added lifecycle reset sites before adding the corresponding local state declarations.
 - **Fix:** Declared all three baselines with the other main-loop counters; the repeat PPU application link and ELF validation passed.
 - **Prevention Rule:** When adding lifecycle-managed metrics, update declarations, session initialization/reset sites, and emission sites together, then run the strict PPU compile before recording the pass as validated.
+
+## Bound the ALAC frame count before decoder array writes
+
+- **Problem:** AddressSanitizer found a heap-buffer-overflow while decoding a reference frame that reported 353 samples against a negotiated 352-sample maximum. Further review found the 32-bit parser accumulated the declared count in a signed integer, risking undefined behavior for high-bit values before the bound check.
+- **Root Cause:** The decoder trusted the frame's in-band sample count while predictor and output arrays were allocated to the SDP maximum. The output-byte capacity check happened after the count was parsed but did not protect those internal arrays.
+- **Fix:** Accumulate 32-bit fields as unsigned, then reject zero and over-negotiated sample counts in both mono and stereo branches before narrowing, output-size arithmetic, or sample-array writes. The regression checks the 353-vs-352 boundary and `UINT32_MAX` under sanitizers while retaining the valid encrypted RTP-to-PCM golden path.
+- **Prevention Rule:** Treat compressed frame headers as untrusted. Validate in-band sample counts against negotiated bounds before any count-based allocation, loop, arithmetic, or output write; run codec fixtures with sanitizers at the exact boundary.

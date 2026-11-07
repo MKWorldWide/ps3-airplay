@@ -161,3 +161,11 @@ Demonstration target: PS3 with Evilnat 4.93 CFW and Cobra 8.5 observed; the cons
 - Canonical Lima build from commit `8769324` passes: full host suite, PPU app, CellOS PPC64 ELF validation, and finalized NPDRM package validation.
 - ELF: 2,780,120 bytes, SHA-256 `ba7450441a8e2def2a1f55e17d523630d3d5af256520f6769154a347b09d3759`. PKG: 3,230,448 bytes, SHA-256 `5548fde98bc08949e4f3a6739a95d5b3dce7dea0458131ec693c01be97766ae0`.
 - The package has not been installed or run in RPCS3; telemetry events, screen, controller exit, and audio remain unverified at runtime. Next package version: 0.1.19.
+
+## ALAC bounds and composed receive-path test (2026-11-07)
+
+- ASan exposed an ALAC decoder heap-buffer-overflow when a 353-sample reference frame was decoded with an SDP maximum of 352 samples. The frame's in-band sample count was used for predictor and output-sample array writes before being constrained to the negotiated maximum.
+- `alac_decode_frame` now reads the declared sample count as unsigned and rejects zero or over-maximum counts in both mono and stereo decode branches before narrowing, calculating output bytes, or touching sample arrays. Wrapper output-capacity checks remain in place.
+- Added `raop_audio_pipeline_test`: a synthetic RAOP ANNOUNCE unwraps an RSA-OAEP-wrapped key; an AES-CBC encrypted reference ALAC packet is inserted as RTP, popped through the receiver's decrypt path, decoded, and byte-compared with reference PCM. Regressions verify rejection at a 352-sample maximum and for an in-band `UINT32_MAX` sample count.
+- The complete Lima host suite, including this test under ASan/UBSan, passes. PPU object compilation passes. This is host pipeline evidence only: it does not establish iPhone interoperability, running the new code in RPCS3, PS3 output, or audible AirPlay audio.
+- The next package version remains 0.1.19; build it from the committed source, validate the NPDRM package, and attempt local RPCS3 install/run only when desktop UI access is available. Do not touch the physical console.
