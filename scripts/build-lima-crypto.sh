@@ -36,6 +36,7 @@ PPU_CC="$PS3DEV/ppu/bin/powerpc64-ps3-elf-gcc"
 PPU_CFLAGS='-DMBEDTLS_NO_PLATFORM_ENTROPY -Dunix -D_POSIX_VERSION=200809L'
 cmake -S "$SOURCE" -B "$PPU_BUILD" \
 	-DCMAKE_TOOLCHAIN_FILE="$PS3DK_SOURCE/cmake/ps3-ppu-toolchain.cmake" \
+	-DMBEDTLS_USER_CONFIG_FILE="$PROJECT_ROOT/src/crypto/mbedtls_ps3_user_config.h" \
 	-DENABLE_PROGRAMS=OFF -DENABLE_TESTING=OFF \
 	-DCMAKE_C_FLAGS="$PPU_CFLAGS"
 cmake --build "$PPU_BUILD" --target mbedcrypto --parallel "$JOBS"

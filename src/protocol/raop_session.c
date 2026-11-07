@@ -369,10 +369,46 @@ static void session_diagnostic(raop_session *session, const char *event,
 		session->diagnostic(session->diagnostic_context, event, value, bytes);
 }
 
+typedef struct {
+	raop_session *session;
+	mbedtls_f_rng_t *rng;
+	void *rng_context;
+} diagnostic_rng_context;
+
+static int diagnostic_rng(void *context, unsigned char *output,
+	size_t length)
+{
+	diagnostic_rng_context *rng_context =
+		(diagnostic_rng_context *)context;
+	int result;
+	if (rng_context == NULL || rng_context->rng == NULL)
+		return -1;
+	session_diagnostic(rng_context->session, "RAOP_RSA_RNG_START", 0,
+		length);
+	result = rng_context->rng(rng_context->rng_context, output, length);
+	session_diagnostic(rng_context->session, "RAOP_RSA_RNG_DONE", result,
+		length);
+	return result;
+}
+
+static int sign_apple_response(raop_session *session, const uint8_t challenge[16],
+ char *response, size_t capacity)
+{
+ diagnostic_rng_context rng_context = {session, session->rng, session->rng_context};
+ int result;
+ session_diagnostic(session, "APPLE_RESPONSE_START", 0, 0);
+ result = raop_crypto_apple_response(session->crypto, challenge,
+  session->local_ipv4, session->mac, diagnostic_rng, &rng_context,
+  response, capacity);
+ session_diagnostic(session, "APPLE_RESPONSE_DONE", result, 0);
+ return result;
+}
+
 static int unwrap_announce_key(raop_session *session,
 	const raop_sdp_offer *offer, uint8_t audio_iv[RAOP_AES_IV_SIZE],
 	uint8_t audio_key[RAOP_AES_KEY_SIZE])
 {
+	diagnostic_rng_context rng_context;
 	int valid;
 	if (!session->crypto_configured || !offer->has_rsa_aes_key ||
 		!offer->has_aes_iv || !raop_crypto_base64_decode(offer->aes_iv,
@@ -384,9 +420,12 @@ static int unwrap_announce_key(raop_session *session,
 	}
 	session_diagnostic(session, "ANNOUNCE_KEY_UNWRAP_START", 0,
 		offer->rsa_aes_key_length);
+	rng_context.session = session;
+	rng_context.rng = session->rng;
+	rng_context.rng_context = session->rng_context;
 	valid = raop_crypto_decrypt_session_key(session->crypto,
-		offer->rsa_aes_key, offer->rsa_aes_key_length, session->rng,
-		session->rng_context, audio_key);
+		offer->rsa_aes_key, offer->rsa_aes_key_length, diagnostic_rng,
+		&rng_context, audio_key);
 	session_diagnostic(session, "ANNOUNCE_KEY_UNWRAP_DONE", valid,
 		valid ? RAOP_AES_KEY_SIZE : 0);
 	return valid;
@@ -459,6 +498,7 @@ int raop_session_handle(raop_session *session, const char *request,
 	next_state = session->state;
 	apple_header[0] = '\0';
 	if (fields.have_apple_challenge) {
+		session_diagnostic(session, "APPLE_CHALLENGE", 1, fields.apple_challenge_length);
 		if (!session->crypto_configured) {
 			status = 501;
 			reason = "Not Implemented";
@@ -466,9 +506,8 @@ int raop_session_handle(raop_session *session, const char *request,
 			fields.apple_challenge_length, challenge)) {
 			status = 400;
 			reason = "Bad Request";
-		} else if (!raop_crypto_apple_response(session->crypto, challenge,
-			session->local_ipv4, session->mac, session->rng,
-			session->rng_context, apple_response, sizeof(apple_response))) {
+		} else if (!sign_apple_response(session, challenge,
+			apple_response, sizeof(apple_response))) {
 			status = 500;
 			reason = "Internal Server Error";
 		} else {

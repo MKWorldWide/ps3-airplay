@@ -362,6 +362,7 @@ static int serve_messages(raop_receiver *receiver)
 		int result = message_length(receiver->request,
 			receiver->request_length, &size);
 		int status = 0;
+		uint64_t handle_started_ms = monotonic_milliseconds();
 		char response[RAOP_SESSION_RESPONSE_MAX];
 #ifdef RAOP_VERBOSE_LOGGING
 		const char *method_event;
@@ -381,6 +382,8 @@ static int serve_messages(raop_receiver *receiver)
 			log_event(receiver, "RTSP_BAD_FRAME", result, receiver->request_length);
 			return 0;
 		}
+		log_event(receiver, "RTSP_HANDLE_MS",
+			bounded_event_count(monotonic_milliseconds() - handle_started_ms), 0);
 		(void)sscanf(response, "RTSP/1.0 %d", &status);
 		if (status == 200 && size >= 6 &&
 			memcmp(receiver->request, "FLUSH ", 6) == 0) {

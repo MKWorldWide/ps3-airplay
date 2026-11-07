@@ -14,7 +14,7 @@ MBEDTLS_INCLUDE="$MBEDTLS_SOURCE/include"
 MBEDTLS_CRYPTO_LIBRARY="$MBEDTLS_PPU_BUILD/library/libmbedcrypto.a"
 OUTPUT_DIR="$PROJECT_ROOT/build/lima-standalone-receiver"
 JOBS="${JOBS:-2}"
-APP_VERSION="${APP_VERSION:-0.1.30}"
+APP_VERSION="${APP_VERSION:-0.1.31}"
 RTSP_PORT="${RTSP_PORT:-5000}"
 PROJECT_REV="$(git -C "$PROJECT_ROOT" rev-parse HEAD 2>/dev/null || true)"
 if [[ -z "$PROJECT_REV" && -f "$PROJECT_ROOT/.source-revision" ]]; then
@@ -40,6 +40,7 @@ export PATH="$PS3DEV/bin:$PS3DEV/ppu/bin:$PATH"
 
 cmake -S "$MBEDTLS_SOURCE" -B "$MBEDTLS_PPU_BUILD" \
 	-DCMAKE_TOOLCHAIN_FILE="$PS3DK_SOURCE/cmake/ps3-ppu-toolchain.cmake" \
+	-DMBEDTLS_USER_CONFIG_FILE="$PROJECT_ROOT/src/crypto/mbedtls_ps3_user_config.h" \
 	-DENABLE_PROGRAMS=OFF -DENABLE_TESTING=OFF \
 	-DCMAKE_C_FLAGS='-DMBEDTLS_NO_PLATFORM_ENTROPY -DMBEDTLS_PLATFORM_MS_TIME_ALT -Dunix -D_POSIX_VERSION=200809L'
 cmake --build "$MBEDTLS_PPU_BUILD" --target mbedcrypto --parallel "$JOBS"

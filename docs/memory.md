@@ -275,3 +275,9 @@ Current requested release label is 0.1.30, filename/app logging 0.1.30, SFO APP_
 - FTP uploaded as a new versioned package and downloaded back byte-for-byte. Remote installation invoked under standing authorization; retrieved installed EBOOT and SFO match the extracted package exactly. Original 0.30 and other rollback packages remain staged.
 - No post-install launch of corrected-label 0.1.30 was performed by the agent. Earlier user startup/tone/idle-exit results refer specifically to the historical 0.30 artifact. Receiver behavior is unchanged, including the unresolved OPTIONS stall.
 - Privacy review: full staged diffs and changed/new files inspected, whitespace and targeted identifier/credential scans clear; no installed secret scanner. Raw logs, artifacts and deferred RNG patch remain ignored and local.
+
+## v0.1.31: PS3 RSA arithmetic ABI fix
+
+Saved RPCS3 v0.1.29 replay contains a PPU fatal invalid-memory read at 0x000a0b40, mapped by the exact ELF's addr2line to mbedtls_mpi_core_mul. Disassembly and upstream bn_mul.h show PPC64 assembly using ld/std on pointer variables, while the surrounding compiler-generated code uses 32-bit lwz/stw pointers. PS3 uses a 64-bit-register / 32-bit-pointer ABI; this assembly path is incompatible.
+
+The PS3-specific Mbed TLS user config disables MBEDTLS_HAVE_ASM only for that ABI. Both PPU library build scripts and standalone compilation use the same config. Portable C bignum arithmetic preserves RSA blinding and system RNG; no cryptographic checks are removed. Added Apple-Challenge/signature/RNG phase events, total RTSP-handler milliseconds, system-menu callback event numbers, and cleanup phases. START exits the current loop immediately once detected. Version 0.1.31, SFO 00.31. Host crypto and RPCS3 replay results follow in the artifact report; PS3 outcome requires maintainer observation.

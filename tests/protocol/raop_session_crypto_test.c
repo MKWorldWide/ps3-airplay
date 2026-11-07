@@ -50,6 +50,9 @@ typedef struct {
 	unsigned int content_type_check_completed;
 	unsigned int response_started;
 	unsigned int response_completed;
+	unsigned int challenge_completed;
+	unsigned int rng_started;
+	unsigned int rng_completed;
 	int key_result;
 } diagnostic_counts;
 
@@ -58,7 +61,9 @@ static void collect_diagnostic(void *context, const char *event, int value,
 {
 	diagnostic_counts *counts = context;
 	(void)bytes;
-	if (strcmp(event, "ANNOUNCE_SDP_PARSE_START") == 0)
+	if (strcmp(event, "APPLE_RESPONSE_DONE") == 0 && value == 1)
+		++counts->challenge_completed;
+	else if (strcmp(event, "ANNOUNCE_SDP_PARSE_START") == 0)
 		++counts->sdp_started;
 	else if (strcmp(event, "ANNOUNCE_SDP_PARSE_DONE") == 0)
 		++counts->sdp_completed;
@@ -75,6 +80,10 @@ static void collect_diagnostic(void *context, const char *event, int value,
 		++counts->response_started;
 	else if (strcmp(event, "ANNOUNCE_RESPONSE_BUILD_DONE") == 0)
 		++counts->response_completed;
+	else if (strcmp(event, "RAOP_RSA_RNG_START") == 0)
+		++counts->rng_started;
+	else if (strcmp(event, "RAOP_RSA_RNG_DONE") == 0)
+		++counts->rng_completed;
 }
 
 int main(void)
@@ -140,6 +149,7 @@ int main(void)
 	assert(make_request(&session, request, response, sizeof(response)));
 	assert(strstr(response, "RTSP/1.0 200 OK") != NULL);
 	assert(strstr(response, "Apple-Response: ") != NULL);
+	assert(diagnostics.challenge_completed == 1);
 
 	length = snprintf(sdp, sizeof(sdp),
 		"v=0\r\nm=audio 0 RTP/AVP 96\r\n"
@@ -160,6 +170,8 @@ int main(void)
 		diagnostics.content_type_check_completed == 1 &&
 		diagnostics.response_started == 1 &&
 		diagnostics.response_completed == 1);
+	assert(diagnostics.rng_started > 0 &&
+		diagnostics.rng_started == diagnostics.rng_completed);
 
 	snprintf(request, sizeof(request),
 		"SETUP rtsp://ps3/stream RTSP/1.0\r\nCSeq: 3\r\n"

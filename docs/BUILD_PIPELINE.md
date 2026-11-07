@@ -112,3 +112,9 @@ Keep the generated package, build manifest, and test logs outside Git. Record pa
 ## Current release identity
 
 APP_VERSION=0.1.30 controls filename and application logging; SFO_VERSION=00.30 controls APP_VER/VERSION. Keep both explicit for every release. The 0.30 artifact was actually tested on hardware before the maintainer corrected its release label; preserve that historical identity in reports. Build from a committed archive stamped with its full SHA. Opening the app truncates the previous diagnostic log, so retrieve evidence before relaunching.
+
+## v0.1.31: PS3 RSA arithmetic ABI fix
+
+Saved RPCS3 v0.1.29 replay contains a PPU fatal invalid-memory read at 0x000a0b40, mapped by the exact ELF's addr2line to mbedtls_mpi_core_mul. Disassembly and upstream bn_mul.h show PPC64 assembly using ld/std on pointer variables, while the surrounding compiler-generated code uses 32-bit lwz/stw pointers. PS3 uses a 64-bit-register / 32-bit-pointer ABI; this assembly path is incompatible.
+
+The PS3-specific Mbed TLS user config disables MBEDTLS_HAVE_ASM only for that ABI. Both PPU library build scripts and standalone compilation use the same config. Portable C bignum arithmetic preserves RSA blinding and system RNG; no cryptographic checks are removed. Added Apple-Challenge/signature/RNG phase events, total RTSP-handler milliseconds, system-menu callback event numbers, and cleanup phases. START exits the current loop immediately once detected. Version 0.1.31, SFO 00.31. Host crypto and RPCS3 replay results follow in the artifact report; PS3 outcome requires maintainer observation.

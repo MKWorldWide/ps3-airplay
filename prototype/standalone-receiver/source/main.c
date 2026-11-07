@@ -77,10 +77,13 @@ static int bounded_counter_delta(uint64_t current, uint64_t previous)
 	return delta > (uint64_t)INT_MAX ? INT_MAX : (int)delta;
 }
 
+static int log_event(const char *event, int value, size_t bytes);
+
 static void on_system_event(u64 status, u64 param, void *userdata)
 {
 	(void)param;
 	(void)userdata;
+	(void)log_event("SYSUTIL_EVENT", (int)status, 0);
 	if (status == SYSUTIL_EXIT_GAME)
 		exit_requested = 1;
 }
@@ -401,6 +404,8 @@ int main(void)
 				}
 			}
 		}
+		if (exit_requested)
+			break;
 		if (receiver.session.state == RAOP_SESSION_RECORDING && decoder == NULL) {
 			if (receiver.session.offer.has_alac &&
 				receiver.session.offer.has_fmtp)
@@ -518,23 +523,30 @@ int main(void)
 	result = 0;
 
 cleanup:
+	(void)log_event("CLEANUP_BEGIN", 0, 0);
 	if (pad_initialized)
 		(void)ioPadEnd();
+	(void)log_event("SCREEN_CLOSE_START", 0, 0);
 	diagnostic_screen_close(&screen);
+	(void)log_event("SCREEN_CLOSE_DONE", 0, 0);
 	if (decoder != NULL)
 		raop_alac_destroy(decoder);
 	memset(decoded_pcm, 0, sizeof(decoded_pcm));
+	(void)log_event("AUDIO_CLOSE_START", 0, 0);
 	if (audio_port_started || audio_notify_set || audio_port_opened ||
 		audio_queue_created || audio_initialized)
 		close_audio(audio_port_started, audio_notify_set, audio_port_opened,
 			audio_queue_created, audio_initialized, audio_port, audio_queue,
 			audio_key);
+	(void)log_event("AUDIO_CLOSE_DONE", 0, 0);
 	if (callback_registered)
 		(void)sysUtilUnregisterCallback(SYSUTIL_EVENT_SLOT0);
 	if (mdns_opened)
 		raop_mdns_service_close(&mdns_service);
+	(void)log_event("RECEIVER_CLOSE_START", 0, 0);
 	if (receiver_opened)
 		raop_receiver_close(&receiver);
+	(void)log_event("RECEIVER_CLOSE_DONE", 0, 0);
 	if (crypto_started)
 		raop_crypto_context_free(&crypto_context);
 	(void)log_event("APP_STOP", result, 0);

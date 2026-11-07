@@ -430,3 +430,10 @@
 - **Root Cause:** Not yet established. Saved log stops inside OPTIONS, before any ANNOUNCE/SETUP/RECORD or RTP events; there is no START event or cleanup evidence.
 - **Fix:** Preserve the original log and investigate synchronous OPTIONS challenge handling before touching ALAC/output timing or blaming cleanup. Correct the working build label without changing runtime code.
 - **Prevention Rule:** Confirm each RTSP/RTP/PCM layer in logs. Preserve logs before relaunch (opening the app truncates the log). Avoid repeated streaming attempts that require forced shutdown.
+
+## PPC64 registers do not imply 64-bit pointers on PS3
+
+- **Problem:** OPTIONS challenge signing and synthetic ANNOUNCE key recovery stopped, followed by loss of controller responsiveness. Saved RPCS3 output records an invalid-memory fault in bignum multiplication.
+- **Root Cause:** Mbed TLS selected PPC64 assembly that loads/stores pointer locals as eight bytes; the PS3 compiler stores those pointers as four bytes. This corrupts pointer slots during RSA arithmetic.
+- **Fix:** Disable that assembly path through a consistent PS3 user configuration; retain portable C arithmetic, RSA blinding, and RNG. Add phase/timing diagnostics.
+- **Prevention Rule:** Run private-key operations on the target ABI. Host crypto tests cannot catch a target-specific assembly/pointer-width incompatibility. Always inspect emulator fatal logs alongside app logs before diagnosing a missing response as a timeout.
