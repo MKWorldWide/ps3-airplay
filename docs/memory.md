@@ -149,3 +149,9 @@ Demonstration target: PS3 with Evilnat 4.93 CFW and Cobra 8.5 observed; the cons
 - Canonical Lima build and package checks pass. ELF: 2,780,064 bytes, SHA-256 `5e80257671409775d98884c7101acf15d7e116448498ee8c69148843a96896dd`. PKG: 3,230,256 bytes, SHA-256 `2095046e20716d9f2768c847691515f1d1e922e5fbd96e15829f92c45816cf23`.
 - Full host tests, PPU object compilation, standalone link/ELF validator, package extraction, APP_VER/title/content IDs, assets, EBOOT comparison, and finalized NPDRM validation pass. RPCS3 install/launch and visual check remain pending because the emulator UI is inaccessible. Do not infer display output or controller exit from `SCREEN_READY` or package validation.
 - Next package version: 0.1.18.
+
+## AIRPLAY02 v0.1.18 PCM telemetry source pass (2026-11-07)
+
+- During an active decoder session, the standalone loop now logs numeric PCM ring occupancy, accepted ring frames, input frames consumed by the resampler, and output frames submitted to GameOS blocks every five seconds.
+- `PCM_PORT_SUBMITTED` counts generated GameOS audio frames and is not a hardware-rendered or audible-output metric. Existing underflow/drop events remain distinct.
+- Full Lima host tests and a working-tree PPU application link/CellOS PPC64 ELF validation pass. Canonical package generation from a committed revision and RPCS3 runtime event verification are pending. v0.1.18 remains the next package version.

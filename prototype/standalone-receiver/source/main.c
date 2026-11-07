@@ -23,6 +23,7 @@
 #include <unistd.h>
 
 #include <arpa/inet.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
@@ -67,6 +68,14 @@ static uint64_t decoded_packet_count;
 static int audio_prebuffer_ready;
 static uint32_t active_sample_rate = 48000;
 static uint32_t logged_volume_updates;
+/* Frames copied into GameOS blocks; this is not an audible-output counter. */
+static uint64_t audio_port_frames_submitted;
+
+static int bounded_counter_delta(uint64_t current, uint64_t previous)
+{
+	uint64_t delta = current >= previous ? current - previous : current;
+	return delta > (uint64_t)INT_MAX ? INT_MAX : (int)delta;
+}
 
 static void on_system_event(u64 status, u64 param, void *userdata)
 {
@@ -182,6 +191,7 @@ static void render_next_audio_block(const audioPortConfig *config)
 	(void)raop_pcm_ring_render_float(&pcm_ring, active_sample_rate,
 		RAOP_DIAGNOSTIC_TONE_RATE, block, AUDIO_BLOCK_SAMPLES);
 	raop_pcm_gain_apply(&stream_gain, block, AUDIO_BLOCK_SAMPLES);
+	audio_port_frames_submitted += AUDIO_BLOCK_SAMPLES;
 }
 
 static void close_audio(int started, int notify_set, int port_open,
@@ -220,9 +230,13 @@ int main(void)
 	uint8_t ip[4];
 	char instance[64], host[64];
 	u64 next_log_us = 0;
+	u64 next_audio_stats_us = 0;
 	int screen_result;
 	uint64_t reported_underflows = 0;
 	uint64_t reported_drops = 0;
+	uint64_t reported_pcm_frames_written = 0;
+	uint64_t reported_pcm_frames_read = 0;
+	uint64_t reported_audio_port_frames = 0;
 	uint64_t handled_flush_generation = 0;
 
 	mdns_service.socket_fd = -1;
@@ -395,6 +409,10 @@ int main(void)
 				receiver.session.offer.fmtp[10];
 			raop_pcm_ring_init(&pcm_ring,
 				decoder == NULL ? 2 : (uint8_t)receiver.session.offer.fmtp[6]);
+			audio_port_frames_submitted = 0;
+			reported_pcm_frames_written = 0;
+			reported_pcm_frames_read = 0;
+			reported_audio_port_frames = 0;
 			(void)log_event(decoder != NULL ? "ALAC_READY" : "ALAC_UNSUPPORTED",
 				(int)receiver.session.offer.fmtp[2],
 				(int)receiver.session.offer.fmtp[6]);
@@ -407,6 +425,10 @@ int main(void)
 			active_sample_rate = 48000;
 			memset(decoded_pcm, 0, sizeof(decoded_pcm));
 			raop_pcm_ring_init(&pcm_ring, 2);
+			audio_port_frames_submitted = 0;
+			reported_pcm_frames_written = 0;
+			reported_pcm_frames_read = 0;
+			reported_audio_port_frames = 0;
 			memset(&receiver.audio_queue, 0, sizeof(receiver.audio_queue));
 			audio_prebuffer_ready = 0;
 		}
@@ -472,6 +494,25 @@ int main(void)
 					(size_t)pcm_ring.count);
 			reported_drops = current;
 			next_log_us = sysGetSystemTime() + 1000000U;
+		}
+		if ((u64)sysGetSystemTime() >= next_audio_stats_us) {
+			if (decoder != NULL) {
+				/* Periodic counters contain only numeric stream-health data. */
+				(void)log_event("PCM_BUFFER_FRAMES", (int)pcm_ring.count, 0);
+				(void)log_event("PCM_QUEUED_FRAMES",
+					bounded_counter_delta(pcm_ring.frames_written,
+						reported_pcm_frames_written), 0);
+				(void)log_event("PCM_CONSUMED_FRAMES",
+					bounded_counter_delta(pcm_ring.frames_read,
+						reported_pcm_frames_read), 0);
+				(void)log_event("PCM_PORT_SUBMITTED",
+					bounded_counter_delta(audio_port_frames_submitted,
+						reported_audio_port_frames), 0);
+				reported_pcm_frames_written = pcm_ring.frames_written;
+				reported_pcm_frames_read = pcm_ring.frames_read;
+				reported_audio_port_frames = audio_port_frames_submitted;
+			}
+			next_audio_stats_us = sysGetSystemTime() + 5000000U;
 		}
 	}
 	result = 0;

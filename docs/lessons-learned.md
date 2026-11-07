@@ -280,3 +280,17 @@
 - **Root Cause:** The display implementation retained a diagnostic text overlay even after the supplied image itself was sufficient confirmation.
 - **Fix:** Removed the glyph table, text renderer, and remaining prompt draw call so scanout shows the supplied background image without text.
 - **Prevention Rule:** Keep the foreground display visually minimal once image visibility has been demonstrated; inspect the actual renderer before removing requested UI elements.
+
+## Distinguish PCM queue flow from audible output
+
+- **Problem:** A PCM ring can accept and consume frames while the GameOS output path still underflows or remains inaudible.
+- **Root Cause:** Queue counters, audio-block submission, and physical sound describe different stages of the pipeline.
+- **Fix:** Add separately named numeric counters for buffer occupancy, frames queued/consumed, and frames submitted to GameOS blocks; preserve underflow/drop events and explicitly avoid treating submission as playback evidence.
+- **Prevention Rule:** Report each audio boundary independently and require a real listening observation for audible playback claims.
+
+## Declare telemetry baselines before wiring session resets
+
+- **Problem:** The first PPU compile failed because new per-session counter baselines were reset at the session boundary but had not been declared in `main`.
+- **Root Cause:** The implementation pass added lifecycle reset sites before adding the corresponding local state declarations.
+- **Fix:** Declared all three baselines with the other main-loop counters; the repeat PPU application link and ELF validation passed.
+- **Prevention Rule:** When adding lifecycle-managed metrics, update declarations, session initialization/reset sites, and emission sites together, then run the strict PPU compile before recording the pass as validated.
