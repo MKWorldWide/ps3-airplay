@@ -34,7 +34,11 @@ This matrix distinguishes portable host evidence and cross-build evidence from r
 | RPCS3-03 | Encrypted RAOP OPTIONS/ANNOUNCE/SETUP/RECORD, RTP, decrypt, ALAC, PCM submit | PASS for the bounded 128-packet fixture. Log: key unwrap complete; 44.1 kHz stereo; RTP decrypt success; ALAC frame; 61,440 output frames submitted. Zero sequence gaps, zero recovery, zero concealment, zero ALAC errors in this fixture. No acoustic confirmation. |
 | RPCS3-04 | Keyboard START to clean app stop | PASS; USER_EXIT_START, CLEANUP_BEGIN, AUDIO_CLOSE_DONE, RECEIVER_CLOSE_DONE, APP_STOP. |
 | RPCS3-05 | mDNS advertisement in RPCS3 | FAIL/unsupported boundary; logs report mDNS interface setup error 125. No iPhone discovery test in this run. |
-| PS3-01 | Physical audio, image stability, XMB resume, START exit, iPhone/Spotify | NOT TESTED; user has console off. Last known physical log is v0.1.35. |
+| PS3-01 | Install and launch production v0.1.39 / SFO 00.39 | PASS by FTP/webMAN; installed SFO verified and webMAN reported AIRPLAY02 00.39 running. |
+| PS3-02 | Startup readiness and diagnostic tone | Startup, screen initialization, controller, network, RTSP/RTP listeners, mDNS, audio, tone-start and tone-complete events present in fresh log. User-visible pixels and audible tone are NOT CONFIRMED. |
+| PS3-03 | Same-LAN discovery and RTSP OPTIONS | DNS-SD browse found a RAOP service. Target resolve inconclusive. TCP 5000 accepted a probe; client received EOF while target logged RTSP status 200 after send_all success. Protocol response discrepancy unresolved; no iPhone session claimed. |
+| PS3-04 | RTP, decryption, ALAC, PCM music and Spotify | NOT TESTED for v0.1.39. No completed session or user-confirmed streamed audio. |
+| PS3-05 | Stable display, START/PS exit, resume, repeated launch | NOT TESTED by user for v0.1.39; app was left running for observation. |
 
 ## v0.1.39 build validation (2026-11-07)
 
@@ -280,3 +284,12 @@ The emitter used a paced diagnostic fixture; target output submission is not pro
 | Static-screen flip behavior | PASS in emulator log; hardware pending | Repeated `SCREEN_FLIPS value=0` heartbeats after initial presentation; one screenshot showed the background. PS3 HDMI and resume behavior remain unverified. |
 | Sustained playback and audible quality | NOT ESTABLISHED | The bounded emulator run is not a sustained or acoustic test. No new hardware listening result. |
 | Physical v0.1.37 deployment | BLOCKED | Direct FTP and webMAN endpoint were unreachable at preflight; installed app and staged package directory were left untouched. |
+
+## Physical v0.1.39 deployment (2026-11-07)
+
+| ID | Scenario | Result |
+|---|---|---|
+| DEPLOY-39-01 | Stage production package under a new name and download-back verify | PASS; 3,236,976 bytes, SHA-256 `9f67340331eaae9e5ecbe94adaee03a0201e79e652a6bf45fa14cf6922877840`. |
+| DEPLOY-39-02 | Install and verify installed title identity | PASS; webMAN install returned success and FTP-read installed SFO reports AIRPLAY02 / 00.39. |
+| DEPLOY-39-03 | Launch and inspect fresh capped log | PASS to startup checkpoints; active app reported by webMAN. Log records tone completion path but does not prove the user heard it or saw a stable screen. |
+| DEPLOY-39-04 | LAN DNS-SD and RTSP OPTIONS probe | PARTIAL; RAOP browse result found. TCP probe connected, receiver logged a sent 200 response, but probe client got EOF. Resolve and client-visible response remain unresolved. |

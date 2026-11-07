@@ -1,9 +1,8 @@
 # Active work
 
-- Current source/package candidate: AIRPLAY02 v0.1.39 / SFO 00.39; production TCP 5000, RPCS3-only TCP 5001.
-- Code: hold RTP sequence gaps for 80 ms; conceal up to 128 lost ALAC frames as PCM silence; skip larger sequence jumps to bound latency. Full Lima ASan/UBSan and PPU component suite passes.
-- v0.1.38 emulator test: installed/launched, visible background, tone complete, encrypted 128-packet session decoded/submitted PCM, keyboard START exited cleanly. No packet loss, acoustic confirmation, or mDNS success; recovery not exercised in RPCS3.
-- Physical baseline remains v0.1.35. User has PS3 off; no console operations.
-- Pushed source: commit `1a5520d6e37239070012cb0f8ed3f7953074bbc0`. Both production port-5000 and RPCS3 port-5001 v0.1.39 / SFO 00.39 finalized packages validate; hashes are in docs/memory.md. Full Lima ASan/UBSan and PPU tests pass on that exact commit.
-- RPCS3 currently last has v0.1.38 runtime evidence. Its latest log proves encrypted test fixture decode/PCM submit and clean emulator exit; no packet loss was injected and mDNS failed. v0.1.39 installation is pending: CUA timed out opening installer and reading AX tree. Do not switch to manual emulator HDD file replacement.
-- Physical PS3 is off and untouched. Next: restore RPCS3 control, install/test v0.1.39 with baseline and loss/reorder sender fixtures; then wait for console availability before any hardware work. No claim of perfect or acoustically verified playback.
+- Physical console has production AIRPLAY02 v0.1.39 / SFO 00.39 installed and running; it was left open for user observation.
+- Verified production PKG: 3,236,976 bytes, SHA-256 `9f67340331eaae9e5ecbe94adaee03a0201e79e652a6bf45fa14cf6922877840`; installed SFO verified through FTP.
+- Fresh log reaches listener, mDNS, audio, and tone-complete checkpoints. Those events do not prove visible pixels or audible output.
+- Same-LAN browse found RAOP. TCP OPTIONS connected; receiver logged response status 200 after successful send, but probe client received EOF. Investigate this mismatch before broader AirPlay claims.
+- No v0.1.39 iPhone session, RTP, streamed decode, Spotify playback, user-confirmed display/tone, or clean-exit result yet.
+- Next: collect the user's screen/tone/exit observations; then one controlled iPhone attempt and immediate fresh-log retrieval. Keep raw logs local/ignored.

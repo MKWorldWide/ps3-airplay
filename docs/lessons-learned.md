@@ -540,3 +540,11 @@ The v0.1.31 fresh RPCS3 replay verifies the portable-arithmetic correction: the 
 - **Root Cause:** The RPCS3 Computer Use accessibility call timed out while opening the package installer, then remained unable to observe the app. The previous log still belongs to v0.1.38.
 - **Fix:** Preserve the v0.1.39 candidate packages and exact hashes, record runtime as pending, and keep the existing emulator installation intact until UI control is available.
 - **Prevention Rule:** Treat compile, package validation, emulator install, app launch, fixture replay, and audio observation as separate gates; never attribute an older log to a newly built PKG.
+
+
+## Target RTSP status and client EOF are conflicting evidence
+
+- **Problem:** A bounded TCP OPTIONS probe connected to the physical receiver, but the client read EOF instead of a response.
+- **Root Cause:** Not established. The receiver log records status 200 only after its `send_all` routine returns success; this shows the server-side send path completed, but does not establish bytes reached or were parsed by the client.
+- **Fix:** Preserve both observations, inspect response framing/socket lifecycle and repeat with a client that records received bytes and close timing. Do not infer full RAOP connection from discovery, TCP accept, or the server status log.
+- **Prevention Rule:** Correlate client-side wire evidence with receiver-side logs at every protocol boundary.

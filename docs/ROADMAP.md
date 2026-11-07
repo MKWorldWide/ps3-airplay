@@ -1,6 +1,6 @@
 # Roadmap
 
-**Current status (2026-11-07):** The last physical PS3 evidence remains v0.1.35: 195 RTP gaps, no retained resend recoveries, zero ALAC failures, and 86,106 active-playback PCM underflow frames. In RPCS3, v0.1.38 / SFO 00.38 launched, rendered the image, completed the diagnostic tone, accepted an encrypted synthetic RAOP session, decrypted RTP, decoded ALAC, submitted PCM, and exited cleanly on keyboard START. That fixture had zero RTP gaps and zero ALAC failures; it does not exercise loss recovery or prove audible output. The v0.1.39 source adds a 128-frame concealment cap, and exact commit `1a5520d` has passed the full Lima sanitizer/PPU suite and built production and RPCS3-only finalized packages. Package hashes are recorded in the hardware follow-up report. RPCS3 v0.1.39 install/replay is pending because the desktop automation interface timed out while opening its package installer; the previous v0.1.38 log remains the latest runtime evidence. The physical console is off and untouched.
+**Current status (2026-11-07):** Production AIRPLAY02 v0.1.39 / SFO 00.39 was staged, hash-verified, installed, and launched on the physical PS3. The fresh log records application startup, screen/controller initialization, network route, RTSP 5000, RTP 6000–6002, mDNS, audio initialization, and completion of the diagnostic-tone code path. The app was left running. Same-LAN DNS-SD browsing found a RAOP service; target resolution was inconclusive. A bounded TCP OPTIONS probe connected, but the client got EOF while the receiver log recorded a successful 200 response send; this discrepancy needs investigation. No user observation of visible pixels or audible tone, no completed iPhone/RTSP session, RTP reception, decoded stream, Spotify audio, or XMB exit has been recorded for this build. Exact PKG SHA-256: `9f67340331eaae9e5ecbe94adaee03a0201e79e652a6bf45fa14cf6922877840`.
 
 ## Milestones
 
@@ -18,14 +18,14 @@
 
 ## Current implementation
 
-Portable components cover bounded DNS-SD/mDNS, RTSP/SDP session handling, UDP RTP, timing probes, retransmission requests and validation, RAOP crypto, ALAC decoding, PCM buffering, and capped diagnostics. The standalone app plays one five-second, low-level 440 Hz startup diagnostic through GameOS audio blocks before normal PCM rendering. Real Spotify audio over AirPlay was previously confirmed on v0.1.33, with crackle/dropouts and XMB-resume flicker. The latest capture identifies v0.1.35 as installed and records active starvation without ALAC decode failures. The resident candidate remains separate and discards decoded PCM.
+Portable components cover bounded DNS-SD/mDNS, RTSP/SDP session handling, UDP RTP, timing probes, retransmission requests and validation, RAOP crypto, ALAC decoding, PCM buffering, and capped diagnostics. The standalone app plays one five-second, low-level 440 Hz startup diagnostic through GameOS audio blocks before normal PCM rendering. Real Spotify audio over AirPlay was previously confirmed on v0.1.33, with crackle/dropouts and XMB-resume flicker. The preceding physical capture (v0.1.35) recorded active starvation without ALAC decode failures; it is not evidence for the current v0.1.39 run. The resident candidate remains separate and discards decoded PCM.
 
 ## Next steps
 
-1. Resume RPCS3 through a working desktop-control path, install the already validated port-5001 v0.1.39 PKG, then run encrypted baseline and controlled-loss fixtures and inspect fresh logs.
-2. Verify the target logs report recovery when a valid resend arrives within 80 ms; verify concealment/skipping counters on unrecovered and large gaps.
-3. When the physical PS3 is back online, verify installed SFO and current log over direct FTP/webMAN before deciding whether to stage the production port-5000 PKG.
-4. Compare the new run's RTP gaps, resend recovery, active PCM underflows, display stability, and clean exit against v0.1.35; separately record user listening results.
+1. Ask the user to report visible background stability, tone audibility, and whether START/PS returns to XMB without a hang; repeat launch/display/exit twice before calling those gates passed.
+2. Diagnose the OPTIONS client EOF against the receiver's RTSP 200-send log, then retry one controlled iPhone connection while retrieving the fresh log.
+3. If RTSP establishes, inspect RTP gap/recovery/concealment and PCM-underflow counters, then request a brief user-confirmed audio playback test.
+4. Run the v0.1.39 controlled-loss/reordering fixture in RPCS3 when desktop control is available; physical deployment is now independently version-verified.
 5. Defer soak tests, resident PRX work, and game-audio mixing until short playback, XMB resume, and clean exit are stable.
 
 ### RTP loss handling and interoperability research (2026-11-07)
