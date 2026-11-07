@@ -44,7 +44,8 @@ The staged source/doc diff passed `git diff --cached --check` and a manual priva
 | v0.1.2 package identity | PASS; installed SFO and EBOOT match the candidate |
 | v0.1.2 XMB launch | FAIL; user reports `80028F21` |
 | v0.1.3 package validation | PASS locally |
-| v0.1.3 transfer/install/launch | NOT RUN; awaiting separate approval |
+| v0.1.3 FTP transfer | PASS; staged under a versioned filename, downloaded back byte-for-byte with the expected size and SHA-256 |
+| v0.1.3 XMB install/launch | NOT RUN; awaiting separate approval |
 | Visible display / START exit / diagnostic tone | NOT RUN for v0.1.3 |
 | iPhone connection / RTP / ALAC / audible music | NOT RUN for v0.1.3 |
 

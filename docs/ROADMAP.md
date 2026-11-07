@@ -20,7 +20,7 @@ Portable components cover bounded DNS-SD/mDNS, RTSP/SDP session handling, UDP RT
 
 ## Next steps
 
-1. With approval, transfer v0.1.3 under a versioned filename, install it through XMB, and test whether it launches. This candidate is based on an upstream report that modern PSL1GHT runtime builds failed before `main()` on 4.93 HEN while a 2020 runtime build worked; that report does not cover Evilnat CFW, so treat the result as a controlled test, not a proven fix.
+1. Request approval to replace the installed AIRPLAY02 app via XMB with the already-staged v0.1.3 candidate, then test whether it launches. Its upload is hash-verified and the v0.1.2 package remains staged for rollback. This candidate is based on an upstream report that modern PSL1GHT runtime builds failed before `main()` on 4.93 HEN while a 2020 runtime build worked; that report does not cover Evilnat CFW, so treat the result as a controlled test, not a proven fix.
 2. If launch succeeds, verify visible display, five-second tone, and START-to-XMB twice. Stop if output is black or normal exit fails.
 3. Try the iPhone once and retrieve the capped log; use accept, method, status, state, SDP, and RTP events to locate the failure before changing capabilities.
 4. Re-test AirPlay audio after display, clean exit, and RTSP/RTP stage evidence are established.
