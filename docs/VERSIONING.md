@@ -96,10 +96,19 @@ The standalone receiver `Makefile` and canonical Lima build/package scripts defa
 - Build: existing Lima VM; PS3DK v0.27.0 PPU compiler 16.1.0, GNU ld 2.42, PSL1GHT revision `dd4e8c9be744e3273d665c393fa6d97a87402e2e`.
 - Checks: full Lima host suite with ASan/UBSan, composed encrypted RTP-to-PCM test, PPU component compilation, standalone link/ELF validation, AIRPLAY02/APP_VER/content ID, asset equality, extraction, EBOOT comparison, relative package paths, and finalized NPDRM envelope PASS.
 - Runtime: RPCS3 still has only the older v0.1.15 app log; the desktop is locked and no fresh v0.1.22 launch/log was obtained. Physical PS3 was not changed. No iPhone session or audible AirPlay playback is verified.
-- The PKG, ELF, and build metadata are preserved in ignored `work/builds/0.1.22/`. Next unused package version: 0.1.23.
+- The PKG, ELF, and build metadata are preserved in ignored `work/builds/0.1.22/`. The next package is v0.1.23.
 
 ## v0.1.23 source pass
 
 - Change: configure a two-second `SO_SNDTIMEO` for each accepted RTSP client and enforce a two-second overall deadline across response writes. Timeout/setup failures are logged without peer details.
 - Validation: full Lima host/sanitizer suite and PPU component compilation pass; the RTSP socket integration forces a slow-reader backpressure condition, verifies the timeout event, and confirms disconnect within four seconds.
 - Full standalone ELF/PKG build and runtime validation pending. RPCS3 is still inaccessible while the desktop is locked.
+
+## v0.1.23 package record
+
+- Source: commit `6513bdd201899e93fd55babd296fb97893d93216` on `main`.
+- Package: `AIRPLAY02`, version `0.1.23`, finalized NPDRM PKG, 3,230,768 bytes; SHA-256 `d17f6d2576bb96d0ff29cd7a58790852b6607d9b60b5d2dcffbe5613e053c4c4`.
+- ELF: CellOS PPC64 executable, 2,780,120 bytes; SHA-256 `2130c17ace5459a57765d3d2ae8b185012548789891961e3b74d330d6f236dd6`.
+- Checks: Lima PS3DK v0.27.0 + PSL1GHT build; ELF validation; finalized package envelope, AIRPLAY02 identity, APP_VER, content ID, EBOOT and embedded background validation pass. The full Lima host/sanitizer and PPU component suite passed in the source pass.
+- Runtime: RPCS3 install/launch could not be performed because desktop access still reports the Mac locked. No fresh v0.1.23 runtime log, iPhone session, or audible AirPlay playback is verified. Physical PS3 was not changed.
+- Artifacts are preserved in ignored `work/builds/0.1.23/`. Next package version: 0.1.24.
