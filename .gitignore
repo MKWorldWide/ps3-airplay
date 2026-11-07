@@ -1,0 +1,35 @@
+# Host build output
+build/
+out/
+dist/
+*.o
+*.a
+*.elf
+*.self
+*.sprx
+*.pkg
+*.map
+*.log
+*.pyc
+__pycache__/
+.DS_Store
+
+# Local PS3 SDK / deps
+.deps/
+sdk/
+.local/
+.env
+.env.*
+!*.example.env
+/work/
+
+# Sensitive device/network reports
+tests/private/
+logs/
+credentials*
+
+# Local agent instructions and private context
+/AGENTS.md
+/agents.md
+**/AGENTS.md
+**/agents.md
