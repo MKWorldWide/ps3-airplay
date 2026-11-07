@@ -20,7 +20,7 @@ Example, with paths adjusted to the local Lima guest:
 export PS3DK_SOURCE="$HOME/ps3-airplay-host/ps3-sdk-src-v0.27.0"
 export PS3DEV="$PS3DK_SOURCE/stage/ps3dev"
 export SOURCE_REVISION="<full SHA of the exact source commit copied into Lima>"
-export APP_VERSION=0.1.13
+export APP_VERSION=0.1.14
 # Optional emulator-only probe when the host's port 5000 is occupied.
 export RTSP_PORT=5001
 bash scripts/build-lima-crypto.sh
@@ -47,4 +47,5 @@ Keep the generated package, build manifest, and test logs outside Git. Record pa
 - v0.1.11 visibly rendered the supplied background and `PRESS START TO EXIT` in RPCS3 without blue bands or `DISPLAY ACTIVE`. It still logged `MDNS_FAILED` without a substage. The screen result is emulator evidence; the user's report separately confirms the app opens.
 - v0.1.12 adds a numeric mDNS failure stage and errno to the privacy-safe `MDNS_FAILED` event. RPCS3 logged stage 4 (UDP bind) and errno 112 (`EADDRINUSE`). A second run with Lima stopped still failed: the host's system mDNS responder owns wildcard UDP 5353, and a wildcard bind probe returned `EADDRINUSE`. RPCS3 mDNS cannot bind on this host; this says nothing about native PS3 port availability.
 - v0.1.13 was built from pushed source revision `70fa6654bd2d092a5f674dd526c05a2e5ccd4703` with the normal PS3 RTSP port 5000. All Lima host tests, PPU objects, ABI validation, PKG extraction, SFO/content-ID, asset equality, and finalized envelope checks passed. The package is 3,224,944 bytes; SHA-256 `f7d076e32520a552349ebb973894409d66fd429ff255d0919c66401fabe9f1e9`. Its RPCS3 and physical-console launch gates remain pending.
+- The next candidate, v0.1.14, adds a best-effort `SO_REUSEPORT` request on platforms whose socket headers define it. A host socket probe bound UDP 5353 with both reuse options while the system mDNS responder remained active and received multicast responses. This validates host socket sharing only; the app advertisement, RPCS3 socket mapping, and native PS3 behavior still require testing.
 - Current next package version is 0.1.14. Every generated package consumes its version even when it fails a test.

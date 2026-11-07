@@ -217,3 +217,10 @@
 - **Root Cause:** The image conversion script has an optional Python dependency that is not part of the pinned PS3DK toolchain.
 - **Fix:** Reused the existing generated RGB file only after confirming the source JPEG hashes matched and the copied RGB bytes compared exactly.
 - **Prevention Rule:** Keep generated image assets out of source control; when reusing one, verify both its source asset identity and byte-for-byte output. Install the documented Pillow dependency when a new conversion is actually required.
+
+## Probe host socket sharing before changing mDNS architecture
+
+- **Problem:** RPCS3 could not bind UDP 5353 while the host system mDNS responder owned the wildcard port.
+- **Root Cause:** SO_REUSEADDR alone did not permit this host's mDNS socket to share the port.
+- **Fix:** A temporary socket probe showed SO_REUSEPORT allowed bind and multicast reception. The receiver now requests it best-effort when the platform headers provide it; app-level discovery is not yet verified.
+- **Prevention Rule:** Validate the actual platform socket behavior with a bounded probe, then keep the option best-effort and verify target behavior before claiming discovery.

@@ -145,8 +145,11 @@ int raop_mdns_service_open(raop_mdns_service *service,
 	if (fd < 0)
 		return fail_open(service, -1, RAOP_MDNS_FAILURE_SOCKET, errno,
 			ipv4, 0);
-	/* Reuse is best-effort; the original receiver continued without it. */
+	/* Keep port sharing best-effort for stacks that do not support it. */
 	(void)setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse));
+#ifdef SO_REUSEPORT
+	(void)setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &reuse, sizeof(reuse));
+#endif
 	if (setsockopt(fd, IPPROTO_IP, IP_MULTICAST_TTL, &ttl, sizeof(ttl)) < 0) {
 		return fail_open(service, fd, RAOP_MDNS_FAILURE_TTL, errno, ipv4, 0);
 	}

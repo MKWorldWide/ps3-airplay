@@ -100,6 +100,7 @@ Demonstration target: PS3 with Evilnat 4.93 CFW and Cobra 8.5 observed; the cons
 - On partial setup failure, drop the multicast membership when joined and close the socket. The full Lima host suite passes and host tests verify deterministic invalid-argument reporting.
 - RPCS3 v0.1.12 reported mDNS stage 4 (UDP bind) and errno 112 (`EADDRINUSE`). A second run with Lima stopped still failed; host inspection showed the system mDNS responder owns wildcard UDP 5353 and a wildcard bind probe fails even with `SO_REUSEADDR`. Lima's host proxy is an additional holder while the VM runs. Do not stop the system service; keep the emulator limitation separate from native PS3 behavior.
 - v0.1.12 was generated from exact mDNS diagnostic source changes before that change was committed; its manifest records `46fca40`. v0.1.13 was rebuilt from committed source `70fa6654bd2d092a5f674dd526c05a2e5ccd4703`, passed the full host/PPU/package validation, and is 3,224,944 bytes with SHA-256 `f7d076e32520a552349ebb973894409d66fd429ff255d0919c66401fabe9f1e9`. RPCS3 and physical PS3 launch tests are pending. The next unused package version is 0.1.14.
+- v0.1.14 source adds a guarded, best-effort SO_REUSEPORT request to the mDNS socket. A host socket probe with the system responder active successfully bound wildcard UDP 5353 and received multicast responses; the native mDNS serializer test passed with the updated source. No RAOP service advertisement, RPCS3 run, or PS3 run has yet verified the change.
 
 ## Invariants
 
