@@ -14,7 +14,7 @@ PS3 AirPlay is an experimental AirPlay 1 / RAOP receiver for PS3 homebrew. The i
 - `src/observability`: capped, privacy-conscious diagnostic logging.
 - `prototype/standalone-receiver`: standalone receiver wiring protocol and audio components.
 - The standalone screen uses PSL1GHT RSX framebuffers and primes scanout using the PSL1GHT `videoTest` sample's spare-buffer-first pattern. Earlier v0.1.11 RPCS3 evidence showed the background with a white controller START prompt; physical HDMI output and orderly XMB return remain unconfirmed.
-- A later user observation reported that the app opened and the background was visible, but blue borders and a `DISPLAY ACTIVE` label were still present. The target (RPCS3 or PS3), package version, and installed artifact were not identified, so this does not establish a current-source regression. The renderer inspected in this pass contained only the `PRESS START TO EXIT` overlay; this follow-up removes all text, and the next build still needs visual confirmation.
+- A later user observation after the RPCS3 test reported that the app opened and the background was visible, but blue borders and a `DISPLAY ACTIVE` label were still present. The package version and installed artifact were not identified, so this does not establish a current-source regression. The renderer inspected in this pass contained only the `PRESS START TO EXIT` overlay; v0.1.17 removes all text, but its own visual output still needs confirmation.
 - Local RPCS3 snapshot checked 2026-11-07: installed AIRPLAY02 SFO is 0.1.12, not the validated v0.1.14 candidate. Its available capped app log records RTSP 5001 and RTP 6000-6002 ready, mDNS bind failure (stage 4 / error 112), diagnostic tone completion, PCM underflows without an RTP event, and APP_STOP. This log cannot be attributed to the user's latest visual observation. A bounded RAOP browse found no instance matching the expected project label; the physical console's previously used FTP/webMAN endpoints did not respond.
 - The standalone app begins with a bounded five-second 440 Hz diagnostic rendered through the same GameOS audio blocks as receiver PCM; host waveform checks do not establish audible hardware output.
 - Latest hardware observation: the user reports a five-second tone, a black screen, and iPhone discovery of `ps3-airplay-diagnostic` followed by a failed connection. A 350-byte log snapshot contains `SCREEN_READY`, `CONTROLLER_READY`, `MDNS_READY`, and `AUDIO_TEST_TONE_START` but no completion, RTSP, or stop event; its package version is unconfirmed, and FTP later timed out. Do not infer that visible pixels reached the display or that AirPlay connected.
@@ -141,4 +141,11 @@ Demonstration target: PS3 with Evilnat 4.93 CFW and Cobra 8.5 observed; the cons
 ## Display cleanup follow-up (2026-11-07)
 
 - The standalone display now draws only the configured background image. It no longer overlays text; the renderer never contained the blue border or `DISPLAY ACTIVE` wording reported in the prior visual observation, but it did draw `PRESS START TO EXIT`.
-- This is source-only until the next package is built and visually checked. Do not infer that v0.1.17 has launched or that screen/exit behavior is verified.
+- v0.1.17 packages this source cleanup, but its screen and exit behavior remain unverified until it runs in RPCS3 or on hardware.
+
+## AIRPLAY02 v0.1.17 display cleanup package (2026-11-07)
+
+- Pushed source commit `4a06c2a` removes the text rasterizer and `PRESS START TO EXIT` overlay. Controller START handling and framebuffer setup are unchanged.
+- Canonical Lima build and package checks pass. ELF: 2,780,064 bytes, SHA-256 `5e80257671409775d98884c7101acf15d7e116448498ee8c69148843a96896dd`. PKG: 3,230,256 bytes, SHA-256 `2095046e20716d9f2768c847691515f1d1e922e5fbd96e15829f92c45816cf23`.
+- Full host tests, PPU object compilation, standalone link/ELF validator, package extraction, APP_VER/title/content IDs, assets, EBOOT comparison, and finalized NPDRM validation pass. RPCS3 install/launch and visual check remain pending because the emulator UI is inaccessible. Do not infer display output or controller exit from `SCREEN_READY` or package validation.
+- Next package version: 0.1.18.
