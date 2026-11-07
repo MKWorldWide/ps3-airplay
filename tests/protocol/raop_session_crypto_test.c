@@ -191,6 +191,27 @@ int main(void)
 	assert(make_request(&session, request, response, sizeof(response)));
 	assert(!session.has_audio_key && session.audio_key[0] == 0 &&
 		session.audio_iv[0] == 0);
+ /* Classic senders supply the RSA key and IV without the optional et hint. */
+ length = snprintf(sdp, sizeof(sdp),
+  "v=0\r\nm=audio 0 RTP/AVP 96\r\na=rsaaeskey:%s\r\na=aesiv:%s\r\n",
+  wrapped_b64, iv_b64);
+ snprintf(request, sizeof(request),
+  "ANNOUNCE rtsp://ps3/stream RTSP/1.0\r\nCSeq: 6\r\n"
+  "Content-Type: application/sdp\r\nContent-Length: %d\r\n\r\n%s", length, sdp);
+ assert(make_request(&session, request, response, sizeof(response)));
+ assert(strstr(response, "RTSP/1.0 200 OK") != NULL && session.has_audio_key);
+ assert(!session.offer.has_encryption_type);
+ memcpy(audio, encrypted_audio, sizeof(audio));
+ assert(raop_session_decrypt_audio(&session, audio, sizeof(audio)));
+ assert(memcmp(audio, clear_audio, sizeof(audio)) == 0);
+ /* An incomplete key/IV pair must not silently select cleartext. */
+ length = snprintf(sdp, sizeof(sdp),
+  "v=0\r\nm=audio 0 RTP/AVP 96\r\na=rsaaeskey:%s\r\n", wrapped_b64);
+ snprintf(request, sizeof(request),
+  "ANNOUNCE rtsp://ps3/stream RTSP/1.0\r\nCSeq: 7\r\n"
+  "Content-Type: application/sdp\r\nContent-Length: %d\r\n\r\n%s", length, sdp);
+ assert(make_request(&session, request, response, sizeof(response)));
+ assert(strstr(response, "RTSP/1.0 400 Bad Request") != NULL);
 	raop_crypto_context_free(&crypto);
 
 	puts("RAOP RTSP challenge, ANNOUNCE key recovery and RTP decrypt: PASS");

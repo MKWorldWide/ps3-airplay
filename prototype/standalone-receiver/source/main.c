@@ -54,6 +54,8 @@ mbedtls_ms_time_t mbedtls_ms_time(void)
 
 static volatile int exit_requested;
 static int system_menu_open;
+static int presentation_failed;
+static uint64_t presented_frames;
 static int last_pad_mask;
 static int last_pad_result;
 static raop_receiver receiver;
@@ -68,6 +70,8 @@ static diagnostic_screen screen;
 static int diagnostic_tone_logged;
 static uint8_t decoded_pcm[RAOP_ALAC_PCM_MAX];
 static uint64_t decoded_packet_count;
+static uint64_t decode_attempts;
+static uint64_t decode_failures;
 static int audio_prebuffer_ready;
 static uint32_t active_sample_rate = 48000;
 static uint32_t logged_volume_updates;
@@ -88,7 +92,12 @@ static void on_system_event(u64 status, u64 param, void *userdata)
 	(void)userdata;
 	(void)log_event("SYSUTIL_EVENT", (int)status, 0);
 	if (status == SYSUTIL_MENU_OPEN) system_menu_open = 1;
-	if (status == SYSUTIL_MENU_CLOSE) system_menu_open = 0;
+	if (status == SYSUTIL_MENU_CLOSE) {
+  system_menu_open = 0;
+  presentation_failed = 0;
+  diagnostic_screen_invalidate(&screen);
+  (void)log_event("SCREEN_RESUME_REQUEST", 0, 0);
+ }
 	if (status == SYSUTIL_EXIT_GAME)
 		exit_requested = 1;
 }
@@ -262,7 +271,6 @@ int main(void)
 	char instance[64], host[64];
 	u64 next_log_us = 0;
 	u64 next_heartbeat_us = 0;
-	int presentation_failed = 0;
 	u64 next_audio_stats_us = 0;
 	int screen_result;
 	uint64_t reported_underflows = 0;
@@ -404,7 +412,8 @@ int main(void)
 		poll_controls(pad_initialized);
 		if (exit_requested) break;
 		if (!presentation_failed) {
-			int present_result = diagnostic_screen_present(&screen);
+			int present_result = diagnostic_screen_present(&screen, system_menu_open);
+			if (present_result > 0) ++presented_frames;
 			if (present_result < 0) {
 				(void)log_event("SCREEN_PRESENT_FAILED", present_result, 0);
 				presentation_failed = 1;
@@ -448,6 +457,7 @@ int main(void)
 				(int)receiver.session.offer.fmtp[6]);
 			audio_prebuffer_ready = 0;
 			decoded_packet_count = 0;
+			decode_attempts = decode_failures = 0;
 		}
 		if (receiver.session.state != RAOP_SESSION_RECORDING && decoder != NULL) {
 			raop_alac_destroy(decoder);
@@ -468,6 +478,7 @@ int main(void)
 			memset(decoded_pcm, 0, sizeof(decoded_pcm));
 			audio_prebuffer_ready = 0;
 			decoded_packet_count = 0;
+			decode_attempts = decode_failures = 0;
 			handled_flush_generation = receiver.flush_generation;
 			(void)log_event("PCM_FLUSH", (int)discarded_frames, 0);
 		}
@@ -487,7 +498,7 @@ int main(void)
 				if (decoder != NULL) {
 					size_t pcm_length = 0;
 					uint32_t samples = 0;
-					if (decoded_packet_count == 0)
+					if (++decode_attempts == 1 || (decode_attempts % 128U) == 0)
 						(void)log_event("ALAC_DECODE_START", 0, frame.packet.payload_length);
 					if (raop_alac_decode(decoder, frame.payload,
 						frame.packet.payload_length, decoded_pcm,
@@ -500,8 +511,10 @@ int main(void)
 							(void)log_event("ALAC_FRAME", (int)samples,
 								pcm_length);
 					} else {
-						(void)log_event("ALAC_DECODE_FAILED",
-							frame.packet.sequence, frame.packet.payload_length);
+						++decode_failures;
+      if (decode_failures <= 4 || (decode_failures % 128U) == 0)
+       (void)log_event("ALAC_DECODE_FAILED",
+        bounded_counter_delta(decode_failures, 0), frame.packet.payload_length);
 					}
 					memset(decoded_pcm, 0, sizeof(decoded_pcm));
 				}
@@ -531,11 +544,16 @@ int main(void)
 		if ((u64)sysGetSystemTime() >= next_heartbeat_us) {
    (void)log_event("APP_HEARTBEAT", (int)receiver.session.state, system_menu_open);
    (void)log_event("PAD_HEALTH", last_pad_result, (size_t)last_pad_mask);
+   (void)log_event("SCREEN_FRAMES", bounded_counter_delta(presented_frames, 0), screen.redraw_mask);
    next_heartbeat_us = sysGetSystemTime() + 10000000U;
   }
 		if ((u64)sysGetSystemTime() >= next_audio_stats_us) {
 			if (decoder != NULL) {
 				/* Periodic counters contain only numeric stream-health data. */
+    (void)log_event("STREAM_RATE", (int)active_sample_rate, receiver.session.offer.fmtp[6]);
+    (void)log_event("STREAM_ENCRYPTED", receiver.session.has_audio_key,
+     receiver.session.offer.has_encryption_type);
+    (void)log_event("ALAC_FAIL_TOTAL", bounded_counter_delta(decode_failures, 0), 0);
 				(void)log_event("PCM_BUFFER_FRAMES", (int)pcm_ring.count, 0);
 				(void)log_event("PCM_QUEUED_FRAMES",
 					bounded_counter_delta(pcm_ring.frames_written,

@@ -6,6 +6,8 @@
 typedef struct {
 	void *context;
 	void *host_memory;
+	uint8_t *image_rgb;
+	uint32_t redraw_mask;
 	void *buffers[2];
 	uint32_t offsets[2];
 	uint16_t width;
@@ -32,7 +34,8 @@ enum diagnostic_screen_result {
 };
 
 int diagnostic_screen_open(diagnostic_screen *screen, const char *rgb_path);
-int diagnostic_screen_present(diagnostic_screen *screen);
+void diagnostic_screen_invalidate(diagnostic_screen *screen);
+int diagnostic_screen_present(diagnostic_screen *screen, int system_menu_open);
 int diagnostic_screen_close(diagnostic_screen *screen);
 
 #endif

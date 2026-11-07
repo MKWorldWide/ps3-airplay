@@ -554,6 +554,10 @@ int raop_session_handle(raop_session *session, const char *request,
 				"application/sdp");
 		session_diagnostic(session, "ANNOUNCE_CONTENT_TYPE_CHECK_DONE",
 			content_type_valid, content_type_length);
+		announce_encrypted = offer_valid && (offer.has_encryption_type ?
+   offer.encryption_type == 1 : (offer.has_rsa_aes_key && offer.has_aes_iv));
+  session_diagnostic(session, "ANNOUNCE_ENCRYPTION", announce_encrypted,
+   offer_valid ? offer.has_encryption_type : 0);
 		if (session->state != RAOP_SESSION_IDLE &&
 			session->state != RAOP_SESSION_ANNOUNCED) {
 			status = 455;
@@ -566,7 +570,10 @@ int raop_session_handle(raop_session *session, const char *request,
 		} else if (!offer_valid) {
 			status = 400;
 			reason = "Bad Request";
-		} else if (offer.has_encryption_type && offer.encryption_type == 1 &&
+		} else if (offer.has_rsa_aes_key != offer.has_aes_iv) {
+			status = 400;
+			reason = "Bad Request";
+		} else if (announce_encrypted &&
 			!unwrap_announce_key(session, &offer, new_audio_iv,
 				new_audio_key)) {
 			status = 400;
@@ -577,8 +584,6 @@ int raop_session_handle(raop_session *session, const char *request,
 			reason = "Unsupported Media Type";
 		} else {
 			session->offer = offer;
-			announce_encrypted = offer.has_encryption_type &&
-				offer.encryption_type == 1;
 			mbedtls_platform_zeroize(session->audio_key,
 				sizeof(session->audio_key));
 			mbedtls_platform_zeroize(session->audio_iv,

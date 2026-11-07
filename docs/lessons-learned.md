@@ -446,3 +446,10 @@ The v0.1.31 fresh RPCS3 replay verifies the portable-arithmetic correction: the 
 - **Root Cause:** Decoder incorrectly hard-coded little-endian host order, producing incorrectly ordered 16-bit PCM on PS3. Separately, the app only flipped the display at startup and serviced controls after network work. Idle underrun spam overwrote the session evidence; the exact control/overlay cause is not yet confirmed.
 - **Fix:** Compiler-based byte order, nonblocking regular presentation, input/callback polling first, bounded graphics cleanup, small decode batches, and rate-limited heartbeat/pad/menu logging. Remote normal quit completed all cleanup stages without reboot.
 - **Prevention Rule:** Compare PCM bytes on the target architecture; a little-endian host test cannot validate the big-endian branch. Preserve logs before recovery and distinguish live audio polling from a frozen process. Do not promise PS-button overlay support until verified on hardware.
+
+## Classic RAOP encryption and compositor resume need native coverage
+
+- **Problem:** Real sender audio still crackled; XMB opened but app resume stuck and image flickered.
+- **Root Cause:** Receiver incorrectly made RSA/AES setup depend on the optional et SDP attribute. Existing fixtures always supplied it and masked the gap. Separately, periodic presentation omitted the reference GPU wait-flip command and reused buffers after compositor activity without restoring their image. Logs show menu-close callbacks but do not isolate the exact resume cause.
+- **Fix:** Infer encryption from complete key/IV pair when et is absent; reject partial pairs; test the missing-et path. Queue standard GPU wait ordering and refresh background buffers on menu close. Limit repeated decode failures and periodically repeat negotiated format/encryption status.
+- **Prevention Rule:** Cover sender variants rather than a single synthetic SDP. A selected route and AES-call success do not prove decoded audio. Emulator presentation does not establish real XMB resume behavior. Preserve diagnostic context by aggregating repeated errors.
