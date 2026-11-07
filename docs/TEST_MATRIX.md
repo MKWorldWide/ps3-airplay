@@ -24,6 +24,7 @@ This matrix distinguishes portable host evidence and cross-build evidence from r
 
 | ID | Scenario | Status |
 |---|---|---|
+| DEPLOY-01 | FTP preflight, package staging, and downloaded-back hash verification | PASS; exact 2,560,368-byte PKG staged; no install performed |
 | HW-01 | Confirm tested recovery procedure and record a privacy-safe baseline | NOT RUN |
 | HW-02 | Install/launch standalone app and exit cleanly | NOT RUN |
 | HW-03 | Audible test audio at the system menu | NOT RUN |

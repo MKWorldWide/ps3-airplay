@@ -1,13 +1,13 @@
 # Roadmap
 
-**Status: experimental; target hardware validation has not started.** This roadmap separates what has been exercised on the host or through cross-builds from what still requires a PS3 and an iPhone.
+**Status: experimental; the first PKG has been staged on PS3 storage, but installation and runtime validation have not started.** This roadmap separates transfer evidence from behavior that still requires a PS3 and an iPhone.
 
 ## Milestones
 
 | Milestone | Goal | Status |
 |---|---|---|
 | Build foundation | Reproducible PPU build and sample PRX structure check | Host/toolchain work complete; hardware compatibility unknown |
-| Standalone audio | Launch the receiver and verify audible output at the system menu | Five-second GameOS-path tone implemented; PS3 not tested |
+| Standalone audio | Launch the receiver and verify audible output at the system menu | PKG staged; install and five-second tone not tested |
 | AirPlay interoperability | Discover the receiver and complete a real iPhone RAOP session | Not tested |
 | Standalone playback | Stable playback, controls, reconnects, and a 30-minute session | Not tested |
 | Resident module | Safely load, receive, stop, and unload a diagnostic PRX | Build checks only; no hardware test |

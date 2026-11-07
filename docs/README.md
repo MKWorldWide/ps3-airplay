@@ -9,5 +9,6 @@ This folder contains project documentation intended for contributors.
 - [Risks](RISKS.md): safety, compatibility, and release risks.
 - [Research](research/README.md): source-based technical notes.
 - [Decision log](decisions/README.md): concise, public project decisions.
+- [First hardware test report](reports/2026-11-07_first_hardware_test.md): package staging evidence and pending XMB/audio checks.
 
 Do not add personal machine paths, hostnames, private network details, console/account identifiers, credentials, or raw device responses to tracked documentation. Keep local agent instructions out of version control.

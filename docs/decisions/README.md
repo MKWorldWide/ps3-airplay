@@ -4,3 +4,4 @@ This directory contains project decisions and release evidence suitable for the 
 
 - [Public release](2026-11-07_0040_public_release.md)
 - [Startup audio diagnostic](2026-11-06_2353_startup_audio_diagnostic.md)
+- [First PKG transfer](2026-11-07_0008_first_pkg_transfer.md)
