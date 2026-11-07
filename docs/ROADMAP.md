@@ -1,6 +1,6 @@
 # Roadmap
 
-**Status: experimental; an earlier standalone run reportedly played its diagnostic tone but showed a black screen, and the iPhone listed the receiver but did not connect. Version 0.1.2 is locally verified but not transferred or hardware-tested. Read-only console preflight now succeeds; the staged and installed versions are both 01.01. A fresh receiver loopback test is scheduling-sensitive.** This roadmap separates build evidence from behavior that still requires a PS3 and an iPhone.
+**Status: experimental; an earlier standalone run reportedly played its diagnostic tone but showed a black screen, and the iPhone listed the receiver but did not connect. Version 0.1.2 is locally verified and now staged with downloaded-back hash verification; it is not installed or hardware-tested. The installed version remains 01.01. A fresh receiver loopback test is scheduling-sensitive.** This roadmap separates build evidence from behavior that still requires a PS3 and an iPhone.
 
 ## Milestones
 
@@ -20,12 +20,11 @@ Portable components cover bounded DNS-SD/mDNS, RTSP/SDP session handling, UDP RT
 
 ## Next steps
 
-1. Obtain approval to replace only the staged package with the exact v0.1.2 artifact; keep the verified 01.01 rollback copy.
-2. After transfer hash verification, have the user install it from XMB and run the visible display/tone/START-exit check first. The 01.01 log is not proof of v0.1.2 behavior.
-3. Stop if the image is black or the app does not exit normally; review a bounded RSX-wait correction before another launch.
-4. Run the receiver loopback test repeatedly without tracing and resolve its timing-probe stall before treating the host suite as green.
-5. Try the iPhone once and retrieve the capped log; use accept, method, status, state, SDP, and RTP events to locate the failure before changing capabilities.
-6. Re-test AirPlay audio after display, clean exit, and RTSP/RTP stage evidence are established.
+1. Have the user install staged v0.1.2 from XMB and run the visible display/tone/START-exit check first. The 01.01 log is not proof of v0.1.2 behavior.
+2. Stop if the image is black or the app does not exit normally; review a bounded RSX-wait correction before another launch.
+3. Run the receiver loopback test repeatedly without tracing and resolve its timing-probe stall before treating the host suite as green.
+4. Try the iPhone once and retrieve the capped log; use accept, method, status, state, SDP, and RTP events to locate the failure before changing capabilities.
+5. Re-test AirPlay audio after display, clean exit, and RTSP/RTP stage evidence are established.
 7. Consider resident PRX lifecycle testing as a separate, reversible experiment.
 8. Test audio coexistence per title only after resident lifecycle and standalone output are established.
 
