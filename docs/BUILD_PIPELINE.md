@@ -20,7 +20,7 @@ Example, with paths adjusted to the local Lima guest:
 export PS3DK_SOURCE="$HOME/ps3-airplay-host/ps3-sdk-src-v0.27.0"
 export PS3DEV="$PS3DK_SOURCE/stage/ps3dev"
 export SOURCE_REVISION="<full SHA of the exact source commit copied into Lima>"
-export APP_VERSION=0.1.15
+export APP_VERSION=0.1.21
 # Optional emulator-only probe when the host's port 5000 is occupied.
 export RTSP_PORT=5001
 bash scripts/build-lima-crypto.sh
@@ -56,4 +56,4 @@ Keep the generated package, build manifest, and test logs outside Git. Record pa
 - v0.1.17 has not been installed or launched in RPCS3. The UI remains unavailable, so its visual output and runtime behavior are untested. The saved Internet setting was not changed.
 - v0.1.18 adds five-second numeric PCM telemetry for ring occupancy, frames queued/consumed, and frames submitted to GameOS audio blocks. Full Lima host tests, PPU objects, the canonical 2,780,120-byte CellOS PPC64 ELF, and finalized package checks pass. ELF SHA-256 `ba7450441a8e2def2a1f55e17d523630d3d5af256520f6769154a347b09d3759`; 3,230,448-byte PKG SHA-256 `5548fde98bc08949e4f3a6739a95d5b3dce7dea0458131ec693c01be97766ae0`. Block submission is not audible-output evidence.
 - v0.1.18 has not been installed or launched in RPCS3. UI access remains unavailable, no emulator setting changed, and no runtime log event is verified.
-- Current next package version is 0.1.19. Both standalone build and package scripts default to 0.1.19. Every generated package consumes its version even when it fails a test.
+- Current package candidate is v0.1.21, which corrects the RAOP TXT server-version value. Both standalone build and package scripts default to 0.1.21. Every generated package consumes its version even when it fails a test.

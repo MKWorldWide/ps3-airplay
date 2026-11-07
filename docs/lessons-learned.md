@@ -336,3 +336,10 @@
 - **Root Cause:** Unknown; the observed package and platform are not identified, and RPCS3 desktop access is currently unavailable.
 - **Fix:** Verify source ancestry and keep the image-only renderer; record the visual mismatch as unresolved until a fresh, version-matched run can be inspected.
 - **Prevention Rule:** Tie visual observations to the installed APP_VER and build before editing already-removed UI elements or creating another package.
+
+## Keep the RAOP TXT server version aligned with RTSP
+
+- **Problem:** Discovery advertised `vs=0.1.2` while RTSP advertised `AirTunes/105.1`.
+- **Root Cause:** The TXT version was hard-coded from the early app/package version instead of the RAOP server protocol identity.
+- **Fix:** Advertise `vs=105.1` and assert the exact TXT capability list in the discovery serializer test.
+- **Prevention Rule:** Treat service TXT fields as protocol metadata; keep the RAOP server version consistent with the RTSP `Server` response and cover it in wire-format tests.

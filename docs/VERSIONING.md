@@ -61,7 +61,7 @@ AIRPLAY02 follows conservative pre-1.0 versioning. Increment the patch number fo
 - The package and ELF are preserved in the ignored local `work/builds/0.1.19/` directory. RPCS3 install/launch was not performed because Computer Use still reports the Mac desktop locked. No physical-console transfer/install, iPhone session, or audible playback is verified.
 - Next unused package version: 0.1.20.
 
-The standalone receiver `Makefile` and canonical Lima build/package scripts default to 0.1.20.
+The standalone receiver `Makefile` and canonical Lima build/package scripts default to 0.1.21.
 
 ## v0.1.20 package record
 
@@ -73,3 +73,11 @@ The standalone receiver `Makefile` and canonical Lima build/package scripts defa
 - Checks: Full Lima host suite with ASan/UBSan halt-on-error, deterministic 256 malformed ALAC inputs, encrypted RTP-to-PCM golden test, PPU app link/ELF validation, SFO/version/title/content ID, assets, extraction, EBOOT comparison, and finalized NPDRM envelope PASS.
 - Runtime: RPCS3 is not tested; current Computer Use reports the Mac desktop locked. No physical PS3 transfer/install, AirPlay sender session, or audible output is verified.
 - The package, ELF, and build-info are preserved locally under ignored `work/builds/0.1.20/`. Next unused package version: 0.1.21.
+
+## v0.1.21 package record
+
+- Source: pending commit on `main` (correct RAOP `vs` server-version TXT value).
+- Artifact: `ps3-airplay-receiver-0.1.21.pkg`, AIRPLAY02, APP_VER `0.1.21`.
+- Change: advertise `vs=105.1`, matching the RTSP `Server: AirTunes/105.1` header; the previous `vs=0.1.2` was stale package metadata.
+- Checks: RAOP TXT serializer assertion, full Lima host suite with ASan/UBSan, and PPU component checks pass. Full standalone ELF/PKG validation and artifact hashes pending.
+- RPCS3 and physical hardware: pending; Mac currently locked and physical-console deployment remains prohibited without approval.

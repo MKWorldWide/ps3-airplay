@@ -47,3 +47,5 @@ Portable host components have tests; cross-build and package structure checks ha
 - [PSL1GHT](https://github.com/ps3dev/PSL1GHT) for standalone GameOS interfaces.
 - [PS3DK](https://github.com/PS3-Homebrew/PS3DK) for the experimental PRX build path.
 - [sys-airplay](https://github.com/azarucha/sys-airplay) for protocol study only.
+- [Unofficial AirPlay Protocol Specification](https://github.com/openairplay/airplay-spec) for RAOP DNS-SD TXT field meanings, including `vs` as the server version.
+- [Shairport Sync](https://github.com/mikebrady/shairport-sync) as an established classic AirPlay receiver behavior reference; its protocol/server version is `105.1` in the RTSP Server header and RAOP advertisements.
