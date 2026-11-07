@@ -285,6 +285,12 @@ int main(void)
 	uint64_t reported_audio_port_frames = 0;
 	uint64_t reported_resend_requests = 0;
 	uint64_t reported_resend_recovered = 0;
+	uint64_t reported_resend_untracked_recovered = 0;
+	uint64_t reported_resend_rejected_unmatched = 0;
+	uint64_t reported_resend_rejected_late = 0;
+	uint64_t reported_resend_rejected_duplicate = 0;
+	uint64_t reported_resend_rejected_queue_full = 0;
+	uint64_t reported_resend_rejected_invalid = 0;
 	uint64_t reported_missing_packets = 0;
 	uint64_t reported_resend_pending_drops = 0;
 	uint64_t reported_resend_tracking_full = 0;
@@ -466,6 +472,17 @@ int main(void)
 			reported_audio_port_frames = 0;
 			reported_resend_requests = receiver.resend_requests;
 			reported_resend_recovered = receiver.resend_recovered;
+			reported_resend_untracked_recovered =
+				receiver.resend_untracked_recovered;
+			reported_resend_rejected_unmatched =
+				receiver.resend_rejected_unmatched;
+			reported_resend_rejected_late = receiver.resend_rejected_late;
+			reported_resend_rejected_duplicate =
+				receiver.resend_rejected_duplicate;
+			reported_resend_rejected_queue_full =
+				receiver.resend_rejected_queue_full;
+			reported_resend_rejected_invalid =
+				receiver.resend_rejected_invalid;
 			reported_missing_packets = receiver.audio_queue.stats.missing_packets;
 			(void)log_event(decoder != NULL ? "ALAC_READY" : "ALAC_UNSUPPORTED",
 				(int)receiver.session.offer.fmtp[2],
@@ -580,6 +597,24 @@ int main(void)
 						reported_resend_recovered),
 					(size_t)bounded_counter_delta(receiver.resend_requests,
 						reported_resend_requests));
+				(void)log_event("RTP_RESEND_UNTRACKED_RECOVERED",
+					bounded_counter_delta(receiver.resend_untracked_recovered,
+						reported_resend_untracked_recovered), 0);
+				(void)log_event("RTP_RESEND_REJECT_UNMATCHED",
+					bounded_counter_delta(receiver.resend_rejected_unmatched,
+						reported_resend_rejected_unmatched), 0);
+				(void)log_event("RTP_RESEND_REJECT_LATE",
+					bounded_counter_delta(receiver.resend_rejected_late,
+						reported_resend_rejected_late), 0);
+				(void)log_event("RTP_RESEND_REJECT_DUPLICATE",
+					bounded_counter_delta(receiver.resend_rejected_duplicate,
+						reported_resend_rejected_duplicate), 0);
+				(void)log_event("RTP_RESEND_REJECT_QUEUE_FULL",
+					bounded_counter_delta(receiver.resend_rejected_queue_full,
+						reported_resend_rejected_queue_full), 0);
+				(void)log_event("RTP_RESEND_REJECT_INVALID",
+					bounded_counter_delta(receiver.resend_rejected_invalid,
+						reported_resend_rejected_invalid), 0);
 				(void)log_event("RTP_PENDING_DROPS",
 					bounded_counter_delta(receiver.resend_pending_drops,
 						reported_resend_pending_drops), receiver.pending_resend_count);
@@ -601,6 +636,17 @@ int main(void)
 				reported_audio_port_frames = audio_port_frames_submitted;
 				reported_resend_requests = receiver.resend_requests;
 				reported_resend_recovered = receiver.resend_recovered;
+				reported_resend_untracked_recovered =
+					receiver.resend_untracked_recovered;
+				reported_resend_rejected_unmatched =
+					receiver.resend_rejected_unmatched;
+				reported_resend_rejected_late = receiver.resend_rejected_late;
+				reported_resend_rejected_duplicate =
+					receiver.resend_rejected_duplicate;
+				reported_resend_rejected_queue_full =
+					receiver.resend_rejected_queue_full;
+				reported_resend_rejected_invalid =
+					receiver.resend_rejected_invalid;
 				reported_missing_packets = receiver.audio_queue.stats.missing_packets;
 				reported_resend_pending_drops = receiver.resend_pending_drops;
 				reported_resend_tracking_full = receiver.resend_tracking_full;

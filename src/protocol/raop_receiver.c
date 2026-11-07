@@ -302,6 +302,12 @@ static void disconnect_client(raop_receiver *receiver)
 	receiver->resend_failures = 0;
 	receiver->resend_recovered = 0;
 	receiver->resend_rejected = 0;
+	receiver->resend_untracked_recovered = 0;
+	receiver->resend_rejected_unmatched = 0;
+	receiver->resend_rejected_late = 0;
+	receiver->resend_rejected_duplicate = 0;
+	receiver->resend_rejected_queue_full = 0;
+	receiver->resend_rejected_invalid = 0;
 	receiver->resend_pending_drops = 0;
 	receiver->resend_tracking_full = 0;
 	receiver->resend_last_send_ms = 0;
@@ -613,6 +619,8 @@ static void receive_resend_audio(raop_receiver *receiver,
 	uint16_t offset, bit;
 	raop_resend_range *tracking = NULL;
 	uint64_t now_ms = monotonic_milliseconds();
+	uint64_t late_before, duplicate_before, drops_before;
+	int untracked = 0;
 	unsigned int i;
 	if (receiver->session.state != RAOP_SESSION_RECORDING ||
 		ntohs(sender->sin_port) != receiver->session.peer_control_port ||
@@ -620,6 +628,7 @@ static void receive_resend_audio(raop_receiver *receiver,
 		!raop_rtp_parse(packet + 4, length - 4, &audio) ||
 		audio.payload_type != 96) {
 		++receiver->resend_rejected;
+		++receiver->resend_rejected_invalid;
 		if (receiver->resend_rejected == 1 ||
 			(receiver->resend_rejected % 16) == 0)
 			log_event(receiver, "RTP_RESEND_REJECTED", -1, length);
@@ -639,27 +648,60 @@ static void receive_resend_audio(raop_receiver *receiver,
 		}
 	}
 	if (tracking == NULL) {
+		/* A valid resend can outlive its one-second bookkeeping entry while
+		 * still being ahead of playout. Accept only a bounded sequence behind
+		 * the highest original packet observed; queue recovery still rejects
+		 * anything already played, duplicated, malformed, or beyond capacity. */
+		int16_t behind;
+		if (!receiver->audio_queue.stats.have_sequence) {
+			++receiver->resend_rejected;
+			++receiver->resend_rejected_unmatched;
+			return;
+		}
+		behind = (int16_t)(uint16_t)(
+			receiver->audio_queue.stats.last_sequence - audio.sequence);
+		if (behind <= 0 || behind > RAOP_RTP_QUEUE_CAPACITY) {
+			++receiver->resend_rejected;
+			++receiver->resend_rejected_unmatched;
+			if (receiver->resend_rejected == 1 ||
+				(receiver->resend_rejected % 16) == 0)
+				log_event(receiver, "RTP_RESEND_REJECTED", audio.sequence, length);
+			return;
+		}
+		untracked = 1;
+	}
+	bit = tracking != NULL ? (uint16_t)(1U << offset) : 0;
+	late_before = receiver->audio_queue.stats.late_packets;
+	duplicate_before = receiver->audio_queue.stats.duplicate_packets;
+	drops_before = receiver->audio_queue.stats.queue_drops;
+	if (!raop_rtp_queue_recover(&receiver->audio_queue, packet + 4,
+			length - 4)) {
+		if (tracking != NULL) {
+			tracking->received_mask &= (uint16_t)~bit;
+			if (tracking->received_mask == 0)
+				tracking->valid = 0;
+		}
 		++receiver->resend_rejected;
+		if (receiver->audio_queue.stats.late_packets != late_before)
+			++receiver->resend_rejected_late;
+		else if (receiver->audio_queue.stats.duplicate_packets != duplicate_before)
+			++receiver->resend_rejected_duplicate;
+		else if (receiver->audio_queue.stats.queue_drops != drops_before)
+			++receiver->resend_rejected_queue_full;
+		else
+			++receiver->resend_rejected_invalid;
 		if (receiver->resend_rejected == 1 ||
 			(receiver->resend_rejected % 16) == 0)
 			log_event(receiver, "RTP_RESEND_REJECTED", audio.sequence, length);
 		return;
 	}
-	bit = (uint16_t)(1U << offset);
-	if (!raop_rtp_queue_recover(&receiver->audio_queue, packet + 4,
-			length - 4)) {
+	if (tracking != NULL) {
 		tracking->received_mask &= (uint16_t)~bit;
 		if (tracking->received_mask == 0)
 			tracking->valid = 0;
-		++receiver->resend_rejected;
-		if (receiver->resend_rejected == 1 ||
-			(receiver->resend_rejected % 16) == 0)
-			log_event(receiver, "RTP_RESEND_REJECTED", audio.sequence, length);
-		return;
+	} else if (untracked) {
+		++receiver->resend_untracked_recovered;
 	}
-	tracking->received_mask &= (uint16_t)~bit;
-	if (tracking->received_mask == 0)
-		tracking->valid = 0;
 	++receiver->resend_recovered;
 	if (receiver->resend_recovered == 1 ||
 		(receiver->resend_recovered % 16) == 0)

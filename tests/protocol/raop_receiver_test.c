@@ -361,6 +361,12 @@ int main(void)
 	}
 	assert(resend_request[4] == 0 && resend_request[5] == 43);
 	assert(resend_request[6] == 0 && resend_request[7] == 2);
+	/* Exercise a legitimate resend arriving after its bounded request-tracking
+	 * slot was lost, while its sequence is still ahead of playout. */
+	pthread_mutex_lock(&args.receiver_lock);
+	memset(receiver.outstanding_resend, 0,
+		sizeof(receiver.outstanding_resend));
+	pthread_mutex_unlock(&args.receiver_lock);
 	for (wait = 0; wait < 50 &&
 		atomic_load_explicit(&args.resend_requests_seen,
 		memory_order_acquire) < 1; ++wait)
@@ -395,6 +401,10 @@ int main(void)
 		(void)nanosleep(&(struct timespec){0, 10000000L}, NULL);
 	assert(atomic_load_explicit(&args.resend_recovered_seen,
 		memory_order_acquire) == 1);
+	pthread_mutex_lock(&args.receiver_lock);
+	assert(receiver.resend_untracked_recovered == 1);
+	assert(receiver.resend_rejected_unmatched == 1);
+	pthread_mutex_unlock(&args.receiver_lock);
 	send_resend(peer_udp_fd, receiver.control_port, 43, 1);
 	for (wait = 0; wait < 50 &&
 		atomic_load_explicit(&args.resend_rejected_seen,
@@ -403,6 +413,7 @@ int main(void)
 	assert(atomic_load_explicit(&args.resend_rejected_seen,
 		memory_order_acquire) == 4);
 	pthread_mutex_lock(&args.receiver_lock);
+	assert(receiver.resend_rejected_duplicate == 1);
 	{
 		raop_rtp_frame frame;
 		assert(raop_receiver_pop_audio(&receiver, &frame));

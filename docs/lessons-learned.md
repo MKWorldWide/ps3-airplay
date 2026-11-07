@@ -489,3 +489,11 @@ The v0.1.31 fresh RPCS3 replay verifies the portable-arithmetic correction: the 
 - **Root Cause:** The audio callback rendered the empty PCM ring after the diagnostic tone and during RAOP's 128-packet prebuffer. Those frames are intentional silence, but the ring counted them as underruns. Counter baselines could also carry stale values across recording sessions.
 - **Fix:** v0.1.35 renders intentional silence without touching ring statistics until the decoder and prebuffer are ready, and resets underflow/drop report baselines at session boundaries. A host regression asserts silence rendering does not increment underflows while a true empty active render does.
 - **Prevention Rule:** Count an audio underrun only after the stream is in a state where PCM is expected. Separate intentional lead-in/prebuffer silence from starvation during active playback.
+
+
+## RTP retransmission responses without a live tracking slot
+
+- **Problem:** The live v0.1.35 log showed active PCM underflows alongside sequence gaps, resend requests, and no recovered packets. Rejection logs did not say why valid resend packets were rejected.
+- **Root Cause:** Confirmed code behavior: a parsed resend was discarded whenever its one-second outstanding tracking entry was absent, even when its sequence could still be ahead of playout. The hardware log does not establish how many responses failed for this reason versus arriving late.
+- **Fix:** v0.1.36 accepts an unmatched resend only from the negotiated peer and only when it is within the bounded 256-packet window behind the highest original RTP sequence. Queue insertion continues to reject already-played packets, duplicates, and capacity overflow. Add aggregated reason counters and an integration regression for a still-playable resend after tracking loss.
+- **Prevention Rule:** Log resend acceptance/rejection categories and correlate active PCM underflows with received, missing, late, recovered, and buffer-occupancy counters before changing the resampler or claiming a single cause.

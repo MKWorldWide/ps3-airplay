@@ -228,3 +228,18 @@ The emitter used a paced diagnostic fixture; target output submission is not pro
 | Supplied acoustic recording | INCONCLUSIVE: 22.485-second mono 48 kHz sample has no >10 ms interval below -50 dBFS or large waveform discontinuity, but its -40.7 dBFS RMS level limits detection of subtle crackle. The private recording is not in the repository. |
 | PCM intentional-silence accounting | HOST TEST PASS: helper fills a block with silence without changing underflow counters; an active empty ring still increments underflow. v0.1.35 PPU build passes; physical behavior pending. |
 | AIRPLAY02 v0.1.35 package | PASS: 3,236,016-byte finalized PKG validates with AIRPLAY02 / APP_VER 00.35 and five items; remote staged bytes match local candidate. Not installed because v0.1.33 remains active. |
+
+
+## v0.1.35 live capture and v0.1.36 source test (2026-11-07)
+
+| Test | Result |
+|---|---|
+| Installed identity | SFO PASS: AIRPLAY02 / 00.35. Log wrapped before its startup version event; installed EBOOT hash captured but not byte-compared with a local extracted v0.1.35 payload. |
+| Staged package | PASS: v0.1.35, 3,236,016 bytes, matching recorded SHA-256. |
+| RTP receive | DEGRADED: 2,048 received packets, 302 sequence gaps, 209 late packets in retained log. |
+| RTP resend | DEGRADED: 58 requests and zero recovered packets in periodic totals; 12 sampled reject records lacked reason attribution. |
+| ALAC | PASS in retained interval: zero decode failures. |
+| PCM | FAIL in retained interval: 102,200 active-stream underflow frames across reported deltas; occupancy snapshots 5,654, 4,533, 1,037 frames. |
+| Display/XMB resume | NOT ESTABLISHED by this log snapshot; no fresh user visual observation was recorded. |
+| v0.1.36 source regression | PASS: bounded recovery of an in-window retransmission after tracking loss; full Lima ASan/UBSan suite and PPU component compilation pass. |
+| v0.1.36 package/RPCS3/PS3 | PENDING. |

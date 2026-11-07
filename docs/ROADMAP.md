@@ -85,3 +85,8 @@ The historical 0.30 build starts and plays its tone on the PS3; START exits whil
 ## v0.1.32 checkpoint
 
 Big-endian PCM bytes and paced target packet/decode/PCM path now validate in RPCS3. Candidate is installed. Regular scanout and input-first loop target the reported PS/START issue; hardware overlay/exit confirmation remains required. Graphics waits are bounded and idle logging no longer destroys connection history as quickly. No extended soak until physical controls and clean exit pass.
+
+
+## v0.1.36 stability work
+
+Live v0.1.35 diagnostics now show active PCM starvation coincident with RTP sequence gaps and resend requests that yielded no recorded recoveries. v0.1.36 adds bounded acceptance for still-playable retransmissions after request bookkeeping expires, with categorized aggregate diagnostics. Next: build and validate the exact candidate, run RPCS3, then stage it for a controlled PS3 test after approval. Keep graphics resume work separate until fresh hardware display evidence is captured.

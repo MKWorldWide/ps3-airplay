@@ -200,3 +200,8 @@ Installed from source e34cbce. Corrects ALAC host byte order; adds regular nonbl
 ## v0.1.35 / SFO 00.35 candidate
 
 Combines v0.1.34's bounded RTP resend-range recovery with valid PCM underflow accounting: intentional silence before decoder/prebuffer readiness no longer increments stream underruns, and session counters reset at recording boundaries. Source commit `51d3be9a0c737e7b11aa442defe90e69061051fb`; 2,780,888-byte CellOS PPC64 ELF SHA-256 `435c6f3e37832376f92d0d8fccc5c088880d0fc20f503235344e314d9990a497`. Finalized 3,236,016-byte AIRPLAY02 package SHA-256 `aba1d95124d85ff84c5d2442235968ad00b25e24871a3875f90dd7080ab74c9b`; SFO `00.35`. Lima host/sanitizer tests, PPU components/application build, ELF/SFO and package validation pass. Package is staged and byte-verified but not installed because v0.1.33 is still running. Hardware behavior is pending.
+
+
+## v0.1.36 / SFO 00.36 candidate in progress
+
+Live read-only evidence captured while AIRPLAY02 v0.1.35 was running: installed SFO 00.35; staged v0.1.35 package hash matched the recorded artifact. In the wrapped active-stream log, 2,048 RTP packets, 302 sequence gaps, 209 late packets, 58 resend requests, zero recovered packets, zero ALAC failures, and 102,200 valid PCM underflow frames were recorded. The receiver previously discarded a valid peer resend when its tracking range was absent, without distinguishing that case from a late/duplicate packet. Candidate source adds bounded untracked recovery inside the 256-packet receive window and reason-coded aggregate counters. Host/Lima tests and PPU component compilation pass. Standalone build/package and emulator/hardware tests remain pending; no clean-audio or display-resume claim.

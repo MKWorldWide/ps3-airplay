@@ -67,6 +67,12 @@ typedef struct {
 	uint64_t resend_failures;
 	uint64_t resend_recovered;
 	uint64_t resend_rejected;
+	uint64_t resend_untracked_recovered;
+	uint64_t resend_rejected_unmatched;
+	uint64_t resend_rejected_late;
+	uint64_t resend_rejected_duplicate;
+	uint64_t resend_rejected_queue_full;
+	uint64_t resend_rejected_invalid;
 	uint64_t resend_pending_drops;
 	uint64_t resend_tracking_full;
 	uint64_t resend_last_send_ms;
