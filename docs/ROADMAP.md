@@ -7,7 +7,7 @@
 | Milestone | Goal | Status |
 |---|---|---|
 | Build foundation | Reproducible PPU build and sample PRX structure check | Host/toolchain work complete; hardware compatibility unknown |
-| Standalone audio | Launch the receiver and verify audible output at the system menu | PKG staged; install and five-second tone not tested |
+| Standalone audio | Launch the receiver and verify audible output at the system menu | First package failed with `80029530`; corrected PKG validated locally, replacement/launch pending |
 | AirPlay interoperability | Discover the receiver and complete a real iPhone RAOP session | Not tested |
 | Standalone playback | Stable playback, controls, reconnects, and a 30-minute session | Not tested |
 | Resident module | Safely load, receive, stop, and unload a diagnostic PRX | Build checks only; no hardware test |
@@ -22,7 +22,7 @@ Portable components cover bounded DNS-SD/mDNS, RTSP/SDP session handling, UDP RT
 
 1. Improve RTP jitter handling and sender-clock scheduling with bounded memory and measurable host tests.
 2. Establish a documented, tested console recovery path before installing or loading any candidate.
-3. Validate standalone launch and audio output at the system menu.
+3. Replace the staged package after approval, then validate corrected NPDRM launch and audio output at the system menu.
 4. Test iPhone discovery and RAOP session behavior; update advertised capabilities only when interoperability supports them.
 5. Consider resident PRX lifecycle testing as a separate, reversible experiment.
 6. Test audio coexistence per title only after resident lifecycle and standalone output are established.

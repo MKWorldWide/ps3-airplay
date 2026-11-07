@@ -1,5 +1,12 @@
 # Lessons learned
 
+## Bind the EBOOT NPDRM content ID to the package
+
+- **Problem:** The first standalone package installed but failed to launch with PS3 error `80029530`; no application startup log was created.
+- **Root Cause:** Likely a content-ID mismatch: the package script wrapped the ELF with generic `fself` and passed a separate content ID only to the PKG builder. PSL1GHT's CEX package rule uses `make_self_npdrm` with the same content ID as the PKG and `PARAM.SFO`; corrected hardware launch is still needed to confirm.
+- **Fix:** Generate `EBOOT.BIN` with `make_self_npdrm <ELF> <EBOOT.BIN> <CONTENTID>` and include the SDK's default icon in the package root.
+- **Prevention Rule:** Treat the EBOOT, SFO title ID, PKG content ID, and icon as one package contract; validate the extracted contents before transfer and keep launch as a separate hardware gate.
+
 ## Keep queue-overflow fixtures distinct from duplicates
 
 - **Problem:** The RTP queue test expected a retransmission of sequence 217 to count as a full-queue drop.

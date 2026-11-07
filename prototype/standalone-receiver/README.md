@@ -17,15 +17,17 @@ export PS3DK_SOURCE="/path/to/ps3-sdk-source"
 The output is `build/lima-standalone-receiver/ps3-airplay-receiver.elf`.
 No build step edits `boot_plugins.txt` or installs a plugin.
 
-To make a fake-SELF homebrew package after building the ELF:
+To make the standalone NPDRM homebrew package after building the ELF:
 
 ```sh
 ./scripts/package-lima-standalone-receiver.sh
 ```
 
-The result is `build/lima-standalone-package/ps3-airplay-receiver.pkg`. Lima
-validates its listing, `AIRPLAY02` PARAM.SFO, extraction, and EBOOT payload. The
-PKG has not been installed or run on the PS3.
+The result is `build/lima-standalone-package/ps3-airplay-receiver.pkg`. The
+packager creates an NPDRM EBOOT bound to the package content ID, includes the
+PSL1GHT default `ICON0.PNG`, and validates package listing, SFO metadata,
+extraction, and payload equality. Hardware install and runtime results are
+tracked in the test matrix and dated reports.
 
 ## Runtime and cleanup
 
