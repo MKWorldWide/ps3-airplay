@@ -32,6 +32,7 @@
 - RPCS3's disconnected virtual network causes the bounded NetCtl address wait to expire. With its network set to Connected, a route is available, but host TCP 5000 is occupied. The v0.1.25 emulator build on port 5001 opens its RTSP and RTP sockets and answers local OPTIONS; keep the production port at 5000.
 - RPCS3 rejects the app's multicast-interface selection (mDNS stage 6, error 125), so emulator discovery remains untested. Do not stop or reconfigure host multicast services to work around this.
 - The emulator confirms neither HDMI display output nor audible sound. Physical PS3 validation remains separate and requires an exact package test, a working recovery path, and safe launch/exit evidence.
+- v0.1.25 accepted a TCP client and answered OPTIONS, but the synthetic ANNOUNCE request produced no response within three seconds. The last reliable event was the method-level `RTSP_ANNOUNCE`; the handler may be blocked in SDP/crypto processing or affected by RPCS3 runtime behavior. v0.1.26 phase events are intended to separate these stages; do not infer an RSA defect until they are observed.
 
 ## Required gates before hardware testing
 

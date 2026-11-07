@@ -214,7 +214,7 @@ int main(void)
 	struct timeval timeout = {2, 0};
 	char response[RAOP_SESSION_RESPONSE_MAX];
 	char setup[512];
-	char log_contents[4096];
+	char log_contents[RECEIVER_LOG_MAX_BYTES + 1];
 	uint8_t resend_request[16];
 	const char *log_path = "/tmp/raop_receiver_timing_test.log";
 	size_t log_size;

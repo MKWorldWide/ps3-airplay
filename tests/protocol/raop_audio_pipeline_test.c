@@ -9,10 +9,13 @@
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <netdb.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
+#include <sys/time.h>
+#include <time.h>
 #include <unistd.h>
 
 #include <mbedtls/aes.h>
@@ -243,6 +246,111 @@ static void verify_socket_audio_pipeline(raop_crypto_context *crypto,
 	puts("RAOP TCP RTSP + UDP RTP + decrypt + ALAC + PCM ring loopback: PASS");
 }
 
+static void receive_rtsp_response(int fd, char *response, size_t capacity)
+{
+	size_t total = 0;
+	struct timeval timeout = {3, 0};
+	assert(setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &timeout,
+		sizeof(timeout)) == 0);
+	while (total + 1 < capacity) {
+		ssize_t amount = recv(fd, response + total,
+			capacity - total - 1, 0);
+		assert(amount > 0);
+		total += (size_t)amount;
+		response[total] = '\0';
+		if (strstr(response, "\r\n\r\n") != NULL)
+			return;
+	}
+	assert(0 && "RTSP response exceeded probe buffer");
+}
+
+static void send_remote_request(int fd, const char *request,
+	char *response, size_t response_capacity)
+{
+	send_all_fd(fd, request, strlen(request));
+	receive_rtsp_response(fd, response, response_capacity);
+	assert(strstr(response, "RTSP/1.0 200 OK") != NULL);
+}
+
+static void verify_remote_audio_pipeline(const char *host, uint16_t rtsp_port,
+	uint16_t audio_port, const char *wrapped_b64, const char *iv_b64,
+	const uint8_t *encrypted_rtp, size_t rtp_length)
+{
+	struct sockaddr_in control_address, audio_address;
+	struct addrinfo hints, *resolved = NULL;
+	struct timespec settle = {2, 0};
+	char sdp[1024], request[2048], response[RAOP_SESSION_RESPONSE_MAX];
+	char service[6];
+	unsigned int packet_index;
+	int client_fd, sender_fd, request_length;
+	memset(&control_address, 0, sizeof(control_address));
+	memset(&hints, 0, sizeof(hints));
+	hints.ai_family = AF_INET;
+	hints.ai_socktype = SOCK_STREAM;
+	snprintf(service, sizeof(service), "%u", (unsigned int)rtsp_port);
+	assert(getaddrinfo(host, service, &hints, &resolved) == 0);
+	assert(resolved != NULL && resolved->ai_addrlen == sizeof(control_address));
+	memcpy(&control_address, resolved->ai_addr, sizeof(control_address));
+	freeaddrinfo(resolved);
+	client_fd = socket(AF_INET, SOCK_STREAM, 0);
+	assert(client_fd >= 0);
+	assert(connect(client_fd, (struct sockaddr *)&control_address,
+		sizeof(control_address)) == 0);
+	send_remote_request(client_fd,
+		"OPTIONS * RTSP/1.0\r\nCSeq: 1\r\n\r\n",
+		response, sizeof(response));
+	snprintf(sdp, sizeof(sdp),
+		"v=0\r\n"
+		"m=audio 0 RTP/AVP 96\r\n"
+		"a=rtpmap:96 AppleLossless/44100/2\r\n"
+		"a=fmtp:96 4096 0 16 40 10 14 2 255 0 0 44100\r\n"
+		"a=rsaaeskey:%s\r\na=aesiv:%s\r\na=et:1\r\n",
+		wrapped_b64, iv_b64);
+	request_length = snprintf(request, sizeof(request),
+		"ANNOUNCE rtsp://receiver/stream RTSP/1.0\r\n"
+		"CSeq: 2\r\nContent-Type: application/sdp\r\n"
+		"Content-Length: %zu\r\n\r\n%s", strlen(sdp), sdp);
+	assert(request_length > 0 && (size_t)request_length < sizeof(request));
+	send_remote_request(client_fd, request, response, sizeof(response));
+	request_length = snprintf(request, sizeof(request),
+		"SETUP rtsp://receiver/stream RTSP/1.0\r\nCSeq: 3\r\n"
+		"Transport: RTP/AVP/UDP;unicast;mode=record;"
+		"control_port=40000;timing_port=40001\r\n\r\n");
+	assert(request_length > 0 && (size_t)request_length < sizeof(request));
+	send_remote_request(client_fd, request, response, sizeof(response));
+	send_remote_request(client_fd,
+		"RECORD rtsp://receiver/stream RTSP/1.0\r\nCSeq: 4\r\n\r\n",
+		response, sizeof(response));
+	sender_fd = socket(AF_INET, SOCK_DGRAM, 0);
+	assert(sender_fd >= 0);
+	memset(&audio_address, 0, sizeof(audio_address));
+	audio_address.sin_family = AF_INET;
+	audio_address.sin_port = htons(audio_port);
+	audio_address.sin_addr = control_address.sin_addr;
+	for (packet_index = 0; packet_index < 128; ++packet_index) {
+		uint8_t packet[12 + RAOP_RTP_PAYLOAD_MAX];
+		ssize_t sent;
+		assert(rtp_length <= sizeof(packet));
+		memcpy(packet, encrypted_rtp, rtp_length);
+		packet[2] = (uint8_t)((packet_index + 1U) >> 8);
+		packet[3] = (uint8_t)(packet_index + 1U);
+		packet[4] = (uint8_t)((packet_index * 353U) >> 24);
+		packet[5] = (uint8_t)((packet_index * 353U) >> 16);
+		packet[6] = (uint8_t)((packet_index * 353U) >> 8);
+		packet[7] = (uint8_t)(packet_index * 353U);
+		sent = sendto(sender_fd, packet, rtp_length, 0,
+			(struct sockaddr *)&audio_address, sizeof(audio_address));
+		assert(sent == (ssize_t)rtp_length);
+	}
+	(void)nanosleep(&settle, NULL);
+	send_remote_request(client_fd,
+		"TEARDOWN rtsp://receiver/stream RTSP/1.0\r\nCSeq: 5\r\n\r\n",
+		response, sizeof(response));
+	close(sender_fd);
+	close(client_fd);
+	puts("RPCS3 RAOP ANNOUNCE/SETUP/RECORD + 128 RTP fixture packets: PASS");
+}
+
 static void malformed_smoke(raop_alac_decoder *decoder,
 	const uint8_t *valid_packet, size_t valid_packet_length)
 {
@@ -288,7 +396,7 @@ static void malformed_smoke(raop_alac_decoder *decoder,
 	}
 }
 
-int main(void)
+int main(int argc, char **argv)
 {
 	static const uint8_t aes_key[RAOP_AES_KEY_SIZE] = {
 		0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6,
@@ -321,6 +429,28 @@ int main(void)
 	size_t pcm_length = 0;
 	uint32_t samples = 0;
 	int request_length;
+	const char *remote_host = NULL;
+	uint16_t remote_rtsp_port = 0, remote_audio_port = 0;
+	if (argc != 1 && argc != 4) {
+		fprintf(stderr, "usage: %s [--remote IPV4 RTSP_PORT]\n", argv[0]);
+		return 2;
+	}
+	if (argc == 4) {
+		char *end = NULL;
+		unsigned long port;
+		if (strcmp(argv[1], "--remote") != 0) {
+			fprintf(stderr, "unknown option\n");
+			return 2;
+		}
+		remote_host = argv[2];
+		port = strtoul(argv[3], &end, 10);
+		if (end == argv[3] || *end != '\0' || port == 0 || port > 65535) {
+			fprintf(stderr, "invalid remote RTSP port\n");
+			return 2;
+		}
+		remote_rtsp_port = (uint16_t)port;
+		remote_audio_port = 6000;
+	}
 
 	encoded = read_file("tests/protocol/fixtures/alac-ffmpeg-352.packet",
 		&encoded_length);
@@ -352,6 +482,10 @@ int main(void)
 	rtp[3] = 1;
 	rtp[7] = 1;
 	rtp[11] = 1;
+	if (remote_host != NULL)
+		verify_remote_audio_pipeline(remote_host, remote_rtsp_port,
+			remote_audio_port, wrapped_b64, iv_b64, rtp,
+			12 + encoded_length);
 	verify_socket_audio_pipeline(&crypto, mac, wrapped_b64, iv_b64,
 		encoded, encoded_length, expected, expected_length, rtp,
 		12 + encoded_length);

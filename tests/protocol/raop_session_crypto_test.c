@@ -41,6 +41,31 @@ static int make_request(raop_session *session, const char *request,
 		response_capacity);
 }
 
+typedef struct {
+	unsigned int sdp_started;
+	unsigned int sdp_completed;
+	unsigned int key_started;
+	unsigned int key_completed;
+	int key_result;
+} diagnostic_counts;
+
+static void collect_diagnostic(void *context, const char *event, int value,
+	size_t bytes)
+{
+	diagnostic_counts *counts = context;
+	(void)bytes;
+	if (strcmp(event, "ANNOUNCE_SDP_PARSE_START") == 0)
+		++counts->sdp_started;
+	else if (strcmp(event, "ANNOUNCE_SDP_PARSE_DONE") == 0)
+		++counts->sdp_completed;
+	else if (strcmp(event, "ANNOUNCE_KEY_UNWRAP_START") == 0)
+		++counts->key_started;
+	else if (strcmp(event, "ANNOUNCE_KEY_UNWRAP_DONE") == 0) {
+		++counts->key_completed;
+		counts->key_result = value;
+	}
+}
+
 int main(void)
 {
 	static const uint8_t aes_key[16] = {
@@ -61,8 +86,8 @@ int main(void)
 	};
 	uint8_t wrapped_key[RAOP_AIRPORT_RSA_SIZE];
 	uint8_t audio[sizeof(encrypted_audio)];
-	uint8_t ipv4[4] = { 192, 168, 1, 25 };
-	uint8_t mac[6] = { 0x11, 0x22, 0x33, 0x44, 0x55, 0x66 };
+	uint8_t ipv4[4] = { 192, 0, 2, 25 };
+	uint8_t mac[6] = { 0x02, 0x00, 0x00, 0x00, 0x00, 0x01 };
 	char wrapped_b64[RAOP_BASE64_ENCODED_MAX + 1];
 	char iv_b64[25];
 	char challenge_b64[25];
@@ -74,6 +99,7 @@ int main(void)
 	mbedtls_rsa_context *rsa;
 	raop_crypto_context crypto;
 	raop_session session;
+	diagnostic_counts diagnostics = {0};
 
 	assert(raop_crypto_context_init(&crypto, host_rng, NULL));
 	rsa = mbedtls_pk_rsa(crypto.private_key);
@@ -94,6 +120,7 @@ int main(void)
 	challenge_b64[challenge_length] = '\0';
 
 	raop_session_init(&session, 6000, 6001, 6002);
+	raop_session_set_diagnostic(&session, collect_diagnostic, &diagnostics);
 	assert(raop_session_configure_crypto(&session, &crypto, host_rng, NULL,
 		ipv4, mac));
 	snprintf(request, sizeof(request),
@@ -115,6 +142,9 @@ int main(void)
 	assert(make_request(&session, request, response, sizeof(response)));
 	assert(strstr(response, "RTSP/1.0 200 OK") != NULL);
 	assert(session.state == RAOP_SESSION_ANNOUNCED && session.has_audio_key);
+	assert(diagnostics.sdp_started == 1 && diagnostics.sdp_completed == 1);
+	assert(diagnostics.key_started == 1 && diagnostics.key_completed == 1 &&
+		diagnostics.key_result == 1);
 
 	snprintf(request, sizeof(request),
 		"SETUP rtsp://ps3/stream RTSP/1.0\r\nCSeq: 3\r\n"

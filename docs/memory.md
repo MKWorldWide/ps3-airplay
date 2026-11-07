@@ -214,3 +214,10 @@ Demonstration target: PS3 with Evilnat 4.93 CFW and Cobra 8.5 observed; the cons
 - AIRPLAY02 v0.1.25 was built from the v0.1.24 source revision with emulator-only `RTSP_PORT=5001`; default production port remains 5000. PKG size 3,231,152 bytes, SHA-256 `420971af3601d0a9813d4853f389f7e4ceb1c9f4a6077e27fcc3b81b292cbcd4`; ELF SHA-256 `848b698f2feaa832cddd88f1610452174a42018cdd0a126ca9d35a5abd724dde`.
 - With its validated extraction copied into RPCS3 title data, v0.1.25 logged RTSP 5001 and RTP 6000–6002 readiness, tone completion, and an RTSP OPTIONS 200 response to a local probe. It failed mDNS multicast-interface setup (stage 6, error 125). App log is locally preserved, not committed raw.
 - The test establishes app startup, network route, sockets, and basic RTSP response under RPCS3. It does not establish visible pixels, controller exit, audible tone, iPhone connection, RTP reception, decoding, or streamed audio. The desktop lock prevented GUI observation; physical console and boot plugins were untouched. Next package version: 0.1.26.
+
+## ANNOUNCE stall instrumentation (2026-11-07)
+
+- v0.1.25 RPCS3 receives TCP, answers OPTIONS 200, and logs a synthetic ANNOUNCE method, but the client receives no response within three seconds. No later RTSP status/error appears in the capped app log. This localizes the observed stall to the ANNOUNCE handler boundary but does not identify the blocked operation.
+- Added session callback events for SDP parse start/completion and RSA key-unwrapping start/completion. Added `--remote IPV4 RTSP_PORT` mode to the encrypted RTP-to-PCM host fixture; it sends a bounded RTSP sequence and 128 encrypted RTP fixture packets to port 6000.
+- Fixed a host test evidence issue: its 4 KiB read buffer truncated the 16 KiB capped receiver log and could omit the slow-reader timeout event. The test now reads the full configured cap. Full host/ASan/UBSan and PPU component tests pass.
+- Standalone app version defaults advance to 0.1.26; package not yet built. Production port remains 5000. Do not infer iPhone compatibility or actual audio from the synthetic probe.

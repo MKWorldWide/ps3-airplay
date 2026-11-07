@@ -20,7 +20,7 @@ The standalone receiver and resident PRX share portable protocol/codec component
 ## Components
 
 - `src/discovery`: bounded RAOP DNS-SD serialization and service behavior.
-- `src/protocol`: RTSP state machine, SDP parsing, RTP sequencing, timing, and retransmission handling.
+- `src/protocol`: RTSP state machine, SDP parsing, RTP sequencing, timing, and retransmission handling. Session diagnostics use an optional event callback to mark SDP parse and RSA key-unwrapping boundaries without logging request contents.
 - `src/crypto`: RAOP challenge response and session-key/audio packet crypto.
 - `src/codec`: bounded ALAC decoder wrapper.
 - `src/audio`: bounded PCM ring, conversion, and resampling.
@@ -42,7 +42,7 @@ The standalone receiver and resident PRX share portable protocol/codec component
 
 ## Validation status
 
-Portable host components have tests; cross-build and package structure checks have been completed. The user reports audible diagnostic tone and iPhone discovery, but also a black screen and failed connection. The new RSX screen and controller exit path are build-checked only. Real RAOP playback and game audio coexistence remain unverified. The repository's [test matrix](TEST_MATRIX.md) is the source of validation status.
+Portable host/sanitizer tests and PPU component compilation pass. v0.1.25 runs in RPCS3, opens RTSP/RTP sockets, and answers a local OPTIONS request, but a synthetic ANNOUNCE receives no reply within three seconds and mDNS setup fails at the emulated multicast interface. RPCS3 display pixels/controller exit, physical HDMI output, iPhone interoperability, and audible AirPlay music remain unverified. The repository's [test matrix](TEST_MATRIX.md) and [ANNOUNCE report](reports/2026-11-07_rpcs3_announce_stall.md) hold current evidence.
 
 ## References
 

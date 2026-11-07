@@ -194,6 +194,18 @@ static void log_event(raop_receiver *receiver, const char *event,
 	(void)receiver_log_file_event(receiver->log, timestamp, event, value, bytes);
 }
 
+static void session_log_event(void *context, const char *event, int value,
+	size_t bytes)
+{
+	log_event((raop_receiver *)context, event, value, bytes);
+}
+
+static void configure_session_diagnostics(raop_receiver *receiver)
+{
+	raop_session_set_diagnostic(&receiver->session, session_log_event,
+		receiver);
+}
+
 static size_t flush_pending_audio_datagrams(raop_receiver *receiver)
 {
 	uint8_t packet[RAOP_UDP_PACKET_MAX];
@@ -289,6 +301,7 @@ static void disconnect_client(raop_receiver *receiver)
 	receiver->resend_last_send_ms = 0;
 	raop_session_init(&receiver->session, receiver->audio_port,
 		receiver->control_port, receiver->timing_port);
+	configure_session_diagnostics(receiver);
 	memset(&receiver->audio_queue, 0, sizeof(receiver->audio_queue));
 	receiver->last_audio_log_packets = 0;
 }
@@ -299,6 +312,7 @@ static int initialize_client_session(raop_receiver *receiver, int client_fd)
 	socklen_t local_length = (socklen_t)sizeof(local);
 	raop_session_init(&receiver->session, receiver->audio_port,
 		receiver->control_port, receiver->timing_port);
+	configure_session_diagnostics(receiver);
 	if (!receiver->crypto_configured)
 		return 1;
 	memset(&local, 0, sizeof(local));
@@ -764,6 +778,7 @@ int raop_receiver_open(raop_receiver *receiver, uint16_t rtsp_port,
 	}
 	raop_session_init(&receiver->session, receiver->audio_port,
 		receiver->control_port, receiver->timing_port);
+	configure_session_diagnostics(receiver);
 #ifdef RAOP_VERBOSE_LOGGING
 	log_event(receiver, "RTSP_LISTEN_READY", receiver->rtsp_port, 0);
 	log_event(receiver, "RTP_AUDIO_READY", receiver->audio_port, 0);

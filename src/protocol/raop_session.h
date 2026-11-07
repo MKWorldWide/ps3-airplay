@@ -18,6 +18,9 @@ typedef enum {
 	RAOP_SESSION_PAUSED
 } raop_session_state;
 
+typedef void (*raop_session_diagnostic_fn)(void *context, const char *event,
+	int value, size_t bytes);
+
 typedef struct {
 	raop_session_state state;
 	uint32_t requests;
@@ -40,10 +43,14 @@ typedef struct {
 	uint8_t audio_key[RAOP_AES_KEY_SIZE];
 	uint8_t audio_iv[RAOP_AES_IV_SIZE];
 	raop_sdp_offer offer;
+	raop_session_diagnostic_fn diagnostic;
+	void *diagnostic_context;
 } raop_session;
 
 void raop_session_init(raop_session *session, uint16_t audio_port,
 	uint16_t control_port, uint16_t timing_port);
+void raop_session_set_diagnostic(raop_session *session,
+	raop_session_diagnostic_fn diagnostic, void *context);
 int raop_session_configure_crypto(raop_session *session,
 	raop_crypto_context *crypto, mbedtls_f_rng_t *rng, void *rng_context,
 	const uint8_t local_ipv4[4], const uint8_t mac[6]);

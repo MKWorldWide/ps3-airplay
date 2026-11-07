@@ -67,3 +67,10 @@ Keep the generated package, build manifest, and test logs outside Git. Record pa
 - Do not change the production default from port 5000 based on this emulator-only conflict. The emulator's multicast-interface failure and the host's occupied port are environment constraints that need separate treatment from PS3 behavior.
 - The desktop remained locked, so the renderer's output and controller START exit could not be visually checked. The physical PS3 and its system/plugin settings were not touched.
 - Next package: v0.1.26.
+
+## ANNOUNCE stall and phase logging (2026-11-07)
+
+- A Lima host sender connected to the running v0.1.25 RPCS3 app through the local host bridge. `OPTIONS` received 200 and `ANNOUNCE` reached the receiver's method log, but no RTSP response arrived within the probe's three-second deadline. The app log ended its protocol trace at `RTSP_ANNOUNCE`; the exact blocked operation is unknown.
+- Added a session diagnostic callback for privacy-safe SDP parse and RSA key-unwrapping start/completion events. Added an opt-in remote mode to `raop_audio_pipeline_test` that sends the shared synthetic RAOP fixture through OPTIONS/ANNOUNCE/SETUP/RECORD and then sends 128 encrypted RTP packets.
+- Full Lima host/sanitizer suite, assertions for diagnostic callback behavior, and PPU component compilation pass. A prior run exposed that `raop_receiver_test` read only 4 KiB from a log capped at 16 KiB; its test buffer now uses the configured cap, and the complete suite passes.
+- v0.1.26 is the next package, built from the source commit with `RTSP_PORT=5001` only for RPCS3. The production default is unchanged.

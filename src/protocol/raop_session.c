@@ -345,6 +345,45 @@ void raop_session_init(raop_session *session, uint16_t audio_port,
 	session->volume_gain = 1.0f;
 }
 
+void raop_session_set_diagnostic(raop_session *session,
+	raop_session_diagnostic_fn diagnostic, void *context)
+{
+	if (session == NULL)
+		return;
+	session->diagnostic = diagnostic;
+	session->diagnostic_context = context;
+}
+
+static void session_diagnostic(raop_session *session, const char *event,
+	int value, size_t bytes)
+{
+	if (session->diagnostic != NULL)
+		session->diagnostic(session->diagnostic_context, event, value, bytes);
+}
+
+static int unwrap_announce_key(raop_session *session,
+	const raop_sdp_offer *offer, uint8_t audio_iv[RAOP_AES_IV_SIZE],
+	uint8_t audio_key[RAOP_AES_KEY_SIZE])
+{
+	int valid;
+	if (!session->crypto_configured || !offer->has_rsa_aes_key ||
+		!offer->has_aes_iv || !raop_crypto_base64_decode(offer->aes_iv,
+			offer->aes_iv_length, audio_iv, RAOP_AES_IV_SIZE,
+			RAOP_AES_IV_SIZE)) {
+		session_diagnostic(session, "ANNOUNCE_CRYPTO_INPUT_INVALID", 0,
+			offer->rsa_aes_key_length);
+		return 0;
+	}
+	session_diagnostic(session, "ANNOUNCE_KEY_UNWRAP_START", 0,
+		offer->rsa_aes_key_length);
+	valid = raop_crypto_decrypt_session_key(session->crypto,
+		offer->rsa_aes_key, offer->rsa_aes_key_length, session->rng,
+		session->rng_context, audio_key);
+	session_diagnostic(session, "ANNOUNCE_KEY_UNWRAP_DONE", valid,
+		valid ? RAOP_AES_KEY_SIZE : 0);
+	return valid;
+}
+
 int raop_session_configure_crypto(raop_session *session,
 	raop_crypto_context *crypto, mbedtls_f_rng_t *rng, void *rng_context,
 	const uint8_t local_ipv4[4], const uint8_t mac[6])
@@ -443,7 +482,12 @@ int raop_session_handle(raop_session *session, const char *request,
 			"GET_PARAMETER, SET_PARAMETER\r\n";
 	} else if (strcmp(fields.method, "ANNOUNCE") == 0) {
 		const char *sdp = request + fields.body_offset;
-		int offer_valid = raop_sdp_parse(sdp, fields.body_length, &offer);
+		int offer_valid;
+		session_diagnostic(session, "ANNOUNCE_SDP_PARSE_START", 0,
+			fields.body_length);
+		offer_valid = raop_sdp_parse(sdp, fields.body_length, &offer);
+		session_diagnostic(session, "ANNOUNCE_SDP_PARSE_DONE",
+			offer_valid, fields.body_length);
 		if (session->state != RAOP_SESSION_IDLE &&
 			session->state != RAOP_SESSION_ANNOUNCED) {
 			status = 455;
@@ -458,13 +502,8 @@ int raop_session_handle(raop_session *session, const char *request,
 			status = 400;
 			reason = "Bad Request";
 		} else if (offer.has_encryption_type && offer.encryption_type == 1 &&
-			(!session->crypto_configured || !offer.has_rsa_aes_key ||
-			!offer.has_aes_iv || !raop_crypto_base64_decode(offer.aes_iv,
-				offer.aes_iv_length, new_audio_iv, sizeof(new_audio_iv),
-				sizeof(new_audio_iv)) ||
-			!raop_crypto_decrypt_session_key(session->crypto,
-				offer.rsa_aes_key, offer.rsa_aes_key_length, session->rng,
-				session->rng_context, new_audio_key))) {
+			!unwrap_announce_key(session, &offer, new_audio_iv,
+				new_audio_key)) {
 			status = 400;
 			reason = "Bad Request";
 		} else if (offer.has_encryption_type && offer.encryption_type != 0 &&

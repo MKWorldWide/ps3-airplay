@@ -61,7 +61,7 @@ AIRPLAY02 follows conservative pre-1.0 versioning. Increment the patch number fo
 - The package and ELF are preserved in the ignored local `work/builds/0.1.19/` directory. RPCS3 install/launch was not performed because Computer Use still reports the Mac desktop locked. No physical-console transfer/install, iPhone session, or audible playback is verified.
 - Next unused package version: 0.1.20.
 
-The standalone receiver `Makefile` and canonical Lima build/package scripts default to 0.1.24.
+The standalone receiver `Makefile` and canonical Lima build/package scripts default to 0.1.26. For RPCS3, override `RTSP_PORT=5001` only when the host's TCP 5000 is occupied; keep production builds on 5000.
 
 ## v0.1.20 package record
 
@@ -138,3 +138,10 @@ The standalone receiver `Makefile` and canonical Lima build/package scripts defa
 - RPCS3: app starts, RTSP/RTP sockets open, five-second tone completion is logged, and local OPTIONS gets 200. mDNS multicast-interface setup fails. Visual display, controller exit, audible tone, iPhone connection, RTP audio, and Spotify playback are unverified.
 - Payload was staged directly from the validated extraction into local RPCS3 title data because its desktop installer UI was unavailable. Prior local title data is preserved for rollback. Physical console unchanged.
 - Next package version: 0.1.26.
+
+## v0.1.26 source pass
+
+- Adds allowlisted session diagnostics around SDP parsing and RSA-wrapped session-key processing, and a reusable host-to-RPCS3 test mode that sends a synthetic RAOP session plus 128 encrypted ALAC RTP fixture packets.
+- Full Lima host/ASan/UBSan suite, crypto/session diagnostic assertions, remote probe build, and PPU component compilation pass. The first v0.1.25 remote ANNOUNCE attempt stalled before reply; v0.1.26 runtime replay is pending.
+- Standalone Makefile and canonical Lima build/package script defaults advance to 0.1.26. Keep the standard RTSP port at 5000; only RPCS3 test builds should override it to 5001 when needed.
+- Package not yet built. Next package version remains 0.1.26 until its artifact is generated.

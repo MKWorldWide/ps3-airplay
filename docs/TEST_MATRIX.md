@@ -106,3 +106,11 @@ Review reports and logs for console/account identifiers, network addresses, Wi-F
 | RTSP OPTIONS loopback | PASS | Local client received `RTSP/1.0 200 OK`; matching log recorded accept, OPTIONS, status 200, and peer close. This is not an iPhone or complete RAOP session. |
 | Display and controller exit | NOT VERIFIED | RPCS3 desktop was locked; `SCREEN_READY` is initialization evidence only. No visible-pixel or START/XMB result is claimed. |
 | RTP audio, ALAC, PCM output, Spotify | NOT RUN | No ANNOUNCE/SETUP/RECORD sender session and no streamed audio were tested in RPCS3. Physical PS3 was not touched. |
+
+## RPCS3 ANNOUNCE diagnostic follow-up (2026-11-07)
+
+| Test | Result | Evidence and boundary |
+|---|---|---|
+| Synthetic RTSP ANNOUNCE | BLOCKED | v0.1.25 log records OPTIONS 200 and then `RTSP_ANNOUNCE`; the sender timed out waiting for the ANNOUNCE response after three seconds. No later status or error event appeared before the emulator was stopped. The exact blocked operation is not yet proven. |
+| v0.1.26 phase diagnostics | HOST PASS / RPCS3 PENDING | Adds privacy-safe SDP parse start/completion and RSA key-unwrapping start/completion events. Full Lima ASan/UBSan suite, crypto/session assertions, remote probe compilation, and PPU component compilation pass; the v0.1.26 package replay has not run yet. |
+| Sender probe | READY | The host utility can perform OPTIONS, ANNOUNCE, SETUP, RECORD, send 128 encrypted RTP fixture packets to UDP 6000, then TEARDOWN. This is synthetic test traffic, not iPhone interoperability. |

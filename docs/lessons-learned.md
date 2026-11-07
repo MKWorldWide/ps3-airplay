@@ -371,3 +371,17 @@
 - **Root Cause:** The disconnected emulator could not provide a NetCtl address. Once connected, host TCP 5000 was already owned, so RPCS3's translated socket could not bind it. A port conflict is an emulator-host constraint, not evidence that the PS3 listener is faulty.
 - **Fix:** Preserve production TCP 5000 and build an emulator-only v0.1.25 with the existing `RTSP_PORT=5001` override. It opened RTSP/RTP sockets and answered a local OPTIONS probe. mDNS separately failed at multicast-interface setup.
 - **Prevention Rule:** Verify RPCS3 NetCtl state and host port ownership before changing receiver code. Keep emulator overrides distinct from production defaults, and classify mDNS interface failures separately from TCP/RTSP results.
+
+## Add phase events when a protocol method stalls
+
+- **Problem:** The v0.1.25 app log showed RTSP `ANNOUNCE` but not whether SDP parsing, RSA key unwrap, or reply generation completed.
+- **Root Cause:** Method/status logging exposed the request boundary but not the synchronous substeps inside session handling.
+- **Fix:** Add privacy-safe SDP parse and RSA key-unwrapping start/completion events and a repeatable host-to-RPCS3 synthetic sender. Keep the session log sink optional for host-only tests.
+- **Prevention Rule:** For blocking protocol work, log entry and completion around each expensive or stateful stage without including SDP, keys, peer addresses, or media.
+
+## Read the complete capped diagnostic log in host tests
+
+- **Problem:** The slow-reader test occasionally failed to find `RTSP_SEND_TIMEOUT` even though the event was present in the receiver log.
+- **Root Cause:** The test buffer read 4 KiB while the logger permits up to 16 KiB; the timeout event could be beyond the truncated prefix.
+- **Fix:** Size the test read buffer from `RECEIVER_LOG_MAX_BYTES` plus one terminator byte.
+- **Prevention Rule:** Test log assertions must read the full declared cap or parse incrementally; a truncated read can report a false product regression.
