@@ -127,3 +127,16 @@ Review reports and logs for console/account identifiers, network addresses, Wi-F
 | ANNOUNCE response | BLOCKED | Sender timed out waiting for the response. No key-unwrapping-start or subsequent RTSP status event appeared. The app was stopped by the test harness; no APP_STOP event was recorded. Exact blocked operation remains unknown. |
 | SETUP/RECORD/RTP | NOT REACHED | Sender stopped at ANNOUNCE; no audio fixture packets were sent. |
 | Display/audio/hardware | NOT VERIFIED | Desktop remained locked; this replay cannot establish visible pixels, audible tone, iPhone compatibility, or physical PS3 behavior. |
+
+
+## RPCS3 v0.1.27 ANNOUNCE validation replay (2026-11-07)
+
+| Test | Result | Evidence and boundary |
+|---|---|---|
+| v0.1.27 package/build | PASS | AIRPLAY02 PKG 3,231,920 bytes, SHA-256 `0a3d1c409fb1044231256090cc3693da3e1aaa5abddd5bc6e00f29a9aa407b6c`; ELF and finalized package checks pass. Full Lima sanitizer suite and PPU objects pass. |
+| RPCS3 startup / listeners | PASS | Fresh log records APP_START, NetCtl route, RTSP 5001, and RTP 6000–6002. |
+| OPTIONS | PASS | Synthetic sender received 200. |
+| ANNOUNCE offer parse | PASS | SDP parse returned 1; offer fields reported encryption type 1, RSA key, and AES IV (encoded flags value 1539, key data length 344). |
+| ANNOUNCE validation / response | BLOCKED | No Content-Type-check, RSA-unwrapping, validation-complete, or RTSP-status event followed the offer summary. Sender timed out; exact stalled operation remains unknown. |
+| RTP / audio | NOT REACHED | Sender aborted before SETUP/RECORD; no media packets were sent. |
+| Display / physical PS3 | NOT VERIFIED | Desktop remained locked; physical PS3 and boot plugin configuration were not changed. |

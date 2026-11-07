@@ -83,3 +83,10 @@ Keep the generated package, build manifest, and test logs outside Git. Record pa
 - Full Lima host/ASan/UBSan tests and PPU object compilation pass from this exact source snapshot. RPCS3 started, obtained a route, opened RTSP 5001/RTP 6000–6002, and answered OPTIONS 200. For ANNOUNCE it logged SDP parse start and success, then no further session event or response arrived within the sender deadline. The key unwrap start event was absent.
 - The receiver payload was copied into RPCS3 local title data after preserving the prior AIRPLAY02 title directory; this was a direct local payload update, not GUI PKG installation. Prior title data and the capped log are preserved locally. Desktop CUA still reports locked. No physical PS3 changes were made.
 - v0.1.27 source adds events around ANNOUNCE field classification, validation completion, and response generation to isolate the remaining boundary. The exact stall cause is still unknown.
+
+
+## v0.1.27 RPCS3 replay and v0.1.28 follow-up
+
+- v0.1.27 was built from pushed source `eebd588f4d4e7baa8da95d5f4127b9155d90b858`, using emulator-only `RTSP_PORT=5001`. CellOS PPC64 ELF: 2,780,208 bytes, SHA-256 `e053dac6dfb801dd3f19d1ceef45d12e10d590052313f9ee0b27d5433e22c440`. Finalized AIRPLAY02 PKG: 3,231,920 bytes, SHA-256 `0a3d1c409fb1044231256090cc3693da3e1aaa5abddd5bc6e00f29a9aa407b6c`.
+- v0.1.27 package validation, host/ASan/UBSan suite, and PPU checks passed. RPCS3 fresh log confirms app/network/listener readiness, mDNS failure at stage 6/error 125, and OPTIONS 200. ANNOUNCE parsed successfully and logged field flags value 1539 with 344 bytes of wrapped-key data, then produced no validation-complete event or response. The probe did not reach RTP.
+- The exact stalled expression is not yet proven. v0.1.28 replaces the Content-Type `strlen` call with a bounded length scan, logs its start/result, and asserts the result in the host session test. This makes the parse boundary explicit and avoids relying on an unbounded scan of a fixed-size parsed header field.

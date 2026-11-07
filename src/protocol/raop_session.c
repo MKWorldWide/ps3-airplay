@@ -59,6 +59,14 @@ static int copy_value(char *out, size_t capacity,
 	return 1;
 }
 
+static size_t bounded_string_length(const char *text, size_t capacity)
+{
+	size_t length;
+	for (length = 0; length < capacity && text[length] != '\0'; ++length)
+		;
+	return length;
+}
+
 static int parse_decimal(const char *value, size_t length, size_t maximum,
 	size_t *number)
 {
@@ -483,6 +491,8 @@ int raop_session_handle(raop_session *session, const char *request,
 	} else if (strcmp(fields.method, "ANNOUNCE") == 0) {
 		const char *sdp = request + fields.body_offset;
 		int offer_valid;
+		int content_type_valid;
+		size_t content_type_length;
 		session_diagnostic(session, "ANNOUNCE_SDP_PARSE_START", 0,
 			fields.body_length);
 		offer_valid = raop_sdp_parse(sdp, fields.body_length, &offer);
@@ -496,14 +506,22 @@ int raop_session_handle(raop_session *session, const char *request,
 				(offer.has_rsa_aes_key ? 1U << 9 : 0U) |
 				(offer.has_aes_iv ? 1U << 10 : 0U)) : 0,
 			offer_valid ? offer.rsa_aes_key_length : 0);
+		session_diagnostic(session, "ANNOUNCE_CONTENT_TYPE_CHECK_START", 0,
+			sizeof(fields.content_type));
+		content_type_length = bounded_string_length(fields.content_type,
+			sizeof(fields.content_type));
+		content_type_valid = content_type_length < sizeof(fields.content_type) &&
+			ascii_equal(fields.content_type, content_type_length,
+				"application/sdp");
+		session_diagnostic(session, "ANNOUNCE_CONTENT_TYPE_CHECK_DONE",
+			content_type_valid, content_type_length);
 		if (session->state != RAOP_SESSION_IDLE &&
 			session->state != RAOP_SESSION_ANNOUNCED) {
 			status = 455;
 			reason = "Method Not Valid in This State";
 		} else if (fields.body_length == 0 ||
 			fields.body_length > RAOP_SESSION_SDP_MAX ||
-			!ascii_equal(fields.content_type, strlen(fields.content_type),
-				"application/sdp")) {
+			!content_type_valid) {
 			status = 415;
 			reason = "Unsupported Media Type";
 		} else if (!offer_valid) {

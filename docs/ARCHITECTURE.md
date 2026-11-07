@@ -20,7 +20,7 @@ The standalone receiver and resident PRX share portable protocol/codec component
 ## Components
 
 - `src/discovery`: bounded RAOP DNS-SD serialization and service behavior.
-- `src/protocol`: RTSP state machine, SDP parsing, RTP sequencing, timing, and retransmission handling. Session diagnostics use an optional event callback to mark SDP parsing, ANNOUNCE validation, RSA key-unwrapping, and response-formatting boundaries without logging request contents.
+- `src/protocol`: RTSP state machine, SDP parsing, RTP sequencing, timing, and retransmission handling. Session diagnostics use an optional event callback to mark SDP parsing, ANNOUNCE field validation, Content-Type checks, RSA key-unwrapping, and response-formatting boundaries without logging request contents.
 - `src/crypto`: RAOP challenge response and session-key/audio packet crypto.
 - `src/codec`: bounded ALAC decoder wrapper.
 - `src/audio`: bounded PCM ring, conversion, and resampling.
@@ -42,7 +42,7 @@ The standalone receiver and resident PRX share portable protocol/codec component
 
 ## Validation status
 
-Portable host/sanitizer tests and PPU component compilation pass. v0.1.26 runs in RPCS3, opens RTSP/RTP sockets, answers OPTIONS, and parses a synthetic ANNOUNCE SDP successfully, but sends no response; RSA key unwrap did not start. mDNS setup fails at the emulated multicast interface. RPCS3 display pixels/controller exit, physical HDMI output, iPhone interoperability, and audible AirPlay music remain unverified. The repository's [test matrix](TEST_MATRIX.md) and [ANNOUNCE reports](reports/) hold current evidence.
+Portable host/sanitizer tests and PPU component compilation pass. v0.1.27 runs in RPCS3, opens RTSP/RTP sockets, answers OPTIONS, parses a synthetic ANNOUNCE SDP and its encrypted offer fields, then stops before validation completes; RSA key unwrap did not start and no response was sent. v0.1.28 adds a bounded Content-Type length check and focused events. mDNS setup fails at the emulated multicast interface. RPCS3 display pixels/controller exit, physical HDMI output, iPhone interoperability, and audible AirPlay music remain unverified. The repository's [test matrix](TEST_MATRIX.md) and [ANNOUNCE reports](reports/) hold current evidence.
 
 ## References
 

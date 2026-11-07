@@ -47,6 +47,7 @@ typedef struct {
 	unsigned int key_started;
 	unsigned int key_completed;
 	unsigned int validation_completed;
+	unsigned int content_type_check_completed;
 	unsigned int response_started;
 	unsigned int response_completed;
 	int key_result;
@@ -68,6 +69,8 @@ static void collect_diagnostic(void *context, const char *event, int value,
 		counts->key_result = value;
 	} else if (strcmp(event, "ANNOUNCE_VALIDATE_DONE") == 0)
 		++counts->validation_completed;
+	else if (strcmp(event, "ANNOUNCE_CONTENT_TYPE_CHECK_DONE") == 0 && value == 1)
+		++counts->content_type_check_completed;
 	else if (strcmp(event, "ANNOUNCE_RESPONSE_BUILD_START") == 0)
 		++counts->response_started;
 	else if (strcmp(event, "ANNOUNCE_RESPONSE_BUILD_DONE") == 0)
@@ -154,6 +157,7 @@ int main(void)
 	assert(diagnostics.key_started == 1 && diagnostics.key_completed == 1 &&
 		diagnostics.key_result == 1);
 	assert(diagnostics.validation_completed == 1 &&
+		diagnostics.content_type_check_completed == 1 &&
 		diagnostics.response_started == 1 &&
 		diagnostics.response_completed == 1);
 

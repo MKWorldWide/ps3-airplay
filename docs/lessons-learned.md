@@ -393,3 +393,11 @@
 - **Root Cause:** The first phase instrumentation stopped at SDP parsing and RSA key unwrap; it did not expose validation branches or response construction. The RSA unwrap event was absent, so observed evidence does not identify that operation as the stall.
 - **Fix:** Add bounded allowlisted events for ANNOUNCE field classification, validation completion, and response construction, then replay the same sender fixture.
 - **Prevention Rule:** Instrument entry and completion around synchronous protocol boundaries before changing protocol or crypto behavior based on an emulator timeout.
+
+
+## Bound scans of parsed fixed-size header fields
+
+- **Problem:** v0.1.27 logging stopped after ANNOUNCE offer classification and before validation completion.
+- **Root Cause:** The validation path used `strlen` on a fixed-size parsed Content-Type buffer. Its terminator should be written by the parser, but the RPCS3 evidence did not show whether this expression was the cause.
+- **Fix:** Replace the unbounded scan with a capacity-bounded length helper and log the check boundary/result.
+- **Prevention Rule:** Use bounded string lengths for fixed-capacity protocol fields, even when the parser is expected to NUL-terminate them; retain phase events to validate the runtime hypothesis.

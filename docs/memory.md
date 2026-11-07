@@ -229,3 +229,11 @@ Demonstration target: PS3 with Evilnat 4.93 CFW and Cobra 8.5 observed; the cons
 - Fresh RPCS3 log verifies startup, route, RTSP/RTP listeners, OPTIONS 200, and SDP parse success on synthetic ANNOUNCE. It produced no response by the three-second client receive deadline. RSA unwrap start was absent, so the exact stall is unknown and RSA is not implicated by this evidence. SETUP/RECORD/RTP were not reached. RPCS3 was stopped by the harness without APP_STOP; display, audible tone, iPhone, and physical console remain unverified.
 - Full Lima host/ASan/UBSan tests, fixture callback assertions, and PPU object compilation pass from the committed source. The package was validated and copied into local RPCS3 title data after a local rollback copy; the desktop remains locked and no physical PS3 files/settings were changed.
 - v0.1.27 adds ANNOUNCE offer-field, validation completion, and response-construction checkpoints to distinguish the remaining boundary. Production RTSP port stays 5000; game audio mixing remains a separate Cobra feasibility gate.
+
+
+## v0.1.27 RPCS3 boundary and v0.1.28 bounded header check (2026-11-07)
+
+- AIRPLAY02 v0.1.27 was built from source `eebd588f4d4e7baa8da95d5f4127b9155d90b858` with emulator-only RTSP 5001. ELF SHA-256 `e053dac6dfb801dd3f19d1ceef45d12e10d590052313f9ee0b27d5433e22c440` (2,780,208 bytes); PKG SHA-256 `0a3d1c409fb1044231256090cc3693da3e1aaa5abddd5bc6e00f29a9aa407b6c` (3,231,920 bytes).
+- Fresh RPCS3 log confirms app startup, route, listeners, mDNS failure stage 6/error 125, OPTIONS 200, successful SDP parse, and offer fields including encryption type 1, RSA key, and IV. Log stops before Content-Type-check, validation completion, RSA unwrap, or response. Synthetic sender did not reach RTP. The exact stall remains unknown.
+- v0.1.28 replaces an unbounded `strlen` over the fixed-size Content-Type field with a bounded length scan and logs the check start/result. This is a defensive code improvement and test hypothesis, not yet a proven runtime fix.
+- No display/audibility/iPhone/physical-console success is claimed; desktop is locked, PS3 and boot plugins unchanged. Next is v0.1.28 build and exact RPCS3 replay.
