@@ -41,8 +41,8 @@ Portable components cover bounded DNS-SD/mDNS, RTSP/SDP session handling, UDP RT
 - A direct `--no-gui` launch attempt against the extracted v0.1.20 EBOOT did not refresh the app log or produce `APP_START`; retain it as inconclusive. The installed emulator title remains 0.1.15.
 - Display follow-up: the user reports a visible image and successful app opening but still sees blue framing and `DISPLAY ACTIVE`. The current source and v0.1.20 ancestry already remove blue diagnostics and all text; no duplicate code patch is warranted without matching the observed package. The local desktop bridge continues to report locked.
 - Research found the RAOP TXT `vs` value is the receiver server version. The service advertised stale `vs=0.1.2` while RTSP identifies `AirTunes/105.1`; the v0.1.21 source now advertises `vs=105.1`, with a wire-format regression assertion.
-- The full Lima host/sanitizer and PPU component suite passes after this metadata fix. Standalone v0.1.21 package validation and RPCS3 launch remain pending.
-- Next: build/inspect v0.1.21 in Lima; once RPCS3 is accessible, install the exact candidate and collect its version-matched log. Then continue with a controlled iPhone session and classify evidence by RTSP, RTP, decrypt/decode, PCM submission, and audible output.
+- The full Lima host/sanitizer and PPU component suite passes after this metadata fix. The v0.1.21 standalone ELF/PKG also validates in Lima; the exact package is preserved locally. RPCS3 installation/launch remains pending because desktop automation reports the Mac is locked.
+- Next: install/run the exact v0.1.21 candidate in RPCS3 when desktop access returns and collect its version-matched log. Then continue with a controlled iPhone session and classify evidence by RTSP, RTP, decrypt/decode, PCM submission, and audible output.
 
 ## Latest update (2026-11-07)
 

@@ -76,8 +76,12 @@ The standalone receiver `Makefile` and canonical Lima build/package scripts defa
 
 ## v0.1.21 package record
 
-- Source: pending commit on `main` (correct RAOP `vs` server-version TXT value).
+- Source: `3e529faac64b0b30989b955e01c991e63fdaeda8` on `main` (correct RAOP `vs` server-version TXT value).
 - Artifact: `ps3-airplay-receiver-0.1.21.pkg`, AIRPLAY02, APP_VER `0.1.21`.
 - Change: advertise `vs=105.1`, matching the RTSP `Server: AirTunes/105.1` header; the previous `vs=0.1.2` was stale package metadata.
-- Checks: RAOP TXT serializer assertion, full Lima host suite with ASan/UBSan, and PPU component checks pass. Full standalone ELF/PKG validation and artifact hashes pending.
-- RPCS3 and physical hardware: pending; Mac currently locked and physical-console deployment remains prohibited without approval.
+- ELF: 2,780,120 bytes, CellOS PPC64, five PT_LOAD segments; SHA-256 `401225f2c8b704103c5f65683a5b48f9c7b34633ae57145ca92c190485543e1e`.
+- Size / SHA-256: 3,230,384 bytes / `c8c77b78d34dc50a955383ddafe7c835a7848c62eb8a9673ede7ed0c2776ef73`.
+- Build: existing Lima VM; PS3DK v0.27.0 PPU compiler 16.1.0, GNU ld 2.42, PSL1GHT revision `dd4e8c9be744e3273d665c393fa6d97a87402e2e`.
+- Checks: RAOP TXT serializer assertion, full Lima host suite with ASan/UBSan, PPU component checks, standalone ELF validation/link, AIRPLAY02/APP_VER/content ID, asset equality, extraction, EBOOT comparison, relative package paths, and finalized NPDRM envelope PASS.
+- Runtime: RPCS3 Computer Use reports the Mac is locked; no fresh v0.1.21 install/launch or matching log. Physical PS3 was not changed. No iPhone session or audible AirPlay playback is verified.
+- The PKG, ELF, and build metadata are preserved in ignored `work/builds/0.1.21/`. Next unused package version: 0.1.22.
