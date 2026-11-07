@@ -1,6 +1,6 @@
 # Roadmap
 
-**Status: experimental; v0.1.3 is installed and XMB launch returns the same `80028F21` error as v0.1.2. Installed SFO and EBOOT match the extracted package, while the diagnostic log is unchanged. The 2020 PSL1GHT runtime did not solve the launch failure.** This roadmap separates build evidence from behavior that still requires a PS3 and an iPhone.
+**Status: experimental; v0.1.3 is installed and XMB launch returns the same `80028F21` error as v0.1.2. Installed SFO and EBOOT match the extracted package, while the diagnostic log is unchanged. The 2020 PSL1GHT runtime did not solve the launch failure. A separate PS3DK-native launch-control PKG now builds locally, but has not been deployed or hardware-tested.** This roadmap separates build evidence from behavior that still requires a PS3 and an iPhone.
 
 ## Milestones
 
@@ -20,15 +20,15 @@ Portable components cover bounded DNS-SD/mDNS, RTSP/SDP session handling, UDP RT
 
 ## Next steps
 
-1. Add a minimal native PS3DK standalone launch control without PSL1GHT, using the existing Lima toolchain. The current `build-lima-smoke.sh` only validates receiver objects and a PRX sample, so it is not this test. Do not transfer the control without separate approval.
-2. Check whether a licensed Sony PS3 SDK 4.75 installation and its Windows build VM are available. The public Thermal Bench project says it uses that SDK and MSBuild in a Windows 7 VM; this is a separate, proprietary toolchain and not a drop-in replacement.
-3. Fix the hard-coded `PKG_VERSION_0.1.2` startup event so future logs identify the actual package version.
-4. After a build launches, verify visible display, five-second tone, and START-to-XMB twice. Stop if output is black or normal exit fails.
-5. Try the iPhone once and retrieve the capped log; use accept, method, status, state, SDP, and RTP events to locate the failure before changing capabilities.
-6. Re-test AirPlay audio after display, clean exit, and RTSP/RTP stage evidence are established.
-7. Repeat the receiver loopback test without tracing; this run passed, but the earlier untraced timing-probe stall remains an intermittent host-test concern.
-8. Consider resident PRX lifecycle testing as a separate, reversible experiment.
-9. Test audio coexistence per title only after resident lifecycle and standalone output are established.
+1. Request approval to transfer and install `AIRTEST01` v0.1.0, preserving AIRPLAY02 and its staged rollback; test XMB launch, visible colors, START exit, automatic timeout, and fresh local log.
+2. Use the launch-control hardware result to identify whether the PS3DK-native launch/display path works on this console. This does not validate AirPlay receiver dependencies.
+3. Fix the hard-coded `PKG_VERSION_0.1.2` startup event so future receiver logs identify the actual package version.
+4. Check whether a licensed Sony PS3 SDK 4.75 installation and its Windows build VM are available. Thermal Bench documents that workflow; it is a separate, proprietary toolchain and not a drop-in replacement.
+5. After a receiver build launches, verify visible display, five-second tone, and START-to-XMB twice. Stop if output is black or normal exit fails.
+6. Try the iPhone once and retrieve the capped log; use accept, method, status, state, SDP, and RTP events to locate the failure before changing capabilities.
+7. Re-test AirPlay audio after display, clean exit, and RTSP/RTP stage evidence are established.
+8. Repeat the receiver loopback test without tracing; an earlier untraced timing-probe stall remains an intermittent host-test concern.
+9. Consider resident PRX lifecycle testing as a separate, reversible experiment, then test per-title game audio only after standalone output works.
 ## Explicit boundaries
 
 - A successful build, package inspection, or PRX structural check does not prove hardware compatibility.

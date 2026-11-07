@@ -15,6 +15,7 @@
 | Receiver loopback timing test is scheduling-sensitive | A host run can stall at its first timing-probe receive, reducing confidence in protocol changes | Latest direct guest run timed out; trace-assisted run passed. Diagnose the discrepancy and require repeated uninstrumented passes before marking green |
 | App fails before fresh diagnostics appear | XMB launch error prevents display, controller, and AirPlay testing; a stale log can hide whether `main()` or the logger opened | v0.1.2 and v0.1.3 (legacy PSL1GHT runtime) both return `80028F21`; installed v0.1.3 files match the package, but the old log is unchanged. Next compare a minimal native PS3DK build and, if licensed access exists, Sony's official SDK build path. Do not infer a specific root cause from the error code alone. |
 | Hard-coded application version in startup log | A future log could misidentify the package version and confuse diagnosis | v0.1.3 still logs `PKG_VERSION_0.1.2`. Make the startup version a build input and verify it against `PARAM.SFO` before the next package is staged. |
+| Native launch control behaves differently on the PS3 than on the host | A locally valid ELF/PKG does not establish XMB launch, visible HDMI pixels, input responsiveness, or clean exit | AIRTEST01 v0.1.0 builds and passes package checks only. Transfer/install requires approval; test it once with START and automatic timeout available, and stop if launch hangs. |
 
 ## Required gates before hardware testing
 

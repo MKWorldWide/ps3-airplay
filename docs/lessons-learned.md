@@ -119,3 +119,10 @@
 - **Root Cause:** Unknown. Installed SFO and EBOOT match the extracted package, but the 1,817-byte application log is unchanged. This points to failure before successful logger startup or a log-open failure; it does not prove the failure is before `main()`.
 - **Fix:** Do not repeat the same runtime-only change. Compare a minimal native PS3DK launch control and consider the Sony SDK route only if a licensed toolchain is available.
 - **Prevention Rule:** A change that reproduces the same hardware failure is evidence against it being a sufficient fix. Tie each launch attempt to installed-file identity and fresh log evidence.
+
+## PS3DK app post-link must use the PS3DK sprxlinker fork
+
+- **Problem:** Both a PS3DK native launch-control app and the upstream cellGcm sample failed after linking with `elf does not have a prx parameter section`.
+- **Root Cause:** Lima's `PS3DEV/bin/sprxlinker` was the older PSL1GHT tool, which does not understand PS3DK's 64-byte `.sys_proc_prx_param` section.
+- **Fix:** Built and installed PS3DK's `tools/sprx-linker` fork into the staged toolchain's `PS3DEV/bin` and `PS3DK/bin`; the app and NPDRM PKG then built successfully.
+- **Prevention Rule:** When an SDK post-link tool reports missing process parameters, inspect that SDK's build/runtime scripts and ensure host tools match the installed SDK revision before changing application code.

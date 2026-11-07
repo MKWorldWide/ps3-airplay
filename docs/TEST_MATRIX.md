@@ -20,6 +20,7 @@ This matrix distinguishes portable host evidence and cross-build evidence from r
 | PPU/PRX | Cross-build and PRX structural checks | Build checks pass; console compatibility untested |
 | Runtime compatibility | Compare current PSL1GHT runtime against 2020 runtime | v0.1.2 using the current runtime and v0.1.3 using PSL1GHT commit `6e565a70e927f55813babe86dc6f64149535f908` (2020-11-25) both fail XMB launch with user-reported `80028F21`. The older runtime alone did not resolve the failure; neither result identifies the cause. |
 | Standalone package | Package inspection, extraction, and installed-file identity | v0.1.2: 3,225,712 bytes, SHA-256 `923aebf6eca5693b21b494a9a4225c36629f13e8b316b2825d5deb3763226ebf`. v0.1.3: 3,183,408 bytes, SHA-256 `98d8701ab018df882e30ba28f851a994c195d0a144dafe7c68c77d86d94126aa`. Installed v0.1.3 SFO and extracted-package EBOOT match exactly. XMB launch fails with `80028F21`; the capped 1,817-byte log is unchanged from the earlier run. |
+| Native PS3DK launch control | Cross-build and package a minimal cellGcm/controller standalone app using a unique title ID | PASS locally: PPU ELF, SELF forms, and AIRTEST01 NPDRM PKG built after installing the PS3DK `sprx-linker` fork. PKG is 192,688 bytes, SHA-256 `7bb8e2fbc12cc3da8f4b91ff0ae85c4dcb105209dba5d45765b1787d4015b6d2`; SFO APP_VER/TITLE_ID and package content ID agree. No PS3 install or runtime test yet. |
 | Resident PCM output | Plugin audio output | Not implemented; candidate discards decoded PCM |
 
 ## PS3 and iPhone gates
@@ -31,12 +32,14 @@ This matrix distinguishes portable host evidence and cross-build evidence from r
 | DEPLOY-03 | Replace staged package with screen-enabled 01.01 candidate and verify downloaded-back hash | PASS; 3,222,640 bytes, byte-identical to approved artifact |
 | DEPLOY-04 | Install v0.1.2 and verify installed app identity against candidate | PASS: SFO reports AIRPLAY02 / 0.1.2; installed EBOOT (445,232 bytes) and SFO match the extracted v0.1.2 files by SHA-256 |
 | DEPLOY-05 | Stage/install the v0.1.3 legacy-runtime candidate and verify launch | Upload PASS: versioned package staged at `/dev_hdd0/packages/ps3-airplay-receiver-0.1.3.pkg`; download-back matched size 3,183,408 bytes, SHA-256 `98d8701ab018df882e30ba28f851a994c195d0a144dafe7c68c77d86d94126aa`, byte-for-byte. Install PASS: SFO and extracted-package EBOOT match. Launch FAIL: user reports the same `80028F21`. Staged v0.1.2 remains available for rollback. |
+| DEPLOY-06 | Build isolated native PS3DK launch-control PKG | PASS locally: APP_VER 0.1.0, AIRTEST01, content ID `UP0001-AIRTEST01_00-0000000000000000`, 192,688 bytes, SHA-256 `7bb8e2fbc12cc3da8f4b91ff0ae85c4dcb105209dba5d45765b1787d4015b6d2`. Not transferred; hardware launch test requires approval. |
 | BUILD-03 | Cross-build visible diagnostic screen and controller START exit; inspect packaged image | PASS in Lima for 0.1.2; hardware behavior untested |
 | HW-01 | Confirm tested recovery procedure and record a privacy-safe baseline | Partial: console remained reachable for read-only checks after the launch error; clean in-app exit and recovery from a new freeze remain unproven. Standalone app does not alter boot plugins. |
 | HW-02 | Install/launch standalone app and exit cleanly | v0.1.3 FAIL at launch: user reports the same XMB error `80028F21`. Installed SFO reports AIRPLAY02 / 0.1.3 and matches the extracted package; installed EBOOT also matches. The 1,817-byte log is unchanged, so no new startup event is available. Display, tone, controller, and clean exit are unverified for v0.1.3. |
 | HW-03 | Audible test audio at the system menu | Prior partial PASS only: user heard the five-second diagnostic tone in a run whose package identity was not established. v0.1.2 tone test BLOCKED by launch failure; normal AirPlay music not tested. |
 | HW-04 | iPhone discovers receiver and completes AirPlay session | Prior partial result only: iPhone listed `ps3-airplay-diagnostic`; selecting it failed to connect. No v0.1.2 connection attempt; session not established. |
 | HW-05 | Verify audible AirPlay playback and controls | NOT RUN |
+| HW-06 | Launch AIRTEST01, verify visible colors, START exit/auto-exit, and fresh local log | NOT RUN; native PS3DK control is built and package-validated locally only |
 | HW-06 | Reconnect after sender/network interruption | NOT RUN |
 | HW-07 | Sustained standalone playback and resource stability | NOT RUN |
 | PRX-01 | Load/start/stop/unload diagnostic module with tested recovery | NOT RUN |
