@@ -301,3 +301,10 @@
 - **Root Cause:** The decoder trusted the frame's in-band sample count while predictor and output arrays were allocated to the SDP maximum. The output-byte capacity check happened after the count was parsed but did not protect those internal arrays.
 - **Fix:** Accumulate 32-bit fields as unsigned, then reject zero and over-negotiated sample counts in both mono and stereo branches before narrowing, output-size arithmetic, or sample-array writes. The regression checks the 353-vs-352 boundary and `UINT32_MAX` under sanitizers while retaining the valid encrypted RTP-to-PCM golden path.
 - **Prevention Rule:** Treat compressed frame headers as untrusted. Validate in-band sample counts against negotiated bounds before any count-based allocation, loop, arithmetic, or output write; run codec fixtures with sanitizers at the exact boundary.
+
+## Fail malformed ALAC decode on undefined math
+
+- **Problem:** A 256-input malformed-packet smoke run with UBSan halt-on-error found an oversized interlace shift and signed predictor accumulation overflow.
+- **Root Cause:** The ALAC bitstream exposed fields used as C shift counts and arithmetic operands without range checks; unsupported predictor modes were logged but still continued into reconstruction.
+- **Fix:** Reject unsupported predictor modes, zero quantization where the algorithm shifts by quantization minus one, invalid sample widths, and interlace shifts above 31. Use 64-bit predictor and weighted-interlace intermediates, explicit bounded sign extension, and constrain the RAOP Rice k-modifier to 30 or less.
+- **Prevention Rule:** Keep a deterministic malformed-frame sanitizer corpus in the regular host path and set sanitizers to halt, so undefined behavior cannot be reported as a passing test.

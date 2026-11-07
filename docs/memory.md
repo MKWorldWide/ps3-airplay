@@ -172,3 +172,10 @@ Demonstration target: PS3 with Evilnat 4.93 CFW and Cobra 8.5 observed; the cons
 - AIRPLAY02 v0.1.19 was built from commit `7b451031487aab7dbad147ab0b47ef80a1e22265`: ELF 2,780,120 bytes, SHA-256 `beb816b2aed2125a94584e4e820f18de66a98f21260ce47fe1654199322e7ec3`; PKG 3,230,704 bytes, SHA-256 `41488b9683b901ecc4d71e113565fcdb10c1834c69e1642fbe774f5cdf4a31a5`. ELF, SFO/version, content ID, asset equality, extraction, EBOOT, package path, and finalized NPDRM checks pass. Files are preserved under the ignored local build directory `work/builds/0.1.19/`.
 - RPCS3 installation/run remains pending: two Computer Use checks still reported the Mac locked. The package is not installed/run in this turn. Do not touch the physical console.
 - Next package version: 0.1.20. Retry v0.1.19 RPCS3 testing when the desktop is unlocked; capture a fresh capped log. No audible AirPlay or Spotify stream is verified.
+
+## Malformed ALAC sanitizer follow-up (2026-11-07)
+
+- A deterministic 256-input malformed ALAC smoke run, with UBSan configured to halt, found additional undefined behavior: a corrupt interlace shift above 31 and signed overflow in predictor coefficient accumulation.
+- Decoder rejects unsupported predictor modes and invalid quantization/read sizes before entropy/predictor work; interlace shifts are bounded; predictor accumulation uses 64-bit intermediates and explicit sign extension; weighted stereo reconstruction uses bounded 64-bit math; the RAOP ALAC offer rejects Rice k-modifier values above 30.
+- The valid encrypted reference RTP-to-PCM test remains byte-identical. The 353-vs-352 and `UINT32_MAX` regressions still reject safely; all 256 deterministic malformed inputs complete without ASan/UBSan findings when halt-on-error is enabled.
+- These follow-on runtime changes are not in v0.1.19. The full Lima host suite now passes with ASan/UBSan halt-on-error and PPU component object compilation passes. Build/package v0.1.20 from the final committed source next. RPCS3 and physical hardware remain pending.

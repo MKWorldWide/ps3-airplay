@@ -28,7 +28,7 @@ static int offer_supported(const raop_sdp_offer *offer)
 	return offer->fmtp[0] > 0 && offer->fmtp[0] <= RAOP_ALAC_FRAME_MAX &&
 		offer->fmtp[1] == 0 && offer->fmtp[2] == 16 &&
 		offer->fmtp[3] <= UINT8_MAX && offer->fmtp[4] <= UINT8_MAX &&
-		offer->fmtp[5] <= UINT8_MAX &&
+		offer->fmtp[5] <= 30 &&
 		(offer->fmtp[6] == 1 || offer->fmtp[6] == 2) &&
 		offer->fmtp[7] <= UINT8_MAX && offer->fmtp[8] <= UINT16_MAX &&
 		offer->fmtp[9] <= UINT32_MAX && offer->fmtp[10] <= UINT32_MAX &&

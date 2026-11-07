@@ -419,6 +419,21 @@ static int32_t sign_extend32(int32_t value, unsigned int bits) {
 }
 #define SIGN_EXTENDED32(val, bits) sign_extend32((int32_t)(val), (unsigned int)(bits))
 
+static int32_t sign_extend64(int64_t value, unsigned int bits) {
+  uint64_t mask;
+  uint64_t sign;
+  uint64_t narrowed;
+  int64_t signed_value;
+  if (bits == 0 || bits > 32)
+    return 0;
+  mask = (((uint64_t)1 << bits) - 1U);
+  sign = (uint64_t)1 << (bits - 1U);
+  narrowed = (uint64_t)value & mask;
+  signed_value = (narrowed & sign) ?
+      (int64_t)narrowed - (int64_t)((uint64_t)1 << bits) : (int64_t)narrowed;
+  return (int32_t)signed_value;
+}
+
 #define SIGN_ONLY(v) ((v < 0) ? (-1) : ((v > 0) ? (1) : (0)))
 
 static void predictor_decompress_fir_adapt(int32_t *error_buffer, int32_t *buffer_out,
@@ -489,20 +504,21 @@ static void predictor_decompress_fir_adapt(int32_t *error_buffer, int32_t *buffe
   if (predictor_coef_num > 0) {
     for (i = predictor_coef_num + 1; i < output_size; i++) {
       int j;
-      int sum = 0;
-      int outval;
+      int64_t sum = 0;
+      int64_t outval;
       int error_val = error_buffer[i];
 
       for (j = 0; j < predictor_coef_num; j++) {
-        sum += (buffer_out[predictor_coef_num - j] - buffer_out[0]) * predictor_coef_table[j];
+        sum += ((int64_t)buffer_out[predictor_coef_num - j] - buffer_out[0]) *
+            predictor_coef_table[j];
       }
 
-      outval = (1 << (predictor_quantitization - 1)) + sum;
+      outval = ((int64_t)1 << (predictor_quantitization - 1)) + sum;
       outval = outval >> predictor_quantitization;
       outval = outval + buffer_out[0] + error_val;
-      outval = SIGN_EXTENDED32(outval, readsamplesize);
+      outval = sign_extend64(outval, (unsigned int)readsamplesize);
 
-      buffer_out[predictor_coef_num + 1] = outval;
+      buffer_out[predictor_coef_num + 1] = (int32_t)outval;
 
       if (error_val > 0) {
         int predictor_num = predictor_coef_num - 1;
@@ -552,14 +568,22 @@ static void deinterlace_16(int32_t *buffer_a, int32_t *buffer_b, int16_t *buffer
   if (interlacing_leftweight) {
     for (i = 0; i < numsamples; i++) {
       int32_t difference, midright;
+      int64_t right_value, left_value;
       int16_t left;
       int16_t right;
 
       midright = buffer_a[i];
       difference = buffer_b[i];
 
-      right = midright - ((difference * interlacing_leftweight) >> interlacing_shift);
-      left = right + difference;
+      right_value = (int64_t)midright -
+          (((int64_t)difference * interlacing_leftweight) >> interlacing_shift);
+      left_value = right_value + difference;
+      if (right_value > INT16_MAX) right_value = INT16_MAX;
+      if (right_value < INT16_MIN) right_value = INT16_MIN;
+      if (left_value > INT16_MAX) left_value = INT16_MAX;
+      if (left_value < INT16_MIN) left_value = INT16_MIN;
+      right = (int16_t)right_value;
+      left = (int16_t)left_value;
 
       /* output is always little endian */
       if (host_bigendian) {
@@ -745,6 +769,13 @@ void alac_decode_frame(alac_file *alac, unsigned char *inbuffer, void *outbuffer
       for (i = 0; i < predictor_coef_num; i++) {
         predictor_coef_table[i] = (int16_t)readbits(alac, 16);
       }
+      if (prediction_type != 0 ||
+          (prediction_quantitization == 0 && predictor_coef_num != 0 &&
+           predictor_coef_num != 0x1f) ||
+          readsamplesize <= 0 || readsamplesize > 16) {
+        *outputsize = 0;
+        return;
+      }
 
       if (uncompressed_bytes) {
         int li;
@@ -901,6 +932,10 @@ void alac_decode_frame(alac_file *alac, unsigned char *inbuffer, void *outbuffer
 
       interlacing_shift = readbits(alac, 8);
       interlacing_leftweight = readbits(alac, 8);
+      if (interlacing_leftweight != 0 && interlacing_shift > 31) {
+        *outputsize = 0;
+        return;
+      }
 
       /******** channel 1 ***********/
       prediction_type_a = readbits(alac, 4);
@@ -924,6 +959,15 @@ void alac_decode_frame(alac_file *alac, unsigned char *inbuffer, void *outbuffer
       /* read the predictor table */
       for (i = 0; i < predictor_coef_num_b; i++) {
         predictor_coef_table_b[i] = (int16_t)readbits(alac, 16);
+      }
+      if (prediction_type_a != 0 || prediction_type_b != 0 ||
+          (prediction_quantitization_a == 0 && predictor_coef_num_a != 0 &&
+           predictor_coef_num_a != 0x1f) ||
+          (prediction_quantitization_b == 0 && predictor_coef_num_b != 0 &&
+           predictor_coef_num_b != 0x1f) ||
+          readsamplesize <= 0 || readsamplesize > 17) {
+        *outputsize = 0;
+        return;
       }
 
       /*********************/

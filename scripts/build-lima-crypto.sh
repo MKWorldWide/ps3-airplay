@@ -132,7 +132,8 @@ cc -std=c11 -Wall -Wextra -Werror -g -fsanitize=address,undefined \
 	"$PROJECT_ROOT/src/observability/receiver_log.c" \
 	"$PROJECT_ROOT/tests/protocol/raop_audio_pipeline_test.c" \
 	"$HOST_LIBRARY" -lm -pthread -o "$RAOP_PIPELINE_TEST"
-(cd "$PROJECT_ROOT" && "$RAOP_PIPELINE_TEST")
+(cd "$PROJECT_ROOT" && UBSAN_OPTIONS=halt_on_error=1 \
+	ASAN_OPTIONS=halt_on_error=1 "$RAOP_PIPELINE_TEST")
 
 RTSP_LOG_TEST="$PROJECT_ROOT/build/lima-crypto/rtsp_listener_test"
 cc -std=c11 -Wall -Wextra -Werror -g -fsanitize=address,undefined -pthread \

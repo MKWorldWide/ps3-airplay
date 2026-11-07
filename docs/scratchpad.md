@@ -1,10 +1,10 @@
 # Active work
 
-- **Current task:** Install/run the validated AIRPLAY02 v0.1.19 in RPCS3 once the Mac desktop is unlocked; collect a fresh log and test display/exit/readiness boundaries.
-- **Source change:** ALAC decode rejects in-band sample counts outside the negotiated maximum before internal array writes. `raop_audio_pipeline_test` composes RTSP RSA-OAEP key unwrap, encrypted RTP payload decryption, ALAC decode, and golden PCM comparison; it also verifies over-limit frame rejection.
-- **Validation:** Full Lima host suite and PPU objects passed under ASan/UBSan, including RSA-OAEP unwrap → encrypted RTP decrypt → ALAC decode → reference PCM equality and over-limit rejection. v0.1.19 ELF and finalized PKG built from `7b45103` and passed structural/package checks.
+- **Current task:** Complete ALAC malformed-bitstream hardening, build AIRPLAY02 v0.1.20, then test in RPCS3 when the Mac desktop unlocks.
+- **Source change:** In addition to negotiated sample-count limits, reject invalid predictor/quantization/interlace fields, constrain Rice k-modifier, and use bounded wider arithmetic for predictor and weighted-interlace math. The composed encrypted RTP-to-PCM golden path remains in `raop_audio_pipeline_test`.
+- **Validation:** Full Lima host suite passed under ASan/UBSan halt-on-error, including 256 deterministic malformed packets, over-limit/`UINT32_MAX` rejection, reference PCM equality, and the loopback timing test. PPU component object compilation passed. Full standalone app and v0.1.20 package validation remain pending.
 - **Artifact:** PKG 3,230,704 bytes, SHA-256 `41488b9683b901ecc4d71e113565fcdb10c1834c69e1642fbe774f5cdf4a31a5`; ELF SHA-256 `beb816b2aed2125a94584e4e820f18de66a98f21260ce47fe1654199322e7ec3`. Local ignored copy: `work/builds/0.1.19/`.
 - **RPCS3:** Computer Use twice reported Mac locked, so v0.1.19 is not installed or run. Earlier RPCS3 log is v0.1.15 and not current evidence.
-- **Version:** v0.1.19 package built; next is 0.1.20. Physical PS3 not touched.
-- **Next:** Retry RPCS3 only when desktop becomes available, then inspect the fresh log. Continue host protocol hardening meanwhile if still locked.
+- **Version:** v0.1.19 package built and preserved; current source changes are intended for v0.1.20. Physical PS3 not touched.
+- **Next:** Run full Lima host/PPU suite, build v0.1.20 from the exact commit, validate package hashes, then retry RPCS3 when desktop becomes available.
 - **Boundary:** Host integration tests do not prove iPhone RTSP/RTP interoperability, GameOS audible output, console display/exit, Spotify playback, or game-audio coexistence.

@@ -72,6 +72,37 @@ static void write_bits(uint8_t *buffer, size_t bit_offset, unsigned int bit_coun
 	}
 }
 
+static uint32_t next_random(uint32_t *state)
+{
+	uint32_t value = *state;
+	value ^= value << 13;
+	value ^= value >> 17;
+	value ^= value << 5;
+	*state = value;
+	return value;
+}
+
+static void malformed_smoke(raop_alac_decoder *decoder)
+{
+	uint32_t state = 0x00c0ffeeU;
+	uint8_t input[RAOP_ALAC_INPUT_MAX];
+	uint8_t output[RAOP_ALAC_PCM_MAX];
+	unsigned int case_index;
+	for (case_index = 0; case_index < 256; ++case_index) {
+		size_t length = 32U +
+			(next_random(&state) % (RAOP_ALAC_INPUT_MAX - 31U));
+		size_t i;
+		for (i = 0; i < length; ++i)
+			input[i] = (uint8_t)next_random(&state);
+		{
+			size_t pcm_length;
+			uint32_t samples;
+			(void)raop_alac_decode(decoder, input, length, output,
+				sizeof(output), &pcm_length, &samples);
+		}
+	}
+}
+
 int main(void)
 {
 	static const uint8_t aes_key[RAOP_AES_KEY_SIZE] = {
@@ -185,6 +216,11 @@ int main(void)
 		frame.packet.payload_length, pcm, sizeof(pcm), &pcm_length, &samples));
 	raop_alac_destroy(limited_decoder);
 	puts("ALAC frame sample count bounded, including UINT32_MAX: PASS");
+	decoder = raop_alac_create(&receiver.session.offer);
+	assert(decoder != NULL);
+	malformed_smoke(decoder);
+	raop_alac_destroy(decoder);
+	puts("ALAC deterministic malformed-packet sanitizer smoke: PASS (256 packets)");
 	raop_crypto_context_free(&crypto);
 	free(encoded);
 	free(expected);
