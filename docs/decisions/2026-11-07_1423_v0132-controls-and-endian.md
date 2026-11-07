@@ -19,7 +19,7 @@ Compiler byte-order selection replaces constant zero. Foreground loop polls cont
 Correct PCM byte order on PS3. Regular display flips for VSH overlay composition; result is unverified on real hardware. No blocking display wait in the service loop. START skips further stream work once detected.
 
 ## Validation performed
-Live HTTP log retrieval; normal webMAN quit produced complete cleanup and APP_STOP 0. Target build, endian fixture and emulator smoke follow committed source. Privacy review before commit.
+Live HTTP log retrieval; normal webMAN quit produced complete cleanup and APP_STOP 0. Target build caught signed-clock versus unsigned-deadline comparisons; explicit casts fix the warning under -Werror. Endian fixture and emulator smoke follow committed source. Privacy review before commit.
 
 ## Immediate results
 Endian defect identified; entire app was not frozen according to live log. Current session recovered through normal quit without reboot.

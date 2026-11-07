@@ -56,7 +56,7 @@ static int wait_rsx_idle(gcmContextData *context)
  rsxSetWriteBackendLabel(context, GCM_LABEL_INDEX, target);
  rsxFlushBuffer(context);
  while (*(volatile uint32_t *)gcmGetLabelAddress(GCM_LABEL_INDEX) != target) {
-  if (sysGetSystemTime() >= deadline) return 0;
+  if ((uint64_t)sysGetSystemTime() >= deadline) return 0;
   usleep(1000);
  }
  return 1;
@@ -66,7 +66,7 @@ static int wait_initial_flip(void)
 {
  uint64_t deadline = sysGetSystemTime() + 500000U;
  while (gcmGetFlipStatus() != 0) {
-  if (sysGetSystemTime() >= deadline) return 0;
+  if ((uint64_t)sysGetSystemTime() >= deadline) return 0;
   usleep(200);
  }
  return 1;
