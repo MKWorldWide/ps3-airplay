@@ -1,9 +1,10 @@
 # Active work
 
-- **Task:** Controlled launch test of the separately validated legacy-runtime candidate; preserve the known v0.1.2 package for rollback.
-- **Source:** Branch `docs/v012-preflight-review`, commit `aaa1872` includes the reproducible legacy-runtime build and candidate report. Public hypothesis reference: `lucasdaddiego/ps3-health`, whose published result concerns HFW 4.93 + HEN rather than Evilnat.
-- **Installed build:** AIRPLAY02 v0.1.2 remains installed and fails XMB launch with `80028F21`; installed EBOOT and SFO match its package.
-- **Candidate:** AIRPLAY02 v0.1.3, 3,183,408 bytes, SHA-256 `98d8701ab018df882e30ba28f851a994c195d0a144dafe7c68c77d86d94126aa`. Built from the same receiver sources with PSL1GHT 2020 commit `6e565a70e927f55813babe86dc6f64149535f908`, matching Mbed TLS/GCC 7.2, and validated package contents. Local artifact: `build/lima-legacy-runtime/ps3-airplay-receiver-0.1.3.pkg`.
-- **Host evidence:** Eleven existing host test executables passed, including receiver RTSP/RTP loopback. Earlier untraced timing-probe stall remains a flakiness concern. No PS3 test of v0.1.3 has occurred.
-- **Upload:** After explicit approval, v0.1.3 is staged at `/dev_hdd0/packages/ps3-airplay-receiver-0.1.3.pkg`. Download-back is byte-identical: 3,183,408 bytes, SHA-256 `98d8701ab018df882e30ba28f851a994c195d0a144dafe7c68c77d86d94126aa`. Staged v0.1.2 and installed AIRPLAY02 remain untouched.
-- **Next:** Request separate approval to install v0.1.3 via XMB, which will replace the installed AIRPLAY02 app. Retain v0.1.2 in `/dev_hdd0/packages/ps3-airplay-receiver.pkg` for rollback. Launch/display/tone/START exit/AirPlay remain unverified.
+- **Task:** Diagnose the repeated AIRPLAY02 launch failure and choose the next SDK comparison.
+- **Source:** Branch `docs/v012-preflight-review`, latest pushed commit `4ca1e35` before this hardware result.
+- **Installed build:** AIRPLAY02 v0.1.3; user reports same XMB error `80028F21` as v0.1.2.
+- **Identity/log evidence:** Installed SFO and EBOOT match v0.1.3 package extraction. The 1,817-byte capped log is byte-for-byte unchanged from the earlier run. No new startup event; this does not prove the app failed before `main()`.
+- **Candidate:** v0.1.3 uses the 2020 PSL1GHT runtime. That change did not fix launch. Staged v0.1.2 remains available at `/dev_hdd0/packages/ps3-airplay-receiver.pkg`.
+- **Additional logging defect:** `main.c` still writes `PKG_VERSION_0.1.2` in v0.1.3; correct this before the next package.
+- **SDK alternatives:** Thermal Bench states it uses Sony's official SDK 4.75 in a Windows 7 VM/MSBuild workflow; this requires a licensed environment and a port. Existing Lima has open-source PS3DK, including a native runtime/API distinct from its PSL1GHT front end.
+- **Next:** Build a minimal native PS3DK launch control locally. Check whether the user has an authorized Sony SDK/VM before attempting that route. Do not transfer a new package without separate approval.

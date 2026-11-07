@@ -1,13 +1,13 @@
 # Roadmap
 
-**Status: experimental; v0.1.2 is installed, but XMB launch returns error `80028F21`. A separately built v0.1.3 candidate uses the 2020 PSL1GHT runtime and passes host build/package checks. Its launch behavior on Evilnat CFW is unknown; it has not been transferred or installed.** This roadmap separates build evidence from behavior that still requires a PS3 and an iPhone.
+**Status: experimental; v0.1.3 is installed and XMB launch returns the same `80028F21` error as v0.1.2. Installed SFO and EBOOT match the extracted package, while the diagnostic log is unchanged. The 2020 PSL1GHT runtime did not solve the launch failure.** This roadmap separates build evidence from behavior that still requires a PS3 and an iPhone.
 
 ## Milestones
 
 | Milestone | Goal | Status |
 |---|---|---|
 | Build foundation | Reproducible PPU build and sample PRX structure check | Host/toolchain work complete; hardware compatibility unknown |
-| Standalone audio | Launch the receiver and verify audible output at the system menu | v0.1.2 launch fails with `80028F21`. v0.1.3 legacy-runtime candidate is ready for an approved controlled launch test; earlier five-second tone came from an unidentified build. |
+| Standalone audio | Launch the receiver and verify audible output at the system menu | v0.1.2 and v0.1.3 both fail at XMB with `80028F21`. Earlier five-second tone came from an unidentified build. |
 | AirPlay interoperability | Discover the receiver and complete a real iPhone RAOP session | Earlier iPhone listing followed by connection failure; cause unconfirmed |
 | Standalone playback | Stable playback, controls, reconnects, and a 30-minute session | Not tested |
 | Resident module | Safely load, receive, stop, and unload a diagnostic PRX | Build checks only; no hardware test |
@@ -20,14 +20,15 @@ Portable components cover bounded DNS-SD/mDNS, RTSP/SDP session handling, UDP RT
 
 ## Next steps
 
-1. Request approval to replace the installed AIRPLAY02 app via XMB with the already-staged v0.1.3 candidate, then test whether it launches. Its upload is hash-verified and the v0.1.2 package remains staged for rollback. This candidate is based on an upstream report that modern PSL1GHT runtime builds failed before `main()` on 4.93 HEN while a 2020 runtime build worked; that report does not cover Evilnat CFW, so treat the result as a controlled test, not a proven fix.
-2. If launch succeeds, verify visible display, five-second tone, and START-to-XMB twice. Stop if output is black or normal exit fails.
-3. Try the iPhone once and retrieve the capped log; use accept, method, status, state, SDP, and RTP events to locate the failure before changing capabilities.
-4. Re-test AirPlay audio after display, clean exit, and RTSP/RTP stage evidence are established.
-5. Repeat the receiver loopback test without tracing; this run passed, but the earlier untraced timing-probe stall remains an intermittent host-test concern.
-6. Consider resident PRX lifecycle testing as a separate, reversible experiment.
-7. Test audio coexistence per title only after resident lifecycle and standalone output are established.
-
+1. Add a minimal native PS3DK standalone launch control without PSL1GHT, using the existing Lima toolchain. The current `build-lima-smoke.sh` only validates receiver objects and a PRX sample, so it is not this test. Do not transfer the control without separate approval.
+2. Check whether a licensed Sony PS3 SDK 4.75 installation and its Windows build VM are available. The public Thermal Bench project says it uses that SDK and MSBuild in a Windows 7 VM; this is a separate, proprietary toolchain and not a drop-in replacement.
+3. Fix the hard-coded `PKG_VERSION_0.1.2` startup event so future logs identify the actual package version.
+4. After a build launches, verify visible display, five-second tone, and START-to-XMB twice. Stop if output is black or normal exit fails.
+5. Try the iPhone once and retrieve the capped log; use accept, method, status, state, SDP, and RTP events to locate the failure before changing capabilities.
+6. Re-test AirPlay audio after display, clean exit, and RTSP/RTP stage evidence are established.
+7. Repeat the receiver loopback test without tracing; this run passed, but the earlier untraced timing-probe stall remains an intermittent host-test concern.
+8. Consider resident PRX lifecycle testing as a separate, reversible experiment.
+9. Test audio coexistence per title only after resident lifecycle and standalone output are established.
 ## Explicit boundaries
 
 - A successful build, package inspection, or PRX structural check does not prove hardware compatibility.

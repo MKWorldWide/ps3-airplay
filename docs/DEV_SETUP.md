@@ -6,7 +6,7 @@
 - For the PS3DK PRX path, use the Linux x86_64 host tools and SDK version documented by the relevant build script or upstream release.
 - For hardware validation, use a PS3 development environment with a tested recovery method.
 
-Toolchain installation details change over time. Follow the upstream [ps3dev](https://github.com/ps3dev/ps3dev), [ps3toolchain](https://github.com/ps3dev/ps3toolchain), [PSL1GHT](https://github.com/ps3dev/PSL1GHT), and [PS3DK](https://github.com/PS3-Homebrew/PS3DK) documentation. Verify published checksums before installing release archives.
+Toolchain installation details change over time. Follow the upstream [ps3dev](https://github.com/ps3dev/ps3dev), [ps3toolchain](https://github.com/ps3dev/ps3toolchain), [PSL1GHT](https://github.com/ps3dev/PSL1GHT), and [PS3DK](https://github.com/FirebirdTA01/PS3DK) documentation. Verify published checksums before installing release archives.
 
 ## Build environment variables
 
@@ -34,3 +34,4 @@ The standalone receiver sources are under `prototype/standalone-receiver`. The e
 Keep these claims separate: host test, cross-compilation, package/container inspection, PS3 load/start/stop/unload, iPhone discovery/session, and audible output. Record only the evidence actually observed in the [test matrix](TEST_MATRIX.md).
 
 Before any hardware test, review [risks and safety gates](RISKS.md). Do not modify boot plugin settings without a tested recovery procedure and an explicit, reviewed test plan.
+For an alternative reference, [Thermal Bench](https://github.com/mohasi/ps3-dev) states that it builds with Sony's official PS3 SDK 4.75 in a Windows 7 VM through MSBuild. That proprietary SDK is not bundled as a dependency here; use this route only with a properly licensed installation. It is not a drop-in replacement: the receiver's GameOS audio, network, RSX, and package adapters need a separate port and validation. The open-source PS3DK also has a native runtime/API path distinct from its PSL1GHT front end; a minimal native launch control is the lower-friction next comparison in the existing Lima VM.
