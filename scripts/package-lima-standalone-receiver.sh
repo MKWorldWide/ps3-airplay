@@ -2,15 +2,16 @@
 set -euo pipefail
 
 : "${PS3DK_SOURCE:?Set PS3DK_SOURCE to the PS3DK v0.27.0 source tree}"
-: "${PS3DEV:?Set PS3DEV to the same legacy PS3DEV bundle used to build the receiver ELF}"
+: "${PS3DEV:?Set PS3DEV to a PSL1GHT-compatible PS3DEV tree for SFO/icon assets}"
 PROJECT_ROOT="${PROJECT_ROOT:-$(pwd)}"
 PS3DK_TOOLS="${PS3DK_TOOLS:-$HOME/ps3-airplay-host/ps3-sdk-tools-v0.27.0-linux-x86_64/bin}"
 SELF_TOOL="${SELF_TOOL:-$PS3DK_TOOLS/make_self_npdrm}"
 PKG_TOOL="${PKG_TOOL:-$PS3DK_TOOLS/pkg}"
+PACKAGE_FINALIZE="${PACKAGE_FINALIZE:-$PS3DK_TOOLS/package_finalize}"
 ELF="${ELF:-$PROJECT_ROOT/build/lima-standalone-receiver/ps3-airplay-receiver.elf}"
 OUT_DIR="${OUT_DIR:-$PROJECT_ROOT/build/lima-standalone-package}"
 APPID=AIRPLAY02
-APP_VERSION="${APP_VERSION:-0.1.6}"
+APP_VERSION="${APP_VERSION:-0.1.7}"
 CONTENTID="UP0001-${APPID}_00-0000000000000000"
 STAGE="$OUT_DIR/$CONTENTID"
 EXTRACT="$OUT_DIR/extracted"
@@ -18,7 +19,7 @@ PACKAGE="$OUT_DIR/ps3-airplay-receiver-${APP_VERSION}.pkg"
 ICON0="$PS3DEV/bin/ICON0.PNG"
 BACKGROUND_RGB="${BACKGROUND_RGB:-$PROJECT_ROOT/build/diagnostic-background.rgb}"
 
-for tool in "$SELF_TOOL" "$PKG_TOOL" "$PS3DEV/bin/sfo"; do
+for tool in "$SELF_TOOL" "$PKG_TOOL" "$PACKAGE_FINALIZE" "$PS3DEV/bin/sfo"; do
 	if [[ ! -x "$tool" ]]; then
 		echo "Missing executable: $tool" >&2
 		exit 1
@@ -29,13 +30,23 @@ if [[ ! -f "$ELF" || ! -f "$PS3DEV/bin/sfo.xml" || ! -f "$ICON0" ||
 	echo "Build the standalone ELF and RGB background, and provide the PSL1GHT SFO template and default icon first" >&2
 	exit 1
 fi
+if [[ -e "$PACKAGE" ]]; then
+	echo "Refusing to overwrite existing versioned package: $PACKAGE" >&2
+	exit 1
+fi
+UNFINALIZED_PACKAGE="$PACKAGE.gnpdrm.pkg"
+if [[ -e "$UNFINALIZED_PACKAGE" ]]; then
+	echo "Refusing to overwrite existing intermediate package: $UNFINALIZED_PACKAGE" >&2
+	exit 1
+fi
 if [[ "$(wc -c < "$BACKGROUND_RGB")" -ne $((1280 * 720 * 3)) ]]; then
 	echo "Background RGB asset must be 1280x720 packed RGB" >&2
 	exit 1
 fi
 
+python3 "$PROJECT_ROOT/scripts/validate-ps3-elf.py" "$ELF"
+
 rm -rf "$STAGE" "$EXTRACT"
-rm -f "$PACKAGE"
 mkdir -p "$STAGE/USRDIR" "$EXTRACT"
 cp "$ICON0" "$STAGE/ICON0.PNG"
 cp "$BACKGROUND_RGB" "$STAGE/USRDIR/background.rgb"
@@ -45,7 +56,9 @@ sed "s/01\.00/${APP_VERSION}/g" "$PS3DEV/bin/sfo.xml" > "$OUT_DIR/sfo.xml"
 	"$CONTENTID"
 "$PS3DEV/bin/sfo" --title='PS3 AirPlay' --appid="$APPID" \
 	--fromxml "$OUT_DIR/sfo.xml" "$STAGE/PARAM.SFO"
-"$PKG_TOOL" --contentid="$CONTENTID" "$STAGE" "$PACKAGE"
+"$PKG_TOOL" --contentid="$CONTENTID" "$STAGE" "$UNFINALIZED_PACKAGE"
+"$PACKAGE_FINALIZE" "$UNFINALIZED_PACKAGE"
+mv "$UNFINALIZED_PACKAGE" "$PACKAGE"
 
 (
 	cd "$EXTRACT"

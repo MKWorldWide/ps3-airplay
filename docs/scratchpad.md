@@ -1,6 +1,6 @@
 # Active work
 
-- **Current task:** Add the streamlined privacy-review procedure to global and project contribution instructions.
-- **Done:** The private global instructions and project `CONTRIBUTING.md` require one concise, mostly automated pass over the full staged diff and exact changed files, followed by manual review of matches. Routine findings should be sanitized automatically and rescanned; only unsafe-to-resolve content stays out of the commit. The global instruction file remains outside the repository.
-- **Commit gate:** Run `git diff --cached --check`, available secret scanners, targeted private-data searches, and manual review. Note unavailable scanners. Remediate routine findings without asking the user; report only narrow blockers that require judgment.
-- **Next project work:** Resume AIRPLAY02 loader diagnosis from v0.1.6. RPCS3 still rejects the ELF type before application startup; compare SELF inner ELF headers with a known booting artifact before building v0.1.7.
+- **Current task:** Produce and RPCS3-test AIRPLAY02 v0.1.7 using the recovered PS3DK/Lima pipeline.
+- **Verified:** v01.01 reference ELF and fresh PS3DK ELF share the expected PS3 executable and `PT_LOAD` layout; legacy v0.1.6 fails the layout gate. Host protocol/audio/log suite and PPU object checks passed in Lima.
+- **In progress:** Commit pipeline scripts and docs. Then rebuild from that exact commit with `SOURCE_REVISION`, package v0.1.7 using PSL1GHT finalization and extraction checks, install and launch in RPCS3, and inspect a fresh emulator log.
+- **Boundary:** Do not deploy to physical console or modify boot plugins. RPCS3 evidence is not hardware evidence. No AirPlay playback claim until the iPhone connects and streamed audio is heard.

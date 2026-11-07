@@ -6,7 +6,7 @@ An open source AirPlay 1 (RAOP) receiver project for PlayStation 3 homebrew, dev
 
 ## Project status
 
-This is experimental software. The maintainer reports an earlier AIRPLAY02 launch and five-second diagnostic tone, but the exact package identity is unknown. Later PS3 installs of AIRPLAY02 v0.1.2 and v0.1.3 returned XMB error `80028F21`. RPCS3 rejected local v0.1.4 and v0.1.5 candidates before app startup; v0.1.6 corrects the PPU OS/ABI marker but RPCS3 still rejects its ELF type. No current candidate has reached app logging in RPCS3, and no recent package was installed on the console. Visible output, clean exit, iPhone connection, and AirPlay music remain unverified. See the [roadmap](docs/ROADMAP.md) and [versioning policy](docs/VERSIONING.md).
+This is experimental software. The maintainer reports an earlier AIRPLAY02 launch and five-second diagnostic tone, but the exact package identity is unknown. Later PS3 installs of AIRPLAY02 v0.1.2 and v0.1.3 returned XMB error `80028F21`. RPCS3 rejected local v0.1.4–v0.1.6 candidates before app startup. The v01.01 reference and a fresh PS3DK-linked candidate share the expected CellOS ELF layout, while v0.1.6's legacy-linker ELF does not; whether this explains the RPCS3 error remains unproven. The corrected pipeline is documented in [Build Pipeline](docs/BUILD_PIPELINE.md); v0.1.7 has not yet passed its RPCS3 launch gate. Visible output, clean exit, iPhone connection, and AirPlay music remain unverified. See the [roadmap](docs/ROADMAP.md) and [versioning policy](docs/VERSIONING.md).
 
 The resident PRX currently receives and decodes supported audio packets for diagnostics; it does not output PCM. Game audio coexistence is a separate feasibility question. No universal in-game mixing capability is claimed.
 
@@ -24,6 +24,7 @@ The resident PRX currently receives and decodes supported audio packets for diag
 - [Documentation index](docs/README.md)
 - [Architecture and project boundaries](docs/ARCHITECTURE.md)
 - [Development setup](docs/DEV_SETUP.md)
+- [Standalone build and package pipeline](docs/BUILD_PIPELINE.md)
 - [Roadmap](docs/ROADMAP.md)
 - [Test matrix](docs/TEST_MATRIX.md)
 - [Risks and safety gates](docs/RISKS.md)

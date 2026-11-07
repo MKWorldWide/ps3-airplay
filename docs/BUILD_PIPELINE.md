@@ -1,0 +1,36 @@
+# Standalone PS3 build and package pipeline
+
+## Canonical path
+
+Use the existing x86_64 Lima guest with the pinned PS3DK v0.27.0 PPU toolchain, the recorded PSL1GHT checkout, and the matching Mbed TLS PPU library. The legacy GCC 7.2/binutils 2.22 script is an ABI comparison experiment only; it is not the release build path.
+
+The v01.01 reference decrypted by RPCS3 is an ELF64 big-endian PPC64 `ET_EXEC`, CellOS OSABI `0x66`, entry `0x10000000`. Its first four `PT_LOAD` flags are `0x400005`, `0x600006`, `0x400004`, `0x600006`, followed by the PS3-specific zero-sized segment. The v0.1.6 legacy-linker ELF had the generic first flags `0x5` and `0x6`. Their shared layout is evidence that the PS3DK path preserves the old artifact's executable contract; it does not prove the complete v01.01 build or runtime is reproducible.
+
+The release path is:
+
+1. Run `scripts/build-lima-crypto.sh` for portable protocol/audio tests and PPU object checks.
+2. Export the pinned toolchain paths, exact source revision, and next unused `APP_VERSION`.
+3. Run `scripts/build-lima-standalone-receiver.sh`. It builds Mbed TLS, clean-builds the receiver, and validates the resulting ELF against the v01.01 ABI/layout reference. It emits a build manifest with the source revision, compiler/linker versions, PSL1GHT revision, and ELF hash.
+4. Run `scripts/package-lima-standalone-receiver.sh`. It verifies the ELF again, creates the NPDRM SELF and matching SFO/content ID, builds the package under a relative content-ID directory, runs PSL1GHT's package finalization step, extracts the result, and compares the installed assets and EBOOT bytes. It refuses to overwrite a versioned package or intermediate.
+5. Install and launch only in RPCS3 for the first gate. Keep physical console deployment separate and require the established recovery procedure and user authorization.
+
+Example, with paths adjusted to the local Lima guest:
+
+```sh
+export PS3DK_SOURCE="$HOME/ps3-airplay-host/ps3-sdk-src-v0.27.0"
+export PS3DEV="$PS3DK_SOURCE/stage/ps3dev"
+export SOURCE_REVISION="<full SHA of the exact source commit copied into Lima>"
+export APP_VERSION=0.1.7
+bash scripts/build-lima-crypto.sh
+bash scripts/build-lima-standalone-receiver.sh
+bash scripts/package-lima-standalone-receiver.sh
+```
+
+Keep the generated package, build manifest, and test logs outside Git. Record package SHA-256, size, source revision, and emulator outcome in a sanitized report. Never treat matching ELF headers or package extraction as proof of PS3 launch, visible display, AirPlay connection, or audible music.
+
+## Current evidence and limits
+
+- The preserved AIRPLAY02 v01.01 package and the modern PS3DK candidate share the validated ELF header and PS3 `PT_LOAD` flag pattern; they are not byte-identical.
+- The v0.1.6 legacy runtime build fails the new layout validator, directly exposing a real ABI/layout regression in that path. This discrepancy is not yet proven to be the sole reason RPCS3 rejected v0.1.6.
+- The PS3DK PPU compiler is GCC 16.1.0 in the current Lima toolchain; compiler and linker versions are captured per build.
+- RPCS3 is the next executable-loader gate. Physical PS3, display, clean exit, iPhone RAOP, and streamed-audio results remain separate tests.

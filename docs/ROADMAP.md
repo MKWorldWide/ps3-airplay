@@ -1,12 +1,12 @@
 # Roadmap
 
-**Status: experimental; the maintainer reports one earlier AIRPLAY02 startup and five-second tone, but the exact package identity is unknown. AIRPLAY02 v0.1.2 and v0.1.3 later returned XMB error `80028F21`; AIRTEST01 v0.1.0 is parked. RPCS3 rejects v0.1.4, v0.1.5, and v0.1.6 before application startup. v0.1.5 corrected package entry paths and exposed an incompatible ELF OS/ABI; v0.1.6 patches the PS3 LV2 OS/ABI but still fails RPCS3 ELF loading. None of these tests establishes display output, a fresh app log, AirPlay connection, or audio playback.** See [versioning policy](VERSIONING.md).
+**Status: experimental; the maintainer reports one earlier AIRPLAY02 startup and five-second tone, but the exact package identity is unknown. AIRPLAY02 v0.1.2 and v0.1.3 later returned XMB error `80028F21`; AIRTEST01 v0.1.0 is parked. RPCS3 rejects v0.1.4, v0.1.5, and v0.1.6 before application startup. A fresh PS3DK build matches the v01.01 reference's ELF ABI and PS3 segment layout; this is the recovered build path, but its v0.1.7 package still needs an RPCS3 launch result.** See [build pipeline](BUILD_PIPELINE.md) and [versioning policy](VERSIONING.md).
 
 ## Milestones
 
 | Milestone | Goal | Status |
 |---|---|---|
-| Build foundation | Reproducible PPU build and sample PRX structure check | Host/toolchain work complete; hardware compatibility unknown |
+| Build foundation | Reproducible PPU build and package pipeline aligned to known v01.01 artifact | ELF validator and canonical PS3DK/Lima pipeline added; v0.1.7 package/emulator check pending; hardware compatibility unknown |
 | Standalone audio | Launch the receiver and verify audible output at the system menu | Earlier AIRPLAY02 run reached startup and tone per maintainer; exact build unknown. v0.1.2/v0.1.3 and separate AIRTEST01 v0.1.0 returned `80028F21`; RPCS3 rejects current v0.1.4–v0.1.6 before app startup. |
 | Diagnostic application | Reliable launch/exit, logs, basic settings and diagnostic toggles | Target for v0.2.0; not achieved |
 | Stable AirPlay audio | Discovery, connection, streamed audio, controls, reconnect, and sustained playback on PS3/iPhone | Target for v0.3.0; not achieved |
@@ -23,7 +23,7 @@ Portable components cover bounded DNS-SD/mDNS, RTSP/SDP session handling, UDP RT
 ## Next steps
 
 1. Keep AIRTEST01 parked; do not use it as a substitute for the receiver.
-2. Compare the inner ELF/SELF type and sections from a known launching package against the current PS3DK output. v0.1.6 has the required `EI_OSABI=0x66` byte but RPCS3 still reports an invalid executable type; the exact remaining loader incompatibility is unresolved.
+2. Build v0.1.7 from the committed PS3DK/Lima pipeline and test it in RPCS3. The v01.01 and v0.1.7 candidate ELF layout now match on OSABI, executable type, entry point, and PS3-specific program-header flags; exact binary equality is not expected because source differs.
 3. Before hardware deployment, bound the display's unbounded RSX waits and make sure controller exit remains available if graphics setup stalls.
 4. Once a receiver build is safe to test, the maintainer's standing authorization allows package staging/installation without another approval request. First verify one launch, visible output, tone, and START-to-XMB; stop if launch or clean exit fails.
 5. Retrieve a fresh log tied to the exact package. Attempt one iPhone connection and follow accept, RTSP method/status, session, SDP, and RTP stages.

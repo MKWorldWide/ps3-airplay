@@ -1,5 +1,12 @@
 # Lessons learned
 
+## Preserve PS3-specific program headers from the known working build
+
+- **Problem:** RPCS3 rejected v0.1.6 before application startup even though its ELF OS/ABI byte had been corrected to CellOS.
+- **Root Cause:** The legacy GCC/binutils path produced generic initial load-segment flags (`0x5`, `0x6`) and a different memory layout than the decrypted v01.01 reference. This structural regression is verified; whether it alone caused RPCS3's error remains unproven.
+- **Fix:** Make the PS3DK v0.27.0 PPU/Lima path canonical and validate the inner ELF header and PS3-specific load flags before packaging. Keep the legacy path for comparison only.
+- **Prevention Rule:** Never use successful compilation or an OS/ABI byte patch as the release gate. Compare executable and program-header structure against the known-good artifact, then verify package install and application launch separately.
+
 ## Keep commit privacy checks brief and complete
 
 - **Problem:** Repeating broad manual review made routine commits slow and token-heavy; stopping at the first privacy match also added avoidable human intervention.

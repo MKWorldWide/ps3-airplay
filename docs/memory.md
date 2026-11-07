@@ -58,6 +58,15 @@ Host tests cover portable protocol, crypto, codec, PCM, and discovery components
 
 Demonstration target: PS3 with Evilnat 4.93 CFW and Cobra 8.5 observed; the console model was not recorded. Hardware compatibility remains unverified.
 
+## Build pipeline recovery (2026-11-07)
+
+- Preserve `work/reference/AIRPLAY02-v01.01-original.pkg` and its RPCS3-decrypted ELF as known-good comparison inputs. The user reports v01.01 ran and played audio on PS3; that is user-observed evidence, not independently repeated here.
+- Canonical standalone path is the pinned PS3DK v0.27.0 PPU toolchain in Lima plus the recorded PSL1GHT checkout and Mbed TLS PPU library. The legacy GCC 7.2/binutils 2.22 route is comparison-only.
+- The decrypted v01.01 ELF and fresh PS3DK-linked ELF share ELF64 big-endian PPC64, CellOS OSABI `0x66`, `ET_EXEC`, entry `0x10000000`, and initial `PT_LOAD` flags `0x400005`, `0x600006`, `0x400004`, `0x600006`. The legacy-linked v0.1.6 ELF instead has generic `0x5`/`0x6` flags and a different memory layout. This is a verified toolchain output regression; it does not prove the exact cause of RPCS3's invalid-type message.
+- `scripts/validate-ps3-elf.py` gates the canonical build and package scripts on the reference layout. Packaging uses matching NPDRM content ID/SFO identity, PSL1GHT `package_finalize`, extraction, and byte comparisons, and refuses version overwrite.
+- Current host validation passed protocol crypto/session/SDP/mDNS, RTSP/RTP loopback, capped logging, ALAC reference decoding, PCM ring/resampling, diagnostic tone, and PPU object checks. The PS3DK ELF validated; v0.1.7 still needs packaging and RPCS3 launch before runtime claims.
+- Host/emulator evidence does not establish PS3 display, clean exit, iPhone connection, or audible AirPlay audio. Game-audio coexistence remains a separate Cobra `.sprx` feasibility gate.
+
 ## Invariants
 
 - Keep protocol inputs, sessions, queues, and logs bounded.

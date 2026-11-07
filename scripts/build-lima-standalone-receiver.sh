@@ -14,7 +14,13 @@ MBEDTLS_INCLUDE="$MBEDTLS_SOURCE/include"
 MBEDTLS_CRYPTO_LIBRARY="$MBEDTLS_PPU_BUILD/library/libmbedcrypto.a"
 OUTPUT_DIR="$PROJECT_ROOT/build/lima-standalone-receiver"
 JOBS="${JOBS:-2}"
-APP_VERSION="${APP_VERSION:-0.1.6}"
+APP_VERSION="${APP_VERSION:-0.1.7}"
+PROJECT_REV="$(git -C "$PROJECT_ROOT" rev-parse HEAD 2>/dev/null || true)"
+SOURCE_REVISION="${SOURCE_REVISION:-$PROJECT_REV}"
+if [[ ! "$SOURCE_REVISION" =~ ^[0-9a-f]{7,40}$ ]]; then
+	echo "Set SOURCE_REVISION to the exact source commit being built" >&2
+	exit 1
+fi
 
 export PS3DEV PS3DK PSL1GHT MBEDTLS_INCLUDE MBEDTLS_CRYPTO_LIBRARY
 export PATH="$PS3DEV/bin:$PS3DEV/ppu/bin:$PATH"
@@ -33,4 +39,17 @@ mkdir -p "$OUTPUT_DIR"
 install -m 0644 \
 	"$PROJECT_ROOT/prototype/standalone-receiver/ps3-airplay-receiver.elf" \
 	"$OUTPUT_DIR/ps3-airplay-receiver.elf"
+python3 "$PROJECT_ROOT/scripts/validate-ps3-elf.py" \
+	"$OUTPUT_DIR/ps3-airplay-receiver.elf"
+PSL1GHT_REV="$(git -C "$PSL1GHT" rev-parse HEAD 2>/dev/null || printf 'unavailable')"
+{
+	printf 'pipeline=PS3DK-v0.27.0-PPU + PSL1GHT\n'
+	printf 'app_version=%s\n' "$APP_VERSION"
+	printf 'project_revision=%s\n' "$SOURCE_REVISION"
+	printf 'psl1ght_revision=%s\n' "$PSL1GHT_REV"
+	printf 'ppu_compiler='; powerpc64-ps3-elf-gcc -dumpfullversion
+	printf 'ppu_linker='; "$PS3DEV/ppu/bin/ppu-ld" --version | sed -n '1p'
+	printf 'elf_sha256='; sha256sum "$OUTPUT_DIR/ps3-airplay-receiver.elf" | awk '{print $1}'
+} > "$OUTPUT_DIR/build-info.txt"
+cat "$OUTPUT_DIR/build-info.txt"
 sha256sum "$OUTPUT_DIR/ps3-airplay-receiver.elf"

@@ -1,5 +1,9 @@
 # Development setup
 
+## Standalone release builds
+
+Use the pinned PS3DK/Lima path documented in [BUILD_PIPELINE.md](BUILD_PIPELINE.md). The legacy runtime build is comparison-only and must not produce release packages. Build tooling validates the inner ELF against the preserved v01.01 executable layout before packaging.
+
 ## Requirements
 
 - Git, Make, Python 3, and a PS3 PPU cross-compiler/SDK.
