@@ -437,3 +437,10 @@ Display candidate restores the standard GPU-side wait-flip command ordering afte
 - v0.2.6 candidate builds through the existing release pipeline; no console deployment in this implementation pass.
 
 - v0.2.6 exact source `bca0f94901acdd7eb97f3b824e372f53beee7ee3` passed the full release gate including encrypted 1,416-byte reference and presenter mocks. PKG 3,233,072 bytes; SHA-256 `472915766a1b950f44558259a3583b5931c0bb3f8d3a8b0e5f1a044715927ca6`. Built/local only; physical resume and audio comparison pending.
+
+
+## v0.2.6 PS3 installation (2026-11-07)
+
+- Deployed the already validated AIRPLAY02 v0.2.6 / SFO 00.46 package under standing install authorization. Local package is 3,233,072 bytes, SHA-256 `472915766a1b950f44558259a3583b5931c0bb3f8d3a8b0e5f1a044715927ca6`. FTP download-back matched byte-for-byte before installation.
+- Closed the previous v0.2.5 session through webMAN; its final log records `SYSUTIL_EXIT_GAME`, cleanup completion and `APP_STOP`. The private log snapshots remain ignored under the local hardware work directory.
+- After webMAN installation, FTP-read PARAM.SFO reports AIRPLAY02 / 00.46 and the installed EBOOT is 452,592 bytes, matching the package's recorded extracted EBOOT size. The app is installed at XMB and was not launched in this deployment pass. No audio or display-resume result for v0.2.6 is established.
