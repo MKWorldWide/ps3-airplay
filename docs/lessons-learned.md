@@ -548,3 +548,18 @@ The v0.1.31 fresh RPCS3 replay verifies the portable-arithmetic correction: the 
 - **Root Cause:** Not established. The receiver log records status 200 only after its `send_all` routine returns success; this shows the server-side send path completed, but does not establish bytes reached or were parsed by the client.
 - **Fix:** Preserve both observations, inspect response framing/socket lifecycle and repeat with a client that records received bytes and close timing. Do not infer full RAOP connection from discovery, TCP accept, or the server status log.
 - **Prevention Rule:** Correlate client-side wire evidence with receiver-side logs at every protocol boundary.
+
+
+## A remote game-exit request can recover the foreground app cleanly
+
+- **Problem:** User reported controller input and the PS button stopped working during an active AirPlay session.
+- **Root Cause:** The app log only samples controller polling result and pad-port presence; it does not record button masks or transitions. The app's retained heartbeat showed its system-menu-open flag set, but that is not proof the menu was visible or responsive.
+- **Fix:** The webMAN XMB exit command produced `SYSUTIL_EXIT_GAME`, followed by screen/audio/receiver cleanup and `APP_STOP`; read-only status then showed XMB. Add privacy-safe button transition diagnostics to determine whether control samples arrive.
+- **Prevention Rule:** Separate controller API health, controller presence, button state, system-menu callbacks, and application cleanup into distinct logged facts.
+
+## Packet recovery helps but does not equal jitter measurement
+
+- **Problem:** The v0.1.39 stream log showed substantial RTP gaps while also showing retransmission recovery and PCM output.
+- **Root Cause:** Current counters report sequence gaps and recovery results, not packet arrival-time variation or continuous buffer occupancy. Sampling windows differ, and the capped log discarded older data.
+- **Fix:** Preserve the observed gap/recovery/concealment counts as separate counters. Add monotonic RTP inter-arrival jitter, PCM occupancy extrema/starvation duration, and audio scheduling lateness before tuning buffer sizes.
+- **Prevention Rule:** Do not infer jitter or exact unrecovered loss by subtracting counters sampled at different boundaries.

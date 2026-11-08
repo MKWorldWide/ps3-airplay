@@ -1,6 +1,6 @@
 # Roadmap
 
-**Current status (2026-11-07):** Production AIRPLAY02 v0.1.39 / SFO 00.39 was staged, hash-verified, installed, and launched on the physical PS3. The fresh log records application startup, screen/controller initialization, network route, RTSP 5000, RTP 6000–6002, mDNS, audio initialization, and completion of the diagnostic-tone code path. The app was left running. Same-LAN DNS-SD browsing found a RAOP service; target resolution was inconclusive. A bounded TCP OPTIONS probe connected, but the client got EOF while the receiver log recorded a successful 200 response send; this discrepancy needs investigation. No user observation of visible pixels or audible tone, no completed iPhone/RTSP session, RTP reception, decoded stream, Spotify audio, or XMB exit has been recorded for this build. Exact PKG SHA-256: `9f67340331eaae9e5ecbe94adaee03a0201e79e652a6bf45fa14cf6922877840`.
+**Current status (2026-11-07):** Production AIRPLAY02 v0.1.39 / SFO 00.39 was installed and run on the physical PS3. Its retained log reaches encrypted 44.1 kHz RAOP recording, RTP receive/decrypt, ALAC decoding, and PCM submission. Across two logged 512-packet batches, 99 sequence gaps were reported; resend recovery counters show 112 recovered packets and 16 concealed frames across separate sampling windows. The bounded log wrapped, and no underflow or ALAC failure appears in the retained streaming segment. User reports controller/PS input unresponsive. Remote webMAN exit reached SYSUTIL_EXIT_GAME and complete cleanup; read-only status now shows XMB. Visible display and user-audible quality remain human-confirmation gates. The observed run proves the pipeline reached GameOS PCM submission, not the exact sound at HDMI.
 
 ## Milestones
 
@@ -22,11 +22,11 @@ Portable components cover bounded DNS-SD/mDNS, RTSP/SDP session handling, UDP RT
 
 ## Next steps
 
-1. Ask the user to report visible background stability, tone audibility, and whether START/PS returns to XMB without a hang; repeat launch/display/exit twice before calling those gates passed.
-2. Diagnose the OPTIONS client EOF against the receiver's RTSP 200-send log, then retry one controlled iPhone connection while retrieving the fresh log.
-3. If RTSP establishes, inspect RTP gap/recovery/concealment and PCM-underflow counters, then request a brief user-confirmed audio playback test.
-4. Run the v0.1.39 controlled-loss/reordering fixture in RPCS3 when desktop control is available; physical deployment is now independently version-verified.
-5. Defer soak tests, resident PRX work, and game-audio mixing until short playback, XMB resume, and clean exit are stable.
+1. Add low-overhead controller button transition diagnostics (without logging device identifiers), because PAD_HEALTH confirms polling/presence but does not record button state.
+2. Add actual RTP arrival-jitter and PCM queue low/high-water plus starvation-duration metrics; keep the log capped and aggregates privacy-safe.
+3. Review the retained gap/recovery/PCM data and the older v0.1.39 OPTIONS EOF discrepancy before changing audio or network behavior.
+4. Ask the user to confirm display stability and audible quality; then perform one controlled playback/START/XMB test with fresh log collection.
+5. Defer soak tests, resident PRX work, and game-audio mixing until short playback, resume, and clean exit are stable.
 
 ### RTP loss handling and interoperability research (2026-11-07)
 

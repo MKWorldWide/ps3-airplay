@@ -36,9 +36,9 @@ This matrix distinguishes portable host evidence and cross-build evidence from r
 | RPCS3-05 | mDNS advertisement in RPCS3 | FAIL/unsupported boundary; logs report mDNS interface setup error 125. No iPhone discovery test in this run. |
 | PS3-01 | Install and launch production v0.1.39 / SFO 00.39 | PASS by FTP/webMAN; installed SFO verified and webMAN reported AIRPLAY02 00.39 running. |
 | PS3-02 | Startup readiness and diagnostic tone | Startup, screen initialization, controller, network, RTSP/RTP listeners, mDNS, audio, tone-start and tone-complete events present in fresh log. User-visible pixels and audible tone are NOT CONFIRMED. |
-| PS3-03 | Same-LAN discovery and RTSP OPTIONS | DNS-SD browse found a RAOP service. Target resolve inconclusive. TCP 5000 accepted a probe; client received EOF while target logged RTSP status 200 after send_all success. Protocol response discrepancy unresolved; no iPhone session claimed. |
-| PS3-04 | RTP, decryption, ALAC, PCM music and Spotify | NOT TESTED for v0.1.39. No completed session or user-confirmed streamed audio. |
-| PS3-05 | Stable display, START/PS exit, resume, repeated launch | NOT TESTED by user for v0.1.39; app was left running for observation. |
+| PS3-03 | Same-LAN discovery and RTSP session | DNS-SD browse found a RAOP service. v0.1.39 log later reached recording state with encrypted RTP, confirming a session/data path; targeted DNS-SD resolve remains inconclusive. Earlier standalone OPTIONS probe EOF discrepancy remains separate/unresolved. |
+| PS3-04 | RTP, decryption, ALAC and PCM submission | PASS to GameOS PCM block submission in the retained v0.1.39 log. User described AirPlay as working. Acoustic quality/Spotify identity not independently measured in this run. |
+| PS3-05 | Remote exit, controller input and XMB status | webMAN remote exit PASS: SYSUTIL_EXIT_GAME, all resource cleanup, APP_STOP; webMAN status then showed XMB. User reports controller/PS input unresponsive. PAD_HEALTH confirms successful polling and port presence, but button transitions are not logged. Display/resume/relaunch remain NOT TESTED. |
 
 ## v0.1.39 build validation (2026-11-07)
 
@@ -293,3 +293,13 @@ The emitter used a paced diagnostic fixture; target output submission is not pro
 | DEPLOY-39-02 | Install and verify installed title identity | PASS; webMAN install returned success and FTP-read installed SFO reports AIRPLAY02 / 00.39. |
 | DEPLOY-39-03 | Launch and inspect fresh capped log | PASS to startup checkpoints; active app reported by webMAN. Log records tone completion path but does not prove the user heard it or saw a stable screen. |
 | DEPLOY-39-04 | LAN DNS-SD and RTSP OPTIONS probe | PARTIAL; RAOP browse result found. TCP probe connected, receiver logged a sent 200 response, but probe client got EOF. Resolve and client-visible response remain unresolved. |
+
+## v0.1.39 live stream and remote-exit follow-up (2026-11-07)
+
+| ID | Scenario | Result |
+|---|---|---|
+| PS3-06 | Encrypted RTP/ALAC/PCM stream path | PASS to PCM submission: recording state 3, 44.1 kHz stereo, two 512-packet batches; successful decrypt and ALAC frame checkpoints; 240,128 GameOS audio frames submitted in each of two report intervals. Not an HDMI loopback measurement. |
+| PS3-07 | Packet loss and recovery | Two receive batches logged 42 and 57 missing sequence numbers; periodic counters logged 65 and 47 recovered packets, 23 and 30 resend requests, 10 and 6 concealed frames, and zero skips/rejections. Counters are on different sampling boundaries and do not reconcile packet-by-packet. |
+| PS3-08 | PCM/RTP queue and decoder health | RTP queue depth 97 then 93 / 256; PCM ring 12,426 then 12,512 / 16,384 frames. No ALAC failure or PCM underflow event in the retained active-stream window; earlier log was overwritten at cap. |
+| PS3-09 | webMAN remote exit and post-exit check | PASS; HTTP 200 command, SYSUTIL_EXIT_GAME, cleanup through APP_STOP. Repeated FTP log download was byte-identical and read-only webMAN status showed XMB. No reboot or forced power-off. |
+| PS3-10 | Controller button handling | INCONCLUSIVE; PAD_HEALTH reports query success and pad port 0 present, but button masks/transitions are not logged. User reports input unresponsive. |
