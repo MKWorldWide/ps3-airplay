@@ -724,6 +724,13 @@ The v0.1.31 fresh RPCS3 replay verifies the portable-arithmetic correction: the 
 - **Fix:** Define `_POSIX_C_SOURCE=200809L` before any system header for non-PSL1GHT builds; keep the PS3 `sysGetSystemTime()` path unchanged.
 - **Prevention Rule:** Treat the pinned Linux release gate as authoritative for host portability; define feature-test macros at the top of the translation unit before includes.
 
+## Keep device runs and evidence provenance separate
+
+- **Problem:** A healthy short hardware log can be mistaken for a stable playback or display acceptance result, and metrics from different consoles/runs can be blended.
+- **Root Cause:** Logs report receiver code-path counters, not listener perception or visible XMB behavior; separate test units and reconnect sessions have different histories.
+- **Fix:** Record unit role, exact package/source identity, duration, acquisition provenance, and observable boundaries. Keep raw logs private and summarize hardware counters separately from user-confirmed sound/display results.
+- **Prevention Rule:** A stable-release claim needs repeatable hardware behavior, direct human audio/display confirmation, and the required duration; counters are supporting evidence, never a substitute.
+
 ## Separate project payload manifests from volatile Git metadata
 
 - **Problem:** A post-copy full-tree comparison reported changes after normal commits, despite all source and ignored project files being preserved.

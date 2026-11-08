@@ -6,7 +6,7 @@ An open source AirPlay 1 (RAOP) receiver project for PlayStation 3 homebrew, dev
 
 ## Project status
 
-This is experimental software. The maintainer reports an earlier AIRPLAY02 launch and five-second diagnostic tone, but the exact package identity is unknown. Later PS3 installs of AIRPLAY02 v0.1.2 and v0.1.3 returned XMB error `80028F21`. RPCS3 rejected local v0.1.4–v0.1.6 candidates before app startup. A v0.1.7 package built with the recovered PS3DK/Lima pipeline installed and reached `APP_START` in RPCS3, then exited after RTSP bind error 112. The emulator's network state was disconnected during the test; whether that caused the bind failure is unconfirmed. The corrected pipeline is documented in [Build Pipeline](docs/BUILD_PIPELINE.md). Visible output, clean exit, iPhone connection, and AirPlay music remain unverified. See the [roadmap](docs/ROADMAP.md) and [versioning policy](docs/VERSIONING.md).
+This is experimental software. AIRPLAY02 v0.2.8 / SFO `00.48` passed the host/PPU/package gate and was installed on the development PS3 with its transferred package and installed metadata verified. A user-supplied summary of a 10m41s run reports active RTP and PCM processing, with all 17 reported missing-packet observations recovered and no logged queue drops, concealment/skips, PCM underflows, or ALAC failures. These counters do not establish uninterrupted audible quality. Visible display, PS-menu resume, clean exit, repeat reconnects, and a 30-minute user-confirmed playback run remain open. See the [roadmap](docs/ROADMAP.md), [public release plan](docs/PUBLIC_RELEASE_PLAN.md), [test matrix](docs/TEST_MATRIX.md), and [versioning policy](docs/VERSIONING.md).
 
 The resident PRX currently receives and decodes supported audio packets for diagnostics; it does not output PCM. Game audio coexistence is a separate feasibility question. No universal in-game mixing capability is claimed.
 
@@ -26,6 +26,7 @@ The resident PRX currently receives and decodes supported audio packets for diag
 - [Development setup](docs/DEV_SETUP.md)
 - [Standalone build and package pipeline](docs/BUILD_PIPELINE.md)
 - [Roadmap](docs/ROADMAP.md)
+- [Public stable release and feature plan](docs/PUBLIC_RELEASE_PLAN.md)
 - [Test matrix](docs/TEST_MATRIX.md)
 - [Risks and safety gates](docs/RISKS.md)
 - [Third-party notices](THIRD_PARTY_NOTICES.md)

@@ -5,7 +5,7 @@
 **Candidate:** v0.2.8 / SFO `00.48`; XMB title `AIR PS3`; RAOP friendly suffix `AirPS3`
 
 **Status:** exact-source Linux release gate passed; candidate package retained locally
-**Hardware:** no PS3 was accessed, installed, restarted, or modified for this candidate.
+**Hardware status:** package installation on the development unit and a later 10m41s stream-log summary are recorded below. The source/build pass itself did not make system changes. The primary test unit was not touched in this documentation update.
 
 ## Forensic input and confidence
 
@@ -58,11 +58,20 @@ The first exact-source Lima gate completed protocol/audio and PPU component chec
 | Host RTP queue delay/recovery test | PASS |
 | Mac host forensic/regression script | PASS; Linux-only resend-policy reproduction skipped on macOS |
 | Exact PS3 PPU and package gate | PASS on pinned Lima source `9f7af00`; local artifact hashes and extracted assets independently verified |
-| Installed version / physical display / START exit | Not tested |
-| AirPlay discovery and RTSP | Not tested |
-| RTP reception, decryption, ALAC, PCM output | Not tested |
-| Audible music / 30-minute stability | Not tested |
+| Installed version identity | PASS: FTP download-back matched package; installed SFO/EBOOT matched package installation payload |
+| Physical display / PS-menu resume / START exit | Not established by the supplied v0.2.8 log summary; it has no menu/resume events |
+| AirPlay discovery and RTSP | PARTIAL: active stream summary and 330 OPTIONS/200; one setup; detailed stage boundary must be interpreted from fresh logs |
+| RTP reception / decryption / ALAC / PCM counters | PASS to reported active-stream counters: 69,632 RTP packets; 17 gaps all recovered; zero reported queue drops/concealment/skips/PCM underflows/ALAC failures |
+| Audible music quality / 30-minute stability | Not established by the summarized log; 10m41s is shorter than the target and requires user listening confirmation |
+
+## Development-unit v0.2.8 hardware log summary
+
+The following is transcribed from the user's supplied sanitized summary of a read-only FTP log capture; the raw log is not committed. The active stream spans 07:05:05Z–07:15:46Z (10m41s). The summary reports 69,632 received RTP packets, 17 missing-packet observations all recovered, no queue drops, concealed/skipped frames, PCM underflows, or ALAC failures; RTP queue depth 79–102/256; PCM occupancy 12,056–12,635/16,384; maximum audio-service interval 15.33 ms; maximum render time 1.754 ms; 330 RTSP OPTIONS responses with status 200; one stream setup; 18 AirPlay volume updates; and one FLUSH.
+
+Repeated rejected RTP timing-packet diagnostics and one accepted timing reply remain to investigate. The summary reports no audio loss alongside them. It contains no XMB menu-open/close or resume events, so it says nothing about display appearance or VSH composition. The packet, queue, and PCM metrics are diagnostic counters; no independent listening measurement is attached to this capture.
+
+Keep these prior v0.2.7 comparisons separate from the v0.2.8 development-unit sample: the development-unit 30-minute run reported 26,814 PCM underflow frames, maximum service interval 35.842 ms, and queue occupancy averaging about 136/256 with peak 177. A different primary test unit's later 17m05s run after AirPlay reconnection reported no queue drops, concealment, underflows, or ALAC failures and 16.79 ms maximum service interval. That primary unit also had an earlier ~5.44-second RTSP/audio-service stall with full RTP queue, drops, concealment, and PCM underflows; a newly started AirPlay session restored operation, but the cause and within-session recovery remain unproven.
 
 ## Rollback and next actions
 
-Keep the v0.2.7 artifact and `baseline-v0.2.7` tag untouched. The v0.2.8 candidate is retained locally under ignored `work/builds/0.2.8/`; it was not installed, launched, transferred, or tested in RPCS3 or on a physical console. A later hardware pass must verify XMB title/art, visible/responsive display, START exit, one AirPlay connection, a fresh verbose log, and audible audio. If queue resync occurs, check its count and time to stable occupancy; if the logger queue overruns or writer fails, preserve the exact log tail and avoid claiming complete instrumentation.
+Keep the v0.2.7 artifact and `baseline-v0.2.7` tag untouched. v0.2.8 is installed on the development unit and the summarized log shows active receiver traffic, but it has not met stable-release criteria. Next hardware pass: confirm exact visible XMB/app artwork, PS-menu open/close/resume twice, START exit, user-audible playback, and then a 30-minute run with fresh log retrieval. If queue resync occurs, measure its count and time to stable occupancy; if the logger queue overruns or writer fails, preserve the exact private log tail and avoid claiming complete instrumentation.

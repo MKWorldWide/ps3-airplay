@@ -2,7 +2,7 @@
 
 AIRPLAY02 follows conservative pre-1.0 versioning. Increment the patch number for each distinct fix or small improvement that produces a new package: `0.1.4`, `0.1.5`, `0.1.6`, and so on. Never reuse a published or tested version number for different package contents. Record the exact package hash beside every result.
 
-**Latest hardware-tested package:** AIRPLAY02 `0.2.4`, SFO `00.44`, built from `f870d823f15398691a6a38e6393f8d1376161bee`. PKG size 3,231,984 bytes; SHA-256 `a27d5c7b5d2d84f12fbb82ee4e164b9b50ccc825b5104b9b749f053d72a42bf7`. Installed SFO and EBOOT match the validated package. The user confirms PS opens the menu, START exits to XMB, and streamed AirPlay music works; resuming leaves a dim screen/frozen loading icon and short audio stutters remain. The 16 KiB run cap was reached in about 37 seconds.
+**Latest installed and log-tested package:** AIRPLAY02 `0.2.8`, SFO `00.48`, source `9f7af0027b7c3e9470a1583bbfbf676f9525f72d`. PKG size 3,906,640 bytes; SHA-256 `e70d957de4a0fe2b0f8a7bd3a87f63cabaab2f12726e6341508a5f9b8c5de383`. FTP download-back and installed SFO/EBOOT match the validated package payload. A user-supplied development-unit log summary covers 10m41s and reports 69,632 RTP packets, 17 missing observations all recovered, and no queue drops, concealment/skips, PCM underflows, or ALAC failures. This is shorter than the 30-minute target and does not establish audible quality or display/resume behavior. See `docs/PUBLIC_RELEASE_PLAN.md` for evidence boundaries and next gates.
 
 **Known-safe functional baseline:** AIRPLAY02 `0.2.4` / SFO `00.44`. User confirms PS opens the system menu, START exits cleanly to XMB, and AirPlay streams music. Resume returns with a dimmed screen and frozen loading indicator; brief audio stutters remain. The 16 KiB per-launch diagnostic cap was reached about 37 seconds into the observed active-stream session. This is a functional rollback baseline, not a quality/stability release.
 
@@ -298,5 +298,6 @@ Exact source `bca0f94901acdd7eb97f3b824e372f53beee7ee3`; full release gate PASS,
 - XMB title: `AIR PS3`. RAOP instance display suffix: `AirPS3`.
 - Approved supplied image is stored as a metadata-free lossless RGB pixel source, with 320x176 `ICON0.PNG`, 1920x1080 `PIC1.PNG`, and the in-app RGB background generated from it.
 - Source changes add a fixed SPSC log queue with a low-priority writer, separated RTSP stage timing, and conditional RTP live-edge recovery after full-queue >128-packet lag.
-- Source revision, exact artifact size/hash, toolchain, and full host/PPU/package gate results are recorded in `docs/reports/air_ps3_v028_reliability_branding.md` after build.
-- Candidate only: no console installation or hardware result is implied by build/package validation.
+- Source revision `9f7af0027b7c3e9470a1583bbfbf676f9525f72d`; exact artifact size/hash, toolchain, and full host/PPU/package gate results are in `docs/reports/air_ps3_v028_reliability_branding.md`.
+- Installed on the development unit; FTP download-back and installed SFO/EBOOT matched the validated package payload.
+- The summarized 10m41s log reports active stream telemetry with recovered packet gaps and no reported decode/PCM/queue errors. Audible quality, display/resume, clean exit, repeat runs, and a 30-minute session remain unverified. This is not a stable-release claim.

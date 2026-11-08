@@ -419,6 +419,10 @@ The emitter used a paced diagnostic fixture; target output submission is not pro
 | Check | Result | Boundary |
 |---|---|---|
 | RTP live-edge resynchronization and discontinuity recovery | PASS on host sanitizer tests | Synthetic queue/socket backlog; PS3 scheduler and acoustic recovery remain untested. |
-| Exact-source Lima release gate | PASS on corrected source `9f7af0027b7c3e9470a1583bbfbf676f9525f72d`; host sanitizer/forensic, protocol/audio, PPU app, ELF, package and SFO checks passed. | Lima Ubuntu 24.04 x86_64 guest; no console deployment. |
+| Exact-source Lima release gate | PASS on corrected source `9f7af0027b7c3e9470a1583bbfbf676f9525f72d`; host sanitizer/forensic, protocol/audio, PPU app, ELF, package and SFO checks passed. | Lima Ubuntu 24.04 x86_64 guest; hardware acceptance is separate. |
 | PPU/ELF/SELF/PKG/SFO/artwork validation | PASS; PPC64 CellOS ELF 2,755,120 bytes; debug PKG 3,906,640 bytes; SFO `00.48`; AIRPLAY02 / `AIR PS3`; extracted assets byte-matched. | Candidate v0.2.8; package SHA-256 in engineering report. |
-| Display, XMB resume, discovery, audio playback and clean exit | NOT TESTED | Physical hardware test remains separate. |
+| Dev-unit installation identity | PASS; FTP download-back hash matched; installed SFO/EBOOT matched the package installation payload. | Verifies deployment identity, not successful launch or playback. |
+| Dev-unit active stream telemetry | PARTIAL PASS per user-supplied sanitized summary: 10m41s; 69,632 RTP packets; 17 missing observations all recovered; no reported RTP drops, conceal/skips, PCM underflows, or ALAC failures. | Not a 30-minute run and not subjective audible-quality confirmation. Full aggregate record: `docs/reports/air_ps3_v028_reliability_branding.md`. |
+| AirPlay request/control telemetry | PARTIAL: 330 OPTIONS/200, one stream setup, 18 volume updates, one FLUSH; repeated timing-packet rejects plus one accepted reply. | Investigate timing-packet compatibility; AirPlay volume events do not test DualShock controls. |
+| Display, PS-menu resume, START exit and clean shutdown | NOT VERIFIED in the v0.2.8 capture; it contains no menu/resume events. | Requires direct user observation on hardware. |
+| Human-confirmed continuous audio / 30-minute run / repeat reconnect | NOT VERIFIED for v0.2.8. | Required before stable receiver milestone. |
