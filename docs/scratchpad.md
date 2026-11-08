@@ -6,4 +6,5 @@
 - Full Lima host suite, forensic suite, PPU PRX build, structural check, and package extraction/comparison passed. Earlier one-off 500 ms receiver observation failure has not recurred in isolated, full, or repeated runs.
 - Harness module-count check is compiled but not runtime-tested because computer-use cannot access the locked Mac. The matching RPCS3 source registers PRX lifecycle and module-list APIs; runtime results remain unknown.
 - Host synthetic encrypted RTP→ALAC→PCM tests pass; resident PRX clears/discards PCM. No audio output or background coexistence.
-- Candidate report is drafted; current readiness is NOT HARDWARE READY. Next: run three RPCS3 cycles if the Mac is unlocked, refresh hashes/report, then final branch handoff.
+- Candidate report is complete at `docs/experimental/RESIDENT_OVERNIGHT_REPORT.md`; hashes were recomputed from the ignored local artifacts and match the report. Hardware readiness is NOT HARDWARE READY.
+- RPCS3 remains blocked by the locked Mac after a second UI check; no package was installed/run and no console was contacted. Next: after manual unlock, run the three harness cycles, capture results, and reassess the hardware gate.
