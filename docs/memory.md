@@ -406,3 +406,10 @@ Display candidate restores the standard GPU-side wait-flip command ordering afte
 - v0.2.3 manually launched. User confirms START exited to XMB once; on a later run, PS produced no visible menu and START no longer worked afterward. Private log size 3,673 bytes; SHA-256 `ae8689248b6e0bdac6d8a25aa1dd06e7a1f75acc1151470b730156726dcd280e`. It records `SYSUTIL_DRAW_BEGIN` (289), `SYSUTIL_MENU_OPEN` (305), 18 pad reports in the next heartbeat, then zero, with no raw digital transition, menu-close, or app-stop event.
 - Likely display regression: commit `43eb638` stopped refreshing unchanged buffers; the current presenter also returns while menu-open. Candidate v0.2.4 keeps paced flips during the menu-open state only. This is a hypothesis pending hardware confirmation.
 - Logging defect: open used `wb` and 16 KiB wrap erased earlier app sessions. Candidate v0.2.4 uses append mode, timestamps each APP_START in UTC, and caps each launch at 16 KiB with LOG_SESSION_CAPPED. Total file growth is bounded per run, not globally.
+
+## v0.2.4 build and install
+
+- Source commit `f870d823f15398691a6a38e6393f8d1376161bee` was built from a clean checkout in the existing Lima VM. Full host ASan/UBSan suite, PPU components, standalone ELF validation and package checks passed. ELF: 2,754,776 bytes, SHA-256 `bd492c726b12e503d268e00cf03dee82c2c3d6f2aac7fa8f4f07c85a68b2e8ae`.
+- AIRPLAY02 v0.2.4 / SFO 00.44 package: 3,231,984 bytes, SHA-256 `a27d5c7b5d2d84f12fbb82ee4e164b9b50ccc825b5104b9b749f053d72a42bf7`. FTP download-back matched. Installed SFO is exact and installed EBOOT exactly matches the package SELF. Previous running app exited through webMAN with `APP_STOP` before install. New version has not been launched yet.
+- Append-only logger host test proves two timestamped APP_START records and a prior-session event remain after reopening. The per-run 16 KiB cap writes LOG_SESSION_CAPPED and rejects later writes. Hardware append behavior remains untested until v0.2.4 is launched twice.
+- Paced menu-time flip change builds but remains a hypothesis until user confirms PS-menu visibility and return behavior on hardware.

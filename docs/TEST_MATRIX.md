@@ -347,10 +347,20 @@ The emitter used a paced diagnostic fixture; target output submission is not pro
 | PS3-10 | Controller button handling | FAIL on v0.2.2 manual reboot/direct launch: user reports no buttons work. 3,672-byte log SHA-256 `d51d7fb882e0ddb5dc60cae08449bb1aab4292c59c700ecb0fde5a1b051c0c9f`; pad presence and `SYSUTIL_MENU_OPEN` are logged, but no raw digital transition, START, or menu-close event. Visible menu response remains unconfirmed. |
 
 
-## v0.2.4 PS-menu refresh and append-only diagnostics candidate
+## v0.2.4 PS-menu refresh and append-only diagnostics
 
 | Test | Result | Boundary |
 |---|---|---|
 | PS-menu framebuffer refresh | PASS by source/PPU build only: candidate resumes paced flips while menu-open. | Hardware confirmation required; hypothesis only. |
 | Append logs across launches | PASS: host regression reopens the same path and verifies both timestamped APP_START records and the first session's unique event remain. | Session cap is 16 KiB; total file grows by launch count. |
 | Per-session cap | PASS: host regression verifies LOG_SESSION_CAPPED and rejects later writes without altering earlier session bytes. | Collect post-deploy log over FTP. |
+
+## v0.2.4 build and deployment
+
+| ID | Scenario | Result | Boundary |
+|---|---|---|---|
+| BUILD-24-01 | Full Lima host/sanitizer suite and PPU component build | PASS; protocol, encrypted RTP/ALAC/PCM loopback, mutation, PCM/gain, tone, and PPU checks completed. Append-only log regression passed. | Emulator/host tests do not validate the PS menu or physical audio. |
+| BUILD-24-02 | Standalone ELF and package checks | PASS; CellOS PPC64 ELF, five load segments; AIRPLAY02, SFO 00.44, content ID, assets, extraction and debug PKG envelope validated. | Host build boundary only. |
+| BUILD-24-03 | Package identity | PASS; 3,231,984 bytes, SHA-256 `a27d5c7b5d2d84f12fbb82ee4e164b9b50ccc825b5104b9b749f053d72a42bf7`; source `f870d823f15398691a6a38e6393f8d1376161bee`. | Artifact retained locally under ignored `work/builds/0.2.4/`. |
+| DEPLOY-24-01 | Stage package and verify download-back | PASS; FTP download-back is byte-identical to local PKG. | New versioned filename; prior staged packages preserved. |
+| DEPLOY-24-02 | Install and verify title payload | PASS; installed SFO exact 00.44; installed EBOOT exactly matches package SELF. | Installation confirmed; post-install launch not yet tested. |

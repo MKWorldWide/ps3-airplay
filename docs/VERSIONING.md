@@ -2,7 +2,7 @@
 
 AIRPLAY02 follows conservative pre-1.0 versioning. Increment the patch number for each distinct fix or small improvement that produces a new package: `0.1.4`, `0.1.5`, `0.1.6`, and so on. Never reuse a published or tested version number for different package contents. Record the exact package hash beside every result.
 
-**Latest hardware-tested package:** AIRPLAY02 `0.2.3`, SFO `00.43`. User confirms START exited to XMB once. On a later run, PS produced no visible menu and START no longer worked afterward. The log records DRAW_BEGIN and MENU_OPEN, then no menu-close; pad reports later fall to zero. Candidate v0.2.4 / SFO `00.44` restores paced flips during the system-menu interval and changes diagnostics to append-only sessions capped at 16 KiB each. Build and hardware validation pending.
+**Latest installed package:** AIRPLAY02 `0.2.4`, SFO `00.44`, built from `f870d823f15398691a6a38e6393f8d1376161bee`. PKG size 3,231,984 bytes; SHA-256 `a27d5c7b5d2d84f12fbb82ee4e164b9b50ccc825b5104b9b749f053d72a42bf7`. Installed SFO and EBOOT match the validated package. The new build has not yet been launched on hardware; PS-menu rendering and append-only log behavior remain to be tested. Previous v0.2.3 reports remain: START exited once, but a later PS press yielded no visible menu and START then stopped working.
 
 ## v0.2.0 candidate package record
 
@@ -261,8 +261,14 @@ Live read-only evidence captured while AIRPLAY02 v0.1.35 was running: installed 
 - Production RTSP remains port 5000. Use port 5001 only for emulator testing when the host port conflicts, and label that package as an emulator variant.
 
 
-## v0.2.4 PS-menu refresh and append-only diagnostics candidate
+## v0.2.4 PS-menu refresh and append-only diagnostics deployment
 
 - Source changes: keep paced framebuffer flips active during `SYSUTIL_MENU_OPEN`, while leaving the static image idle otherwise; open the diagnostic log in append mode; cap each launch independently at 16 KiB with a `LOG_SESSION_CAPPED` marker. The first `APP_START` record in each run carries its UTC launch timestamp.
 - Version: app/package `0.2.4`; SFO APP_VER/VERSION `00.44`.
-- Build and physical validation: pending.
+- Source: `f870d823f15398691a6a38e6393f8d1376161bee` on `main`.
+- Artifact: `ps3-airplay-receiver-0.2.4.pkg`, AIRPLAY02 app version `0.2.4`, SFO APP_VER/VERSION `00.44`.
+- Size / SHA-256: 3,231,984 bytes / `a27d5c7b5d2d84f12fbb82ee4e164b9b50ccc825b5104b9b749f053d72a42bf7`.
+- ELF: 2,754,776 bytes, CellOS PPC64 executable, five PT_LOAD segments; SHA-256 `bd492c726b12e503d268e00cf03dee82c2c3d6f2aac7fa8f4f07c85a68b2e8ae`.
+- Build: existing Lima VM, PS3DK v0.27.0 PPU compiler 16.1.0, GNU ld 2.42, PSL1GHT revision `dd4e8c9be744e3273d665c393fa6d97a87402e2e`.
+- Checks: full Lima host ASan/UBSan and PPU component suite; standalone ELF validation; package extraction, launch metadata, content ID, assets and debug NPDRM envelope PASS.
+- Deployment: FTP upload/download-back hash matched; installed AIRPLAY02 SFO 00.44 matches exactly and installed EBOOT matches the package SELF exactly. Not yet launched after installation.
