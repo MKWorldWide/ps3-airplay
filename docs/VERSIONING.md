@@ -2,7 +2,7 @@
 
 AIRPLAY02 follows conservative pre-1.0 versioning. Increment the patch number for each distinct fix or small improvement that produces a new package: `0.1.4`, `0.1.5`, `0.1.6`, and so on. Never reuse a published or tested version number for different package contents. Record the exact package hash beside every result.
 
-**Latest hardware package:** AIRPLAY02 `0.2.2`, SFO `00.42`, installed and launched. User reports START and PS still do nothing. The log records no digital-mask change or START event, but does record a PS menu-open callback without close. The user will reboot and launch manually before the next diagnosis; no controller fix is confirmed.
+**Latest hardware package:** AIRPLAY02 `0.2.2`, SFO `00.42`, installed and launched. User reports START and PS still do nothing. The log records no digital-mask change or START event, but does record a PS menu-open callback without close. A manual reboot and direct XMB launch reproduced the same failure, so launch method is not the differentiator. Fresh manual-run log: 3,672 bytes, SHA-256 `d51d7fb882e0ddb5dc60cae08449bb1aab4292c59c700ecb0fde5a1b051c0c9f`; it records a PS menu-open callback without close and no raw button transition or START. No controller fix is confirmed.
 
 ## v0.2.0 candidate package record
 
@@ -36,7 +36,7 @@ AIRPLAY02 follows conservative pre-1.0 versioning. Increment the patch number fo
 - ELF: 2,754,776 bytes; SHA-256 `554c2580944bb0cd6d214f96b410c5d2c2395da609beeca9230455d2a3aa1bf6`. Extracted SFO is AIRPLAY02 / `00.42`; extracted EBOOT SHA-256 `b250051d8784922f696540cab7a5b672d7e85d651e1e6aa2df6144fec7e88fbf`.
 - Build: Lima, PS3DK v0.27.0 PPU compiler 16.1.0, GNU ld 2.42, PSL1GHT revision `dd4e8c9be744e3273d665c393fa6d97a87402e2e`. Full host/sanitizer/PPU suite and ELF/SFO/package/NPDRM checks passed.
 - Hardware: uploaded to a new versioned package path, downloaded back byte-identically, installed via webMAN, and launched. Installed SFO matches exactly; installed EBOOT matches the package payload plus 32 zero bytes.
-- Controller result: user reports START and PS still do nothing. Latest 2,340-byte log (SHA-256 `010188b420884a0233e7cc04abfc17d8f0dcbf2c88aeee78a2107f38c6229f8f`) records `PAD_REPORTS=0` in the first two heartbeat windows. The PS menu-open callback fires, followed by two pad reports but no raw digital-mask change, no START event, and no menu-close event. The user will reboot and launch manually to compare; do not issue webMAN launch/exit commands during that test.
+- Controller result: user reports START and PS still do nothing. Latest 2,340-byte log (SHA-256 `010188b420884a0233e7cc04abfc17d8f0dcbf2c88aeee78a2107f38c6229f8f`) records `PAD_REPORTS=0` in the first two heartbeat windows. The PS menu-open callback fires, followed by two pad reports but no raw digital-mask change, no START event, and no menu-close event. Manual reboot/direct launch comparison completed with the same reported failure; do not issue remote launch/exit commands during user-controlled testing.
 - Artifact is preserved under ignored `work/builds/0.2.2/`. The raw log remains private under ignored `work/hardware/`.
 
 ## Milestones

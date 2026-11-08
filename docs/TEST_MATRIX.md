@@ -32,7 +32,7 @@
 | v0.2.2 PPU build and full host suite | PASS: full Lima host/ASan/UBSan suite, PPU component objects, and standalone ELF validation. | Cross-build does not validate physical input. |
 | v0.2.2 finalized package | PASS: 3,232,112 bytes, SHA-256 `44886cd6ce7bbeff8089bd2d5d752cce3b76ded01f36b214cfdaff057f6748cd`; AIRPLAY02 / SFO 00.42. | ELF, SFO, content ID, assets, extraction, SELF, and finalized package checks passed. |
 | v0.2.2 install and launch | PASS: FTP download-back hash match; installed SFO exact; installed EBOOT equals package SELF plus 32 zero bytes; fresh `PKG_VERSION_0.2.2` log. | Installed and launched on PS3. |
-| v0.2.2 controller retest | FAIL/INCONSISTENT: user reports START/PS do nothing; log records PS menu-open callback but no close, no START, and no digital-mask change. | User will reboot and launch manually; wait for that result before further console commands. |
+| v0.2.2 controller retest: manual reboot/direct XMB launch | FAIL: user reports no buttons work, same as webMAN launch. Fresh log records `SYSUTIL_MENU_OPEN` but no close, no raw digital-mask transition, no START, and no app stop. | Manual launch does not distinguish or fix the issue. Callback delivery is not proof that the menu appeared. Console left under user control; isolate START-first then PS behavior on a fresh launch. |
 
 This matrix distinguishes portable host evidence and cross-build evidence from real hardware validation. Update rows only when the listed scenario is actually exercised.
 
@@ -336,4 +336,4 @@ The emitter used a paced diagnostic fixture; target output submission is not pro
 | PS3-07 | Packet loss and recovery | Two receive batches logged 42 and 57 missing sequence numbers; periodic counters logged 65 and 47 recovered packets, 23 and 30 resend requests, 10 and 6 concealed frames, and zero skips/rejections. Counters are on different sampling boundaries and do not reconcile packet-by-packet. |
 | PS3-08 | PCM/RTP queue and decoder health | RTP queue depth 97 then 93 / 256; PCM ring 12,426 then 12,512 / 16,384 frames. No ALAC failure or PCM underflow event in the retained active-stream window; earlier log was overwritten at cap. |
 | PS3-09 | webMAN remote exit and post-exit check | PASS; HTTP 200 command, SYSUTIL_EXIT_GAME, cleanup through APP_STOP. Repeated FTP log download was byte-identical and read-only webMAN status showed XMB. No reboot or forced power-off. |
-| PS3-10 | Controller button handling | INCONCLUSIVE; PAD_HEALTH reports query success and pad port 0 present, but button masks/transitions are not logged. User reports input unresponsive. |
+| PS3-10 | Controller button handling | FAIL on v0.2.2 manual reboot/direct launch: user reports no buttons work. 3,672-byte log SHA-256 `d51d7fb882e0ddb5dc60cae08449bb1aab4292c59c700ecb0fde5a1b051c0c9f`; pad presence and `SYSUTIL_MENU_OPEN` are logged, but no raw digital transition, START, or menu-close event. Visible menu response remains unconfirmed. |

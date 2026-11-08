@@ -605,3 +605,11 @@ The v0.1.31 fresh RPCS3 replay verifies the portable-arithmetic correction: the 
 - **Root Cause:** Report count alone does not identify whether a report contained analog movement, a button edge, or a system-menu side effect. The callback confirms sysutil received a PS-menu-open event, while no close event or visible-menu confirmation exists.
 - **Fix:** Keep the manual-reboot comparison pending and correlate raw masks, app START events, sysutil open/close, and user-visible behavior. Do not treat report count or callback delivery as proof of usable input.
 - **Prevention Rule:** Log and interpret pad report arrival, digital mask changes, button actions, OS menu callbacks, and visible UI as separate evidence.
+
+
+## Manual launch did not change controller failure
+
+- **Problem:** v0.2.2 still had no usable controller buttons after a user-performed reboot and direct XMB launch.
+- **Root Cause:** Not established. The run showed no digital mask transition or START event; a `SYSUTIL_MENU_OPEN` callback arrived without a close. This is insufficient to decide whether button data is missing or whether the system menu is open and intercepting app input.
+- **Fix:** No speculative code change. Record the fresh run and next isolate START-first from PS-button behavior.
+- **Prevention Rule:** Compare launch paths only with matching, controlled button order and visible-result observations; do not treat a system callback as evidence that the UI appeared.

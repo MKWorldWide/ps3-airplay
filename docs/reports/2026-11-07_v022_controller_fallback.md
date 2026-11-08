@@ -1,6 +1,6 @@
 # AIRPLAY02 v0.2.2 controller fallback
 
-**Status:** Installed and launched; user reports START and PS still do nothing. Manual reboot/launch comparison pending.
+**Status:** Installed and launched; manual reboot/direct XMB launch reproduced the same no-buttons report. Controller failure remains unresolved.
 
 ## Build
 
@@ -19,8 +19,12 @@
 - Launched AIRPLAY02. Fresh log records `PKG_VERSION_0.2.2`, screen/controller setup, RTSP/RTP, mDNS and audio ready. Startup tone remains absent.
 - The user reports START and PS still do nothing. Captured log: 2,340 bytes; SHA-256 `010188b420884a0233e7cc04abfc17d8f0dcbf2c88aeee78a2107f38c6229f8f`.
 - Log records zero `PAD_REPORTS` during two heartbeat windows. At 01:13:14Z it records `SYSUTIL_MENU_OPEN`; the next heartbeat has two pad reports, but no `PAD_RAW_MASKS` transition, `PAD_BUTTONS` transition, `USER_EXIT_START`, or `SYSUTIL_MENU_CLOSE`. The callback indicates a PS-menu-open event reached the app, but does not prove the menu was visible or responsive.
-- User plans to reboot and launch manually without webMAN to compare startup/control behavior. No further webMAN/FTP console command should be sent until the user reports the result.
+- Manual reboot/direct XMB launch comparison completed: user reports the same failure, with no buttons working. Captured private log at `work/hardware/2026-11-07-pre-v020-install/v022-live-log-after-manual-reboot.log`: 3,672 bytes; SHA-256 `d51d7fb882e0ddb5dc60cae08449bb1aab4292c59c700ecb0fde5a1b051c0c9f`. No remote console action is being taken; the user retains control.
 
 ## Interpretation and limits
 
-The raw-mask fallback did not produce a button event in this test. Two positive pad reports are not evidence of digital-button data. Audio playback was not retested on v0.2.2; no audible result is claimed. The manual-launch comparison may distinguish launch-path effects from app input handling, but the current evidence does not establish either as the cause.
+The manual launch did not change the reported behavior, so webMAN launch is not the differentiator. The log begins at `APP_START` / v0.2.2, records a connected pad and one early input report, then `SYSUTIL_MENU_OPEN` at about five seconds. One subsequent heartbeat reports two pad samples; later heartbeat counts are zero. No raw digital transition, START event, `SYSUTIL_MENU_CLOSE`, or `APP_STOP` appears. The callback confirms event delivery only; it does not prove a visible or responsive system menu. Audio playback was not retested in this run.
+
+## Next controlled observation
+
+On a fresh launch, test START first, before PS, and report whether the app exits. If it remains open, press PS once and report separately whether the system menu visibly appears and responds. This isolates app button handling from the PS system-menu event ordering. Do not change source or produce another package until this distinguishes the input path.

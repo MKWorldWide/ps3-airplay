@@ -1,10 +1,7 @@
 # Active work
 
-- Current task: compare v0.2.2 controller behavior after a manual reboot/launch.
-- v0.2.0 (PKG SHA-256 `924a01ef0ef812e1badb8e94011930f5187c4dba91b253e578e16ab72de4f29b`) was installed/launched and a user-streamed song reached RTSP RECORD, RTP decrypt, ALAC decode, and PCM submission. The user reports START and PS buttons did not work. Saved logs show pad poll success/pad 0 present but no button data.
-- webMAN normal exit recorded `SYSUTIL_EXIT_GAME`, full cleanup, and `APP_STOP`; status confirmed XMB. v0.2.0 and the prior v0.1.39 rollback package remain staged. Raw hardware logs are private and ignored under `work/hardware/2026-11-07-pre-v020-install/`.
-- v0.2.2 / SFO 00.42 is installed and launched. User reports START and PS did nothing. Log `010188b420884a0233e7cc04abfc17d8f0dcbf2c88aeee78a2107f38c6229f8f`: two heartbeat windows with zero input reports; after PS menu-open, two reports but no raw digital change, START, or menu-close. This indicates no app-visible digital button transition and a system callback, but not a visible menu.
-- Package: 3,232,112 bytes; SHA-256 `44886cd6ce7bbeff8089bd2d5d752cce3b76ded01f36b214cfdaff057f6748cd`. Source commit `6151aae43b7ed26dfa940f090afbdd5b13ba53ac`; full Lima host/sanitizer suite and package validators passed.
-- Latest hardware log is private/ignored at `work/hardware/2026-11-07-pre-v020-install/v022-live-log-after-controls.log` (2,340 bytes; SHA-256 `010188b420884a0233e7cc04abfc17d8f0dcbf2c88aeee78a2107f38c6229f8f`). No AirPlay stream was active during this test; display visibility and audible output are unconfirmed.
-- User is rebooting and will launch v0.2.2 manually without webMAN. Do not send webMAN launch/exit commands or otherwise touch the console until the user reports the result.
-- Next: retrieve the post-manual-launch log, compare PAD_REPORTS/raw masks/sysutil events, then diagnose the first differing startup/input boundary. Keep the current installed package unless evidence requires another fix.
+- Current task: diagnose v0.2.2 controller input failure.
+- Manual reboot and direct XMB launch reproduced the same no-buttons behavior as webMAN launch; launch method is not the differentiator.
+- Latest private log: `work/hardware/2026-11-07-pre-v020-install/v022-live-log-after-manual-reboot.log`, 3,672 bytes, SHA-256 `d51d7fb882e0ddb5dc60cae08449bb1aab4292c59c700ecb0fde5a1b051c0c9f`. It records `SYSUTIL_MENU_OPEN` but no close, no raw digital transition, no START, and no app stop. Callback delivery does not prove visible menu behavior.
+- The console is under the user's manual control. Do not issue remote exit, launch, install, or other state-changing commands.
+- Next discriminating observation: on a fresh launch, press START first; report whether it exits. If it does not, press PS once and confirm whether the system menu visibly appears/responds. Keep these as separate button tests.
