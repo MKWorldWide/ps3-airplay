@@ -18,7 +18,9 @@ export SFO_VERSION=00.45
 bash scripts/release-lima-standalone-receiver.sh
 ```
 
-The release gate requires a clean tracked worktree and a full matching source revision. It runs `build-lima-crypto.sh`, `build-lima-standalone-receiver.sh`, generates the runtime RGB background from the checked-in JPEG, then runs `package-lima-standalone-receiver.sh` with fail-fast behavior. The image conversion requires Pillow (`python3-pil` on Ubuntu). Keep build outputs and package files under ignored `work/`; never deploy a package that failed any stage. Record the exact source revision and output hash. The first physical launch remains a separate hardware test.
+The release gate requires a clean tracked worktree and a full matching source revision. It runs `build-lima-crypto.sh`, `build-lima-standalone-receiver.sh`, generates the runtime RGB background from `assets/air-ps3/artwork-source.png`, validates `ICON0.PNG` and `PIC1.PNG` as direct resizes of that source, then runs `package-lima-standalone-receiver.sh` with fail-fast behavior. The image conversion requires Pillow (`python3-pil` on Ubuntu). The packager includes project-managed artwork rather than the generic SDK icon and verifies extracted asset equality. Keep build outputs and package files under ignored `work/`; never deploy a package that failed any stage. Record the exact source revision and output hash. The first physical launch remains a separate hardware test.
+
+AIR PS3 packaging defaults are `XMB_TITLE="AIR PS3"`, `APP_VERSION=0.2.8`, and `SFO_VERSION=00.48` for this candidate. The RAOP DNS-SD instance uses the existing hardware-derived unique prefix followed by `@AirPS3`; the hardware address itself is not committed. The existing title/content ID remain unchanged.
 
 The release path is:
 

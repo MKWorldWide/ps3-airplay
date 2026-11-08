@@ -291,3 +291,12 @@ Live read-only evidence captured while AIRPLAY02 v0.1.35 was running: installed 
 ## v0.2.6 / SFO 00.46
 
 Exact source `bca0f94901acdd7eb97f3b824e372f53beee7ee3`; full release gate PASS, including payload/recovery and mocked production display tests. PKG 3,233,072 bytes, SHA-256 `472915766a1b950f44558259a3583b5931c0bb3f8d3a8b0e5f1a044715927ca6`. Built locally; no deployment. See `docs/reports/2026-11-07_v026_payload_resume.md` for acceptance boundary.
+
+## v0.2.8 / SFO 00.48 candidate
+
+- Preserve v0.2.7 / SFO `00.47` as the rollback baseline; title ID and NPDRM content identity remain `AIRPLAY02`.
+- XMB title: `AIR PS3`. RAOP instance display suffix: `AirPS3`.
+- Approved supplied image is stored as a metadata-free lossless RGB pixel source, with 320x176 `ICON0.PNG`, 1920x1080 `PIC1.PNG`, and the in-app RGB background generated from it.
+- Source changes add a fixed SPSC log queue with a low-priority writer, separated RTSP stage timing, and conditional RTP live-edge recovery after full-queue >128-packet lag.
+- Source revision, exact artifact size/hash, toolchain, and full host/PPU/package gate results are recorded in `docs/reports/air_ps3_v028_reliability_branding.md` after build.
+- Candidate only: no console installation or hardware result is implied by build/package validation.

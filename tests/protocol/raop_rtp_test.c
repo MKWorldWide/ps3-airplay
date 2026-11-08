@@ -134,6 +134,7 @@ int main(void)
 	assert(raop_rtp_queue_pop(&wrap_queue, &frame, 0));
 	assert(frame.packet.sequence == 0);
 
+	memset(&queue, 0, sizeof(queue));
 	for (i = 0; i < RAOP_RTP_QUEUE_CAPACITY + 1; ++i) {
 		length = make_packet(packet, (uint16_t)(200 + i), payload,
 			sizeof(payload));
@@ -144,6 +145,39 @@ int main(void)
 	length = make_packet(packet, 10000, payload, sizeof(payload));
 	assert(!raop_rtp_queue_recover(&queue, packet, length));
 	assert(queue.stats.queue_drops == 2);
+
+	/* Delays through one second fit in the existing queue without forced reset. */
+	memset(&gap_queue, 0, sizeof(gap_queue));
+	length = make_packet(packet, 100, payload, sizeof(payload));
+	assert(raop_rtp_queue_push(&gap_queue, packet, length));
+	assert(raop_rtp_queue_pop(&gap_queue, &frame, 0) == 1);
+	for (i = 1; i <= 126; ++i) {
+		length = make_packet(packet, (uint16_t)(100 + i), payload,
+			sizeof(payload));
+		assert(raop_rtp_queue_push(&gap_queue, packet, length));
+	}
+	assert(gap_queue.stats.resync_events == 0);
+	assert(gap_queue.count == 126);
+
+	/* A five-second receive backlog at ~8 ms/packet must rejoin live audio,
+	 * retaining a bounded queue and counting discarded stale frames. */
+	raop_rtp_queue_flush(&gap_queue);
+	length = make_packet(packet, 1000, payload, sizeof(payload));
+	assert(raop_rtp_queue_push(&gap_queue, packet, length));
+	assert(raop_rtp_queue_pop(&gap_queue, &frame, 0) == 1);
+	for (i = 1; i <= 625; ++i) {
+		length = make_packet(packet, (uint16_t)(1000 + i), payload,
+			sizeof(payload));
+		assert(raop_rtp_queue_push(&gap_queue, packet, length));
+	}
+	assert(gap_queue.stats.resync_events == 2);
+	assert(gap_queue.stats.resync_dropped_packets == 512);
+	assert(gap_queue.stats.queue_drops == 512);
+	assert(gap_queue.count == 113);
+	assert(raop_rtp_queue_pop(&gap_queue, &frame, 1) == 1);
+	assert(frame.packet.sequence == (uint16_t)(1000 + 513));
+	assert(gap_queue.stats.concealed_packets == 0);
+
 	{
 		uint64_t packets_before = queue.stats.packets;
 		uint64_t drops_before = queue.stats.queue_drops;

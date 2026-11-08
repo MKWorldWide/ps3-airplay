@@ -24,13 +24,14 @@ The standalone receiver and resident PRX share portable protocol/codec component
 - `src/crypto`: RAOP challenge response and session-key/audio packet crypto.
 - `src/codec`: bounded ALAC decoder wrapper.
 - `src/audio`: bounded PCM ring, conversion, and resampling.
-- `src/observability`: 16 KiB capped diagnostic logging that avoids stream content, peer addresses, keys, and track identifiers; wrap events identify when the bounded file rolls over.
+- `src/observability`: append-only per-launch 5 MiB capped diagnostics. On PS3, producers enqueue fixed-size lines into a 128-record SPSC queue; a low-priority PPU writer owns file writes/flushes. Queue overruns and write/flush maxima are observable; worker failure cannot be persisted through a failed file sink. Host tests retain synchronous output.
 - `prototype/standalone-receiver`: standalone app wiring for discovery, receive, decode, audio output, RSX diagnostic display, and controller-requested exit.
 - `experimental/resident`: diagnostic PRX candidate; decoded PCM is discarded.
 
 ## Constraints
 
 - Bound sessions, packet sizes, queue depths, timeouts, decoding work, and log storage.
+- A full RTP queue with more than 128 packets of lead over consumed audio triggers a bounded live-edge resync; queued stale frames, pending UDP audio, resend expectations, and buffered PCM are discarded with counters. The RTP queue capacity is not enlarged.
 - Accepted RTSP client sockets have a two-second send timeout, and each complete response has a two-second overall deadline. Slow or stalled readers are disconnected rather than allowed to stall the receiver loop indefinitely.
 - RTP diagnostics emit an aggregate checkpoint every 128 accepted audio packets: packet/payload deltas and queue depth, plus nonzero missing, reordered, duplicate, late, and queue-drop deltas. FLUSH starts a new logging baseline while cumulative receiver statistics remain available internally.
 - Advertised RAOP capabilities must match implemented behavior. Current host checks do not prove sender interoperability.

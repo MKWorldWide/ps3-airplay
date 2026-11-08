@@ -44,6 +44,18 @@
 
 This matrix distinguishes portable host evidence and cross-build evidence from real hardware validation. Update rows only when the listed scenario is actually exercised.
 
+## AIR PS3 v0.2.8 candidate gate
+
+| Test | Result | Boundary |
+|---|---|---|
+| RTP delay simulation (50 ms through 1 s) | PASS: queue holds packets without forced resynchronization | Host sequence model, not a real scheduler pause |
+| RTP five-second backlog | PASS: two bounded resyncs, 512 stale queued frames counted, queue returns to 113 live frames, no obsolete concealment | Host queue test; audio heard on hardware not verified |
+| Asynchronous logging | PENDING | PPU build and hardware writer scheduling still required |
+| RTSP stage timing | PENDING | Source instrumentation requires a fresh runtime log |
+| Supplied artwork source/derivatives | PASS: source pixels and direct-resize checks; XMB icon 320x176; PIC1 1920x1080 | No physical XMB visual check |
+| v0.2.8 PPU ELF and package | PENDING | Exact committed source revision is built by the Lima release gate |
+| XMB resume, iPhone discovery, streaming, and audio quality | NOT TESTED | No console installation or launch was performed in this package task |
+
 **Demonstration target:** PS3 with Evilnat 4.93 CFW; Cobra 8.5 observed. Model not recorded. This configuration is context for future community testing and is not hardware compatibility evidence.
 
 ## Host and build checks

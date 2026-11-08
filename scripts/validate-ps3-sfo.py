@@ -6,7 +6,7 @@ import sys
 from pathlib import Path
 
 
-def validate(path, expected_version):
+def validate(path, expected_version, expected_title=None):
     data = Path(path).read_bytes()
     if len(data) < 20 or data[:4] != b'\x00PSF':
         raise ValueError('invalid SFO header')
@@ -30,11 +30,13 @@ def validate(path, expected_version):
     for key, expected in {'TITLE_ID': 'AIRPLAY02', 'CATEGORY': 'HG', 'BOOTABLE': 1}.items():
         if fields.get(key) != expected:
             raise ValueError(f'unexpected {key}')
-    print(f'SFO launch metadata passed: AIRPLAY02, {expected_version}')
+    if expected_title is not None and fields.get('TITLE') != expected_title:
+        raise ValueError('unexpected TITLE')
+    print(f'SFO launch metadata passed: AIRPLAY02, {expected_version}, {fields.get("TITLE")}')
 
 
 if __name__ == '__main__':
     try:
-        validate(sys.argv[1], sys.argv[2])
+        validate(sys.argv[1], sys.argv[2], sys.argv[3] if len(sys.argv) > 3 else None)
     except (ValueError, IndexError, struct.error, UnicodeError) as exc:
         raise SystemExit(f'SFO validation failed: {exc}')

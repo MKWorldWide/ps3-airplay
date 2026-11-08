@@ -6,6 +6,7 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 : "${PS3DK_SOURCE:?Set PS3DK_SOURCE to the pinned PS3DK v0.27.0 tree}"
 : "${APP_VERSION:?Set the unique app/package version for this build}"
 : "${SFO_VERSION:?Set the matching XX.YY SFO version for this build}"
+export XMB_TITLE="${XMB_TITLE:-AIR PS3}"
 PS3DEV="${PS3DEV:-$PS3DK_SOURCE/stage/ps3dev}"
 
 if git -C "$PROJECT_ROOT" rev-parse --verify HEAD >/dev/null 2>&1; then
@@ -41,8 +42,9 @@ MBEDTLS_INCLUDE="${DEPS_ROOT:-$HOME/ps3-airplay-host/crypto-deps}/src/mbedtls-3.
  bash "$SCRIPT_DIR/run-forensic-tests.sh"
 bash "$SCRIPT_DIR/build-lima-standalone-receiver.sh"
 python3 "$SCRIPT_DIR/prepare-diagnostic-background.py" \
-	"$PROJECT_ROOT/assets/diagnostic-background.jpg" \
+	"$PROJECT_ROOT/assets/air-ps3/artwork-source.png" \
 	"$PROJECT_ROOT/build/diagnostic-background.rgb"
+python3 "$SCRIPT_DIR/validate-air-ps3-artwork.py" "$PROJECT_ROOT/assets/air-ps3"
 bash "$SCRIPT_DIR/package-lima-standalone-receiver.sh"
 
 PACKAGE="$PROJECT_ROOT/build/lima-standalone-package/ps3-airplay-receiver-${APP_VERSION}.pkg"

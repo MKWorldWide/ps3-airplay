@@ -11,6 +11,7 @@
 #define RAOP_RTP_PREBUFFER_PACKETS 128
 #define RAOP_RTP_GAP_WAIT_MS 80U
 #define RAOP_RTP_MAX_CONCEAL_PACKETS 128U
+#define RAOP_RTP_RESYNC_LAG_PACKETS 128U
 
 typedef struct {
 	uint8_t payload_type;
@@ -34,6 +35,8 @@ typedef struct {
 	uint64_t gap_waits;
 	uint64_t concealed_packets;
 	uint64_t skipped_gap_packets;
+	uint64_t resync_events;
+	uint64_t resync_dropped_packets;
 	uint16_t last_sequence;
 	uint16_t last_missing_sequence;
 	uint16_t last_missing_count;

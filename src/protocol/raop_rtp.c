@@ -138,6 +138,7 @@ int raop_rtp_queue_push(raop_rtp_queue *queue, const uint8_t *data,
 	size_t length)
 {
 	raop_rtp_packet parsed;
+	int16_t lag;
 	if (queue == NULL || data == NULL)
 		return 0;
 	queue->stats.last_missing_count = 0;
@@ -146,6 +147,30 @@ int raop_rtp_queue_push(raop_rtp_queue *queue, const uint8_t *data,
 		return 0;
 	}
 	account_packet(&queue->stats, &parsed);
+	/* A full queue plus >128 packets of lag is a sustained desynchronization,
+	 * not ordinary jitter. Keep the live packet and restart the sequence epoch;
+	 * the receiver resets PCM and resend expectations on resync_events change. */
+	if (queue->count == RAOP_RTP_QUEUE_CAPACITY &&
+		queue->have_popped_sequence) {
+		lag = (int16_t)(uint16_t)(parsed.sequence -
+			queue->last_popped_sequence);
+		if (lag > (int16_t)RAOP_RTP_RESYNC_LAG_PACKETS) {
+			uint64_t discarded = queue->count;
+			queue->stats.queue_drops += discarded;
+			queue->stats.resync_dropped_packets += discarded;
+			++queue->stats.resync_events;
+			queue->read_index = 0;
+			queue->write_index = 0;
+			queue->count = 0;
+			queue->last_popped_sequence = (uint16_t)(parsed.sequence - 1U);
+			queue->have_popped_sequence = 1;
+			queue->gap_started_ms = 0;
+			queue->gap_waiting = 0;
+			queue->gap_expired = 0;
+			queue->stats.last_missing_count = 0;
+			return insert_packet(queue, data, &parsed, 0);
+		}
+	}
 	return insert_packet(queue, data, &parsed, 0);
 }
 

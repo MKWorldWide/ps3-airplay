@@ -1,5 +1,17 @@
 # Lessons learned
 
+## AIR PS3 v0.2.8 engineering lessons (2026-11-08)
+
+- **Problem:** A long control-path stall can leave the fixed RTP queue full of stale audio; the application then continues with obsolete sequence expectations.
+- **Root Cause:** The old queue rejected new packets at capacity and had no automatic full-queue epoch reset. The supplied hardware summary correlates a long RTSP/audio-service interruption with saturation, but does not prove that synchronous disk logging alone caused it.
+- **Fix:** Add a low-priority writer behind a fixed SPSC event queue, separate RTSP parse/handler/send timing, and resynchronize only when the packet queue is full and incoming sequence position is more than 128 packets ahead of the last consumed frame. Reset pending resends and PCM buffering at that boundary.
+- **Prevention Rule:** Do not solve multi-second stalls by blindly enlarging queues or hiding drops. Keep the failure bounded, count discarded data, and verify the complete hardware path after host fault injection.
+
+- **Problem:** Packaging the SDK's generic icon would ignore the approved product identity, and the supplied JPEG contains source metadata.
+- **Root Cause:** The packager referenced the SDK icon directly and did not manage `PIC1.PNG`.
+- **Fix:** Store a metadata-free lossless RGB pixel copy, derive `ICON0.PNG` and `PIC1.PNG`, verify decoded pixels and exact extracted package assets, and change only the SFO title/RAOP friendly label while preserving `AIRPLAY02`.
+- **Prevention Rule:** Treat image metadata and every package asset as publication inputs; verify pixel content, dimensions, hashes, and extracted contents before committing or building.
+
 ## A sequence-sorted RTP queue still needs playout-gap policy
 
 - **Problem:** RTP packets were inserted in sequence order, but the player popped the head immediately when the next expected sequence was missing. Retransmitted frames arriving afterward were rejected as late; physical logs showed many RTP gaps and no retained recovery.

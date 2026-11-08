@@ -1,7 +1,7 @@
 # Active project context
 
-- Consolidation is complete. Use the single `main` checkout in `PS3 Airplay` for future development.
-- The obsolete nested checkout is archived recoverably with the private migration backup; it is no longer in the active workspace.
-- The v0.2.7 source is preserved at tag `baseline-v0.2.7`; the relocated clean-source Lima release gate passes and the rebuilt PKG is retained locally under ignored `work/builds/consolidation/`.
-- No PS3 deployment or GitHub Release occurred during migration. Physical display resume and audio-quality validation remain separate hardware tasks.
+- Current task: prepare AIR PS3 v0.2.8 / SFO 00.48 candidate from `baseline-v0.2.7` on branch `lily/air-ps3-v028`.
+- Implemented: async fixed log queue/worker, RTSP stage timing, RTP live-edge resync, approved artwork derivatives, XMB/RAOP branding.
+- Pending: full Lima sanitizer/PPU/package gate; exact SFO/title/asset/package hashes; sanitized report/decision update; privacy review; commit and push feature branch.
+- Do not install on either PS3. Hardware tests for launch, display resume, AirPlay session, sound, and clean exit remain pending.
 - Remote development branches remain available; review before any remote cleanup.

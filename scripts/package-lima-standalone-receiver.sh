@@ -13,12 +13,15 @@ ELF="${ELF:-$PROJECT_ROOT/build/lima-standalone-receiver/ps3-airplay-receiver.el
 OUT_DIR="${OUT_DIR:-$PROJECT_ROOT/build/lima-standalone-package}"
 APPID=AIRPLAY02
 APP_VERSION="${APP_VERSION:-0.2.7}"
+XMB_TITLE="${XMB_TITLE:-AIR PS3}"
 CONTENTID="UP0001-${APPID}_00-0000000000000000"
 STAGE="$OUT_DIR/$CONTENTID"
 EXTRACT="$OUT_DIR/extracted"
 PACKAGE="$OUT_DIR/ps3-airplay-receiver-${APP_VERSION}.pkg"
 UNFINALIZED_PACKAGE="$PACKAGE.unfinalized.pkg"
-ICON0="$PS3DEV/bin/ICON0.PNG"
+ARTWORK_DIR="${ARTWORK_DIR:-$PROJECT_ROOT/assets/air-ps3}"
+ICON0="$ARTWORK_DIR/ICON0.PNG"
+PIC1="$ARTWORK_DIR/PIC1.PNG"
 BACKGROUND_RGB="${BACKGROUND_RGB:-$PROJECT_ROOT/build/diagnostic-background.rgb}"
 
 # Keep the release label separate from the PS3 fixed-width version fields.
@@ -35,8 +38,9 @@ for tool in "$SELF_TOOL" "$PKG_TOOL" "$PS3DEV/bin/sfo"; do
 	fi
 done
 if [[ ! -f "$ELF" || ! -f "$PS3DEV/bin/sfo.xml" || ! -f "$ICON0" ||
+	! -f "$PIC1" ||
 	! -f "$BACKGROUND_RGB" ]]; then
-	echo "Build the standalone ELF and RGB background, and provide the PSL1GHT SFO template and default icon first" >&2
+	echo "Build the standalone ELF and RGB background, and provide AIR PS3 artwork and the PSL1GHT SFO template first" >&2
 	exit 1
 fi
 if [[ -e "$PACKAGE" ]]; then
@@ -57,12 +61,13 @@ python3 "$PROJECT_ROOT/scripts/validate-ps3-elf.py" "$ELF"
 rm -rf "$STAGE" "$EXTRACT"
 mkdir -p "$STAGE/USRDIR" "$EXTRACT"
 cp "$ICON0" "$STAGE/ICON0.PNG"
+cp "$PIC1" "$STAGE/PIC1.PNG"
 cp "$BACKGROUND_RGB" "$STAGE/USRDIR/background.rgb"
 sed "s/01\.00/${SFO_VERSION}/g" "$PS3DEV/bin/sfo.xml" > "$OUT_DIR/sfo.xml"
 # Bind the EBOOT's NPDRM content ID to the same ID used by PARAM.SFO and PKG.
 "$SELF_TOOL" "$ELF" "$STAGE/USRDIR/EBOOT.BIN" \
 	"$CONTENTID"
-"$PS3DEV/bin/sfo" --title='PS3 AirPlay' --appid="$APPID" \
+"$PS3DEV/bin/sfo" --title="$XMB_TITLE" --appid="$APPID" \
 	--fromxml "$OUT_DIR/sfo.xml" "$STAGE/PARAM.SFO"
 "$PKG_TOOL" --contentid="$CONTENTID" "$STAGE" "$UNFINALIZED_PACKAGE"
 
@@ -73,10 +78,11 @@ sed "s/01\.00/${SFO_VERSION}/g" "$PS3DEV/bin/sfo.xml" > "$OUT_DIR/sfo.xml"
 EXTRACTED_EBOOT="$EXTRACT/$CONTENTID/USRDIR/EBOOT.BIN"
 EXTRACTED_SFO="$EXTRACT/$CONTENTID/PARAM.SFO"
 EXTRACTED_ICON="$EXTRACT/$CONTENTID/ICON0.PNG"
+EXTRACTED_PIC1="$EXTRACT/$CONTENTID/PIC1.PNG"
 if [[ ! -f "$EXTRACTED_EBOOT" || ! -f "$EXTRACTED_SFO" ||
-	! -f "$EXTRACTED_ICON" ||
+	! -f "$EXTRACTED_ICON" || ! -f "$EXTRACTED_PIC1" ||
 	! -f "$EXTRACT/$CONTENTID/USRDIR/background.rgb" ]]; then
-	echo "PKG extract did not contain EBOOT.BIN, PARAM.SFO, ICON0.PNG, and background.rgb" >&2
+	echo "PKG extract did not contain EBOOT.BIN, PARAM.SFO, ICON0.PNG, PIC1.PNG, and background.rgb" >&2
 	exit 1
 fi
 SFO_OUTPUT="$("$PS3DEV/bin/sfo" --list "$EXTRACTED_SFO")"
@@ -88,6 +94,7 @@ fi
 cmp -n "$(wc -c < "$STAGE/USRDIR/EBOOT.BIN")" \
 	"$STAGE/USRDIR/EBOOT.BIN" "$EXTRACTED_EBOOT"
 cmp "$STAGE/ICON0.PNG" "$EXTRACTED_ICON"
+cmp "$STAGE/PIC1.PNG" "$EXTRACTED_PIC1"
 cmp "$BACKGROUND_RGB" "$EXTRACT/$CONTENTID/USRDIR/background.rgb"
 PKG_LIST="$("$PKG_TOOL" --list "$UNFINALIZED_PACKAGE")"
 printf '%s\n' "$PKG_LIST"
@@ -95,11 +102,13 @@ if printf '%s\n' "$PKG_LIST" | awk '/(raw data|directory|NPDRM SELF):/ && $NF ~ 
 	echo "PKG contains absolute entry paths; refusing to publish this package" >&2
 	exit 1
 fi
-python3 "$PROJECT_ROOT/scripts/validate-ps3-sfo.py" "$EXTRACTED_SFO" "$SFO_VERSION"
+python3 "$PROJECT_ROOT/scripts/validate-ps3-sfo.py" \
+	"$EXTRACTED_SFO" "$SFO_VERSION" "$XMB_TITLE"
 cp "$UNFINALIZED_PACKAGE" "$PACKAGE"
 if [[ "$PACKAGE_FORMAT" == finalized ]]; then
  "$PACKAGE_FINALIZE" "$PACKAGE"
 fi
 python3 "$PROJECT_ROOT/scripts/validate-ps3-pkg.py" "$PACKAGE" "$CONTENTID" "$PACKAGE_FORMAT"
 sha256sum "$UNFINALIZED_PACKAGE" "$PACKAGE" \
-	"$STAGE/USRDIR/EBOOT.BIN" "$STAGE/USRDIR/background.rgb" "$STAGE/ICON0.PNG"
+	"$STAGE/USRDIR/EBOOT.BIN" "$STAGE/USRDIR/background.rgb" \
+	"$STAGE/ICON0.PNG" "$STAGE/PIC1.PNG"

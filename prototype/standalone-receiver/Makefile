@@ -36,7 +36,7 @@ PROJECT_CFILES := \
 	../../src/audio/pcm_gain.c \
 	../../src/observability/receiver_log.c
 INCLUDES := include
-TITLE := PS3 AirPlay 1 Receiver
+TITLE := AIR PS3
 APPID := AIRPLAY02
 CONTENTID := UP0001-$(APPID)_00-0000000000000000
 APP_VERSION ?= 0.2.7

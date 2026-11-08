@@ -63,6 +63,19 @@ static uint64_t monotonic_milliseconds(void)
 #endif
 }
 
+static uint64_t monotonic_microseconds(void)
+{
+#if defined(RAOP_USE_PSL1GHT)
+	return sysGetSystemTime();
+#else
+	struct timespec now;
+	if (clock_gettime(CLOCK_MONOTONIC, &now) != 0)
+		return 0;
+	return (uint64_t)now.tv_sec * 1000000U +
+		(uint64_t)now.tv_nsec / 1000U;
+#endif
+}
+
 static void close_socket(int fd)
 {
 #if defined(__powerpc64__) && !defined(RAOP_USE_PSL1GHT)
@@ -374,10 +387,13 @@ static int serve_messages(raop_receiver *receiver)
 	unsigned int handled;
 	for (handled = 0; handled < RAOP_MAX_MESSAGES_PER_POLL; ++handled) {
 		size_t size = 0;
+		uint64_t parse_started_us = monotonic_microseconds();
 		int result = message_length(receiver->request,
 			receiver->request_length, &size);
 		int status = 0;
 		uint64_t handle_started_ms = monotonic_milliseconds();
+		uint64_t handle_started_us;
+		uint64_t send_started_us;
 		char response[RAOP_SESSION_RESPONSE_MAX];
 #ifdef RAOP_VERBOSE_LOGGING
 		const char *method_event;
@@ -385,6 +401,9 @@ static int serve_messages(raop_receiver *receiver)
 #endif
 		if (result == 0)
 			return 1;
+		log_event(receiver, "RTSP_PARSE_US",
+			bounded_event_count(monotonic_microseconds() - parse_started_us),
+			receiver->request_length);
 #ifdef RAOP_VERBOSE_LOGGING
 		method_event = rtsp_method_event(receiver->request,
 			receiver->request_length);
@@ -392,11 +411,14 @@ static int serve_messages(raop_receiver *receiver)
 		log_event(receiver, method_event, (int)previous_state,
 			size > 0 ? size : receiver->request_length);
 #endif
+		handle_started_us = monotonic_microseconds();
 		if (result < 0 || !raop_session_handle(&receiver->session,
 			receiver->request, size, response, sizeof(response))) {
 			log_event(receiver, "RTSP_BAD_FRAME", result, receiver->request_length);
 			return 0;
 		}
+		log_event(receiver, "RTSP_HANDLER_US",
+			bounded_event_count(monotonic_microseconds() - handle_started_us), 0);
 		log_event(receiver, "RTSP_HANDLE_MS",
 			bounded_event_count(monotonic_milliseconds() - handle_started_ms), 0);
 		(void)sscanf(response, "RTSP/1.0 %d", &status);
@@ -429,6 +451,7 @@ static int serve_messages(raop_receiver *receiver)
 			++receiver->flush_generation;
 			log_event(receiver, "RTP_QUEUE_FLUSH", (int)discarded, 0);
 		}
+		send_started_us = monotonic_microseconds();
 		if (!send_all(receiver->client_fd, response, strlen(response))) {
 #ifdef RAOP_VERBOSE_LOGGING
 			const char *event = errno == ETIMEDOUT || errno == EAGAIN ||
@@ -437,6 +460,9 @@ static int serve_messages(raop_receiver *receiver)
 #endif
 			return 0;
 		}
+		log_event(receiver, "RTSP_RESPONSE_SEND_US",
+			bounded_event_count(monotonic_microseconds() - send_started_us),
+			strlen(response));
 		if (receiver->session.state != RAOP_SESSION_RECORDING ||
 			(size >= 6 && memcmp(receiver->request, "FLUSH ", 6) == 0) ||
 			(size >= 9 && memcmp(receiver->request, "TEARDOWN ", 9) == 0)) {
@@ -807,10 +833,29 @@ static void receive_udp(raop_receiver *receiver, int fd, int channel)
 		return;
 	if (channel == 0) {
 		raop_rtp_stats *stats = &receiver->audio_queue.stats;
+		uint64_t resyncs_before = stats->resync_events;
 		if (receiver->session.state != RAOP_SESSION_RECORDING)
 			return;
 		(void)raop_rtp_queue_push(&receiver->audio_queue, packet,
 			(size_t)amount);
+		if (stats->resync_events != resyncs_before) {
+			size_t pending = flush_pending_audio_datagrams(receiver);
+			memset(receiver->pending_resend, 0,
+				sizeof(receiver->pending_resend));
+			memset(receiver->outstanding_resend, 0,
+				sizeof(receiver->outstanding_resend));
+			receiver->pending_resend_read = 0;
+			receiver->pending_resend_write = 0;
+			receiver->pending_resend_count = 0;
+			receiver->resend_sequence = 0;
+			receiver->resend_last_send_ms = 0;
+			++receiver->flush_generation;
+			log_event(receiver, "RTP_QUEUE_RESYNC",
+				bounded_event_count(stats->resync_events),
+				(size_t)bounded_event_count(stats->resync_dropped_packets));
+			log_event(receiver, "RTP_SOCKET_BACKLOG_DROP",
+				bounded_event_count(pending), 0);
+		}
 		if (stats->last_missing_count != 0)
 			queue_missing_audio(receiver, stats->last_missing_sequence,
 				stats->last_missing_count);

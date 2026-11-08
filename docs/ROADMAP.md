@@ -1,5 +1,13 @@
 # Roadmap
 
+## AIR PS3 v0.2.8 candidate work (2026-11-08)
+
+- Candidate baseline: validated v0.2.7 / SFO `00.47`, source tag `baseline-v0.2.7`, title ID `AIRPLAY02`. The v0.2.7 package and rollback remain preserved.
+- Candidate changes: bounded SPSC diagnostic queue with a low-priority PPU writer; per-request RTSP parse/handler/response timing; full-queue RTP stale-frame resynchronization with resend/PCM reset; AIR PS3 XMB title, AirPS3 RAOP label, and supplied artwork derivatives.
+- Host regression tests cover non-resync through a one-second simulated backlog and recovery after a five-second backlog. PPU/package validation and real console behavior are separate gates.
+- XMB VSH composition remains partly outside the application framebuffer. This candidate keeps the existing callback/refresh behavior; no visual resume improvement is claimed without hardware observation.
+- Candidate package version `0.2.8`, SFO `00.48`. Do not install it as part of the build pass.
+
 **Current status (2026-11-07):** AIRPLAY02 v0.2.0 / SFO 00.40 was installed and launched on the demo PS3. User streamed a song during the run. Fresh log reached RTSP RECORD, 23,040 successful RTP decryptions, ALAC frames with zero sampled decode failures, and PCM submission. A retained interval showed queue depth 74/256 and PCM occupancy 12,602/16,384; it also reported RTP gaps and concealment, while the capped log wrapped. No PCM underflow or drop event appears in the saved post-wrap segment. The user reports START and PS buttons were unresponsive. Existing diagnostics only reported pad polling success/pad 0 present and did not include button transitions, so the input failure boundary is unknown. A webMAN exit produced `SYSUTIL_EXIT_GAME`, complete audio/screen/receiver cleanup, and `APP_STOP`; status confirmed XMB. The package launched and accepted a stream, but display visibility and the user's audible quality report remain unconfirmed; the stable 0.2.0 milestone is not met. A 0.2.1 / SFO 00.41 candidate adds bounded button-state and named system-menu diagnostics for the next controller retest.
 
 ## Milestones

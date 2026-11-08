@@ -397,6 +397,7 @@ int main(void)
 	uint64_t reported_resend_pending_drops = 0;
 	uint64_t reported_resend_tracking_full = 0;
 	uint64_t handled_flush_generation = 0;
+	uint64_t handled_resync_events = 0;
 
 	mdns_service.socket_fd = -1;
 	raop_pcm_ring_init(&pcm_ring, 2);
@@ -405,6 +406,11 @@ int main(void)
 		printf("Cannot open capped log at %s\n", RECEIVER_LOG_PATH);
 		goto cleanup;
 	}
+	if (!receiver_log_file_start_worker(&diagnostic_log))
+		(void)log_event("LOG_WORKER_UNAVAILABLE", 0, 0);
+	else
+		(void)log_event("LOG_WORKER_READY", 1,
+			RECEIVER_LOG_QUEUE_CAPACITY);
 	(void)log_event("APP_START", 0, 0);
 	(void)log_event("PKG_VERSION_" APP_VERSION_STRING, 0, 0);
 	screen_result = diagnostic_screen_open(&screen, BACKGROUND_RGB_PATH);
@@ -464,7 +470,7 @@ int main(void)
 		goto cleanup;
 	}
 	(void)snprintf(instance, sizeof(instance),
-		"%02X%02X%02X%02X%02X%02X@PS3-AirPlay-Diagnostic",
+		"%02X%02X%02X%02X%02X%02X@AirPS3",
 		net_info.ether_addr.data[0], net_info.ether_addr.data[1],
 		net_info.ether_addr.data[2], net_info.ether_addr.data[3],
 		net_info.ether_addr.data[4], net_info.ether_addr.data[5]);
@@ -618,13 +624,19 @@ int main(void)
 		}
 		if (receiver.flush_generation != handled_flush_generation) {
 			uint32_t discarded_frames = pcm_ring.count;
+			uint64_t resync_events = receiver.audio_queue.stats.resync_events;
+			uint64_t resync_delta = resync_events >= handled_resync_events ?
+				resync_events - handled_resync_events : resync_events;
 			raop_pcm_ring_clear(&pcm_ring);
 			memset(decoded_pcm, 0, sizeof(decoded_pcm));
 			audio_prebuffer_ready = 0;
 			decoded_packet_count = 0;
 			decode_attempts = decode_failures = 0;
 			handled_flush_generation = receiver.flush_generation;
-			(void)log_event("PCM_FLUSH", (int)discarded_frames, 0);
+			handled_resync_events = resync_events;
+			(void)log_event("PCM_DISCONTINUITY",
+				(int)discarded_frames,
+				(size_t)resync_delta);
 		}
 		if (decoder != NULL && !audio_prebuffer_ready &&
 			receiver.audio_queue.count >= RAOP_RTP_PREBUFFER_PACKETS) {
@@ -705,14 +717,25 @@ int main(void)
 			next_log_us = sysGetSystemTime() + 5000000U;
 		}
 		if ((u64)sysGetSystemTime() >= next_heartbeat_us) {
-   (void)log_event("APP_HEARTBEAT", (int)receiver.session.state, system_menu_open);
-   (void)log_event("PAD_HEALTH", last_pad_result, (size_t)last_pad_mask);
-   (void)log_event("PAD_REPORTS", (int)pad_reports_since_heartbeat,
-    (size_t)last_pad_mask);
-   pad_reports_since_heartbeat = 0;
-   (void)log_event("SCREEN_FLIPS", bounded_counter_delta(screen_flips, 0), screen.redraw_mask);
-   next_heartbeat_us = sysGetSystemTime() + 10000000U;
-  }
+			receiver_log_stats log_stats;
+			receiver_log_file_get_stats(&diagnostic_log, &log_stats);
+			(void)log_event("APP_HEARTBEAT", (int)receiver.session.state,
+				system_menu_open);
+			(void)log_event("PAD_HEALTH", last_pad_result,
+				(size_t)last_pad_mask);
+			(void)log_event("PAD_REPORTS",
+				(int)pad_reports_since_heartbeat, (size_t)last_pad_mask);
+			pad_reports_since_heartbeat = 0;
+			(void)log_event("SCREEN_FLIPS",
+				bounded_counter_delta(screen_flips, 0), screen.redraw_mask);
+			(void)log_event("LOG_QUEUE_DEPTH",
+				(int)log_stats.queued_events, log_stats.queue_overruns);
+			(void)log_event("LOG_WRITE_US_MAX",
+				(int)log_stats.write_max_us, 0);
+			(void)log_event("LOG_FLUSH_US_MAX",
+				(int)log_stats.flush_max_us, 0);
+			next_heartbeat_us = sysGetSystemTime() + 10000000U;
+		}
 		if ((u64)sysGetSystemTime() >= next_audio_stats_us) {
 			if (decoder != NULL) {
 				/* Aggregates only: no per-block file writes. Includes silence services. */

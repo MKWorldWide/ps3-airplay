@@ -1,6 +1,10 @@
 # Risks and safety gates
 
 | Risk | Impact | Mitigation / evidence needed |
+| Logger writer thread fails or is starved | Events can be dropped, or the capped log may miss its latest buffered tail | Fixed 128-record queue, explicit overrun/timing counters, low-priority worker, bounded 500 ms shutdown drain; validate on real PS3 and inspect queue depth/writer errors. |
+| Queue resynchronization discards recoverable audio | A transient burst may cause a short audible gap | Trigger only at full queue and more than 128 packets of live sequence lag; preserve drop/resync counters; exercise jitter, burst, sequence wrap, FLUSH, and reconnect on host before hardware. |
+| XMB artwork or callback rendering conflicts with VSH composition | The PS menu could obscure the app or resume to stale/dim frames | Keep title framebuffer presentation bounded and never draw over VSH; confirm repeated PS-menu cycles on hardware before changing compositing behavior. |
+| Supplied artwork carries source metadata | Personal metadata could enter the public repository | Store a lossless PNG of the decoded RGB pixels with source metadata removed; verify exact pixel equality and derivative checksums. |
 |---|---|---|
 | Game audio cannot mix with external PCM | In-game background audio goal may not be achievable | Treat as a separate feasibility gate; test per title and make no universal claim |
 | Resident module lifecycle is incompatible or unstable | Freeze, crash, or loss of console access | Do not load until exact compatibility and a tested recovery path are established; never use boot loading for initial tests |

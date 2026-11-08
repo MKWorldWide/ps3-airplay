@@ -472,3 +472,12 @@ Display candidate restores the standard GPU-side wait-flip command ordering afte
 - The combined Lima release gate now generates every package input. The relocated-source v0.2.7 gate passes, with a validated local PKG retained under ignored `work/builds/consolidation/`. The original validated artifact and rollback tags remain available.
 - GitHub main and the `baseline-v0.2.7` source tag are synced. Remote development branches are intentionally retained for separate review. No public Release or PS3 deployment occurred during consolidation.
 - The obsolete nested checkout was moved into the private migration backup after validation; it remains recoverable, while `PS3 Airplay` is the only active worktree.
+
+## AIR PS3 v0.2.8 implementation state (2026-11-08)
+
+- Candidate remains based on baseline v0.2.7 / SFO 00.47 / AIRPLAY02. Candidate version is 0.2.8 / SFO 00.48; title ID, NPDRM identity, install path, and 44.1 kHz ALAC to 48 kHz GameOS output are unchanged.
+- On PS3, diagnostics now use a 128-record fixed SPSC queue and a low-priority PPU file-writer thread. Producers format/enqueue without file I/O; queue overruns and write/flush maxima are observable. Worker-failure state is exposed to the app, but cannot be persisted to the same sink if that sink itself has failed. Shutdown drain is bounded to 500 ms; a stalled writer can leave the final buffered tail unwritten.
+- RTSP parsing, handler, and response-send durations have separate microsecond aggregate events. Existing `RTSP_HANDLE_MS` remains for continuity.
+- RTP queue recovery triggers only when capacity is full and incoming sequence position is over 128 packets ahead of the last consumed frame. It drops stale queue/socket backlog, clears resend state, and increments the PCM discontinuity generation so the app clears PCM/resampler history and re-prebuffers.
+- User-supplied artwork is preserved as decoded RGB pixels in metadata-free PNG. XMB `ICON0.PNG` is 320x176; `PIC1.PNG` is 1920x1080; the in-app 1280x720 RGB asset comes from the same image. Hardware display and icon appearance remain to be confirmed.
+- No physical console was touched during this candidate source/build work. XMB resume compositing, live discovery, RTSP/RTP session, ALAC, audible output, and sustained playback must be treated as pending until a fresh hardware test.
