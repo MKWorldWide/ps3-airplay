@@ -1,6 +1,6 @@
 # AIRPLAY02 v0.2.3 normalized START fallback
 
-**Status:** Built and installed; runtime launch and controller test pending.
+**Status:** Built and installed. User reports START exited to XMB once; PS-menu behavior failed on a subsequent v0.2.3 launch.
 
 ## Context
 
@@ -27,4 +27,4 @@ Source revision `5a04d93459611df730cc0b0f2d6f2afe84903b86` changes the START exi
 
 ## Next step
 
-Launch from XMB. Press START before PS and confirm whether it exits cleanly. If START fails, retrieve the fresh log before any second attempt. Test PS separately only after START behavior is known; the existing callback does not prove visible system-menu support.
+Follow-up: user manually launched v0.2.3 and reports START exited once. On a later run, PS produced no visible menu and START no longer worked. The fresh 3,673-byte log SHA-256 `ae8689248b6e0bdac6d8a25aa1dd06e7a1f75acc1151470b730156726dcd280e` records DRAW_BEGIN, MENU_OPEN, 18 pad reports, then zero; no raw transition or menu-close. Candidate v0.2.4 continues paced flips only while the system menu is open. A separate v0.2.4 change makes logs append-only across launches, retaining each UTC APP_START timestamp and limiting each session to 16 KiB. Both changes require build and hardware validation.

@@ -345,3 +345,12 @@ The emitter used a paced diagnostic fixture; target output submission is not pro
 | PS3-08 | PCM/RTP queue and decoder health | RTP queue depth 97 then 93 / 256; PCM ring 12,426 then 12,512 / 16,384 frames. No ALAC failure or PCM underflow event in the retained active-stream window; earlier log was overwritten at cap. |
 | PS3-09 | webMAN remote exit and post-exit check | PASS; HTTP 200 command, SYSUTIL_EXIT_GAME, cleanup through APP_STOP. Repeated FTP log download was byte-identical and read-only webMAN status showed XMB. No reboot or forced power-off. |
 | PS3-10 | Controller button handling | FAIL on v0.2.2 manual reboot/direct launch: user reports no buttons work. 3,672-byte log SHA-256 `d51d7fb882e0ddb5dc60cae08449bb1aab4292c59c700ecb0fde5a1b051c0c9f`; pad presence and `SYSUTIL_MENU_OPEN` are logged, but no raw digital transition, START, or menu-close event. Visible menu response remains unconfirmed. |
+
+
+## v0.2.4 PS-menu refresh and append-only diagnostics candidate
+
+| Test | Result | Boundary |
+|---|---|---|
+| PS-menu framebuffer refresh | PASS by source/PPU build only: candidate resumes paced flips while menu-open. | Hardware confirmation required; hypothesis only. |
+| Append logs across launches | PASS: host regression reopens the same path and verifies both timestamped APP_START records and the first session's unique event remain. | Session cap is 16 KiB; total file grows by launch count. |
+| Per-session cap | PASS: host regression verifies LOG_SESSION_CAPPED and rejects later writes without altering earlier session bytes. | Collect post-deploy log over FTP. |

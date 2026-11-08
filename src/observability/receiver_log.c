@@ -37,7 +37,7 @@ int receiver_log_file_open(receiver_log_file *log, const char *path)
 		return 0;
 	memset(log, 0, sizeof(*log));
 	memcpy(log->path, path, path_length + 1);
-	log->stream = fopen(log->path, "wb");
+	log->stream = fopen(log->path, "ab");
 	return log->stream != NULL;
 }
 
@@ -49,6 +49,7 @@ void receiver_log_file_close(receiver_log_file *log)
 		fclose(log->stream);
 	log->stream = NULL;
 	log->bytes_written = 0;
+	log->capped = 0;
 }
 
 int receiver_log_file_event(receiver_log_file *log, const char *timestamp,
@@ -56,7 +57,7 @@ int receiver_log_file_event(receiver_log_file *log, const char *timestamp,
 {
 	char line[160];
 	int length;
-	if (log == NULL || log->stream == NULL ||
+	if (log == NULL || log->stream == NULL || log->capped ||
 		!safe_field(timestamp, 40) ||
 		!safe_field(event, RECEIVER_LOG_EVENT_MAX))
 		return 0;
@@ -65,30 +66,17 @@ int receiver_log_file_event(receiver_log_file *log, const char *timestamp,
 	if (length <= 0 || (size_t)length >= sizeof(line) ||
 		(size_t)length > RECEIVER_LOG_MAX_BYTES)
 		return 0;
-	if (log->bytes_written + (size_t)length > RECEIVER_LOG_MAX_BYTES) {
-		FILE *old_stream = log->stream;
-		size_t old_bytes = log->bytes_written;
-		log->stream = NULL;
-		if (fclose(old_stream) != 0)
-			return 0;
-		log->stream = fopen(log->path, "wb");
-		log->bytes_written = 0;
-		if (log->stream == NULL)
-			return 0;
-		length = snprintf(line, sizeof(line),
-			"%s event=LOG_WRAPPED value=%lu bytes=0\n", timestamp,
-			(unsigned long)old_bytes);
-		if (length <= 0 || (size_t)length >= sizeof(line) ||
-			fwrite(line, 1, (size_t)length, log->stream) != (size_t)length ||
-			fflush(log->stream) != 0)
-			return 0;
-		log->bytes_written = (size_t)length;
-		length = snprintf(line, sizeof(line),
-			"%s event=%s value=%d bytes=%lu\n", timestamp, event, value,
-			(unsigned long)byte_count);
-		if (length <= 0 || (size_t)length >= sizeof(line) ||
-			log->bytes_written + (size_t)length > RECEIVER_LOG_MAX_BYTES)
-			return 0;
+	if (log->bytes_written + (size_t)length > RECEIVER_LOG_MAX_BYTES - 160U) {
+		int marker_length = snprintf(line, sizeof(line),
+			"%s event=LOG_SESSION_CAPPED value=%lu bytes=0\n", timestamp,
+			(unsigned long)log->bytes_written);
+		if (marker_length > 0 && (size_t)marker_length < sizeof(line) &&
+			log->bytes_written + (size_t)marker_length <= RECEIVER_LOG_MAX_BYTES &&
+			fwrite(line, 1, (size_t)marker_length, log->stream) ==
+				(size_t)marker_length && fflush(log->stream) == 0)
+			log->bytes_written += (size_t)marker_length;
+		log->capped = 1;
+		return 0;
 	}
 	if (fwrite(line, 1, (size_t)length, log->stream) != (size_t)length ||
 		fflush(log->stream) != 0)

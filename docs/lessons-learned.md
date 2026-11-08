@@ -627,3 +627,18 @@ The v0.1.31 fresh RPCS3 replay verifies the portable-arithmetic correction: the 
 - **Root Cause:** The HTTP response confirms command handling, not successful title start.
 - **Fix:** Require a fresh app-version/startup log and matching runtime state before recording launch as PASS; hand off to a direct XMB launch if the remote command does not start it.
 - **Prevention Rule:** Track upload, install, launch, runtime input, and user-visible behavior as separate gates.
+
+
+## System-menu callback is not proof of a rendered menu
+
+- **Problem:** v0.2.3 logged `SYSUTIL_DRAW_BEGIN` and `SYSUTIL_MENU_OPEN`, but the user saw no XMB; START stopped working afterward.
+- **Root Cause:** Suspected interaction between VSH's RSX overlay and the static-screen optimization that stopped flips when no redraw was pending. This is not yet confirmed on hardware.
+- **Fix:** Candidate v0.2.4 resumes paced framebuffer flips only during the menu-open interval.
+- **Prevention Rule:** Validate visible system-menu output separately from callback delivery; retain scanout refresh while VSH draws overlays.
+
+## Capped logs must retain prior launches
+
+- **Problem:** Opening the diagnostic path with `wb` and wrapping at 16 KiB erased evidence from previous app sessions.
+- **Root Cause:** The cap applied to the whole file and open truncated it, rather than bounding each launch separately.
+- **Fix:** Candidate v0.2.4 appends sessions, timestamps `APP_START` in UTC, caps each session at 16 KiB, writes `LOG_SESSION_CAPPED`, then stops logging until next launch.
+- **Prevention Rule:** Bound log volume per session without truncating prior sessions; test append, timestamp and cap semantics across opens.

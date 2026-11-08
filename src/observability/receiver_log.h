@@ -12,13 +12,14 @@ typedef struct {
 	FILE *stream;
 	char path[RECEIVER_LOG_PATH_MAX];
 	size_t bytes_written;
+	int capped;
 } receiver_log_file;
 
 /* Events deliberately exclude IPs, headers, bodies, track names, and keys. */
 int receiver_log_event(FILE *stream, const char *timestamp,
 	const char *event, int value, size_t byte_count);
 
-/* Truncate on open; wrap to an empty file when the fixed byte cap is reached. */
+/* Append-only file; the fixed byte cap applies independently to each launch. */
 int receiver_log_file_open(receiver_log_file *log, const char *path);
 void receiver_log_file_close(receiver_log_file *log);
 int receiver_log_file_event(receiver_log_file *log, const char *timestamp,

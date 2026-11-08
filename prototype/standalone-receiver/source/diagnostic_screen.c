@@ -15,6 +15,7 @@
 #define SCREEN_COMMAND_BYTES 0x100000U
 #define SCREEN_IO_BYTES (32U * 1024U * 1024U)
 #define GCM_LABEL_INDEX 255U
+#define SCREEN_REFRESH_INTERVAL_US 16667U
 #define IMAGE_WIDTH 1280U
 #define IMAGE_HEIGHT 720U
 #define IMAGE_RGB_BYTES (IMAGE_WIDTH * IMAGE_HEIGHT * 3U)
@@ -210,25 +211,32 @@ int diagnostic_screen_present(diagnostic_screen *screen, int system_menu_open)
    return !system_menu_open && now - screen->flip_started_us > 500000U ?
     DIAGNOSTIC_SCREEN_TIMEOUT : 0;
   screen->flip_pending = 0;
-  if (system_menu_open) return 0;
 
   /* The just-completed target is active. Refresh the other buffer without
    * another flip unless invalidation dirtied the active image as well. */
   active_buffer = screen->next_buffer ^ 1U;
   buffer = screen->next_buffer;
-  if (screen->redraw_mask & (1U << buffer)) {
+  if (!system_menu_open && (screen->redraw_mask & (1U << buffer))) {
    copy_image((uint32_t *)screen->buffers[buffer], screen->pitch,
     screen->width, screen->height, screen->image_rgb);
    screen->redraw_mask &= ~(1U << buffer);
   }
-  if (!(screen->redraw_mask & (1U << active_buffer))) return 0;
- } else if (system_menu_open || screen->redraw_mask == 0) {
+  if (!system_menu_open && !(screen->redraw_mask & (1U << active_buffer)))
+   return 0;
+ } else if (!system_menu_open && screen->redraw_mask == 0) {
   return 0;
  }
 
+ /* VSH's PS menu shares the RSX scanout. Keep flipping the unchanged image
+  * while the menu is open so VSH receives refreshes; otherwise stay static to
+  * avoid the visible flicker caused by unnecessary flips. */
+ if (screen->flip_started_us != 0 &&
+     now - screen->flip_started_us < SCREEN_REFRESH_INTERVAL_US)
+  return 0;
+
  /* next_buffer is inactive whenever no flip is pending. */
  buffer = screen->next_buffer;
- if (screen->redraw_mask & (1U << buffer)) {
+ if (!system_menu_open && (screen->redraw_mask & (1U << buffer))) {
   copy_image((uint32_t *)screen->buffers[buffer], screen->pitch,
    screen->width, screen->height, screen->image_rgb);
   screen->redraw_mask &= ~(1U << buffer);

@@ -399,3 +399,10 @@ Display candidate restores the standard GPU-side wait-flip command ordering afte
 - Queue depth was 97 then 93 of 256. PCM ring occupancy was 12,426 then 12,512 of 16,384 input frames (~76%; ~282-284 ms at 44.1 kHz). Interval queued/read PCM deltas were 220,704/220,617 then 220,704/220,618; GameOS audio block submission was 240,128 frames in each interval. These are code-path counters, not a hardware loopback measurement.
 - `PAD_HEALTH value=0 bytes=1` repeats, indicating input API polling success and pad port 0 present, but the current logger does not record button masks/transitions. `APP_HEARTBEAT bytes=1` means its system-menu-open flag was set throughout the retained idle interval; it does not prove the XMB overlay was visible or interactive. A previous `RTP_TIMING_BAD` 32-byte event is one invalid timing response, not a jitter measurement.
 - Current console state is XMB. The new raw log snapshots remain under ignored local `work/hardware/2026-11-07-v0139-current/`; do not publish them.
+
+
+## v0.2.3 PS-menu and log follow-up
+
+- v0.2.3 manually launched. User confirms START exited to XMB once; on a later run, PS produced no visible menu and START no longer worked afterward. Private log size 3,673 bytes; SHA-256 `ae8689248b6e0bdac6d8a25aa1dd06e7a1f75acc1151470b730156726dcd280e`. It records `SYSUTIL_DRAW_BEGIN` (289), `SYSUTIL_MENU_OPEN` (305), 18 pad reports in the next heartbeat, then zero, with no raw digital transition, menu-close, or app-stop event.
+- Likely display regression: commit `43eb638` stopped refreshing unchanged buffers; the current presenter also returns while menu-open. Candidate v0.2.4 keeps paced flips during the menu-open state only. This is a hypothesis pending hardware confirmation.
+- Logging defect: open used `wb` and 16 KiB wrap erased earlier app sessions. Candidate v0.2.4 uses append mode, timestamps each APP_START in UTC, and caps each launch at 16 KiB with LOG_SESSION_CAPPED. Total file growth is bounded per run, not globally.

@@ -2,7 +2,7 @@
 
 AIRPLAY02 follows conservative pre-1.0 versioning. Increment the patch number for each distinct fix or small improvement that produces a new package: `0.1.4`, `0.1.5`, `0.1.6`, and so on. Never reuse a published or tested version number for different package contents. Record the exact package hash beside every result.
 
-**Latest installed package:** AIRPLAY02 `0.2.3`, SFO `00.43`. Installed SFO and EBOOT match the validated PKG. The v0.2.3 controller behavior is not yet tested: a webMAN launch request returned HTTP 200 but the console remained at XMB with no new `APP_START`. On v0.2.2, the user pressed PS first and the menu never appeared visibly. v0.2.3 connects the normalized START state to the clean-exit action; test START first from XMB. PS-menu visibility remains unresolved.
+**Latest hardware-tested package:** AIRPLAY02 `0.2.3`, SFO `00.43`. User confirms START exited to XMB once. On a later run, PS produced no visible menu and START no longer worked afterward. The log records DRAW_BEGIN and MENU_OPEN, then no menu-close; pad reports later fall to zero. Candidate v0.2.4 / SFO `00.44` restores paced flips during the system-menu interval and changes diagnostics to append-only sessions capped at 16 KiB each. Build and hardware validation pending.
 
 ## v0.2.0 candidate package record
 
@@ -259,3 +259,10 @@ Live read-only evidence captured while AIRPLAY02 v0.1.35 was running: installed 
 - Includes v0.1.36's bounded in-window late RTP resend recovery and changes the static-screen renderer to submit only a menu-resume refresh instead of flipping continuously.
 - Fresh console baseline remains v0.1.35 / SFO 00.35. v0.1.37 build, package hashes, RPCS3 replay, and hardware validation are pending.
 - Production RTSP remains port 5000. Use port 5001 only for emulator testing when the host port conflicts, and label that package as an emulator variant.
+
+
+## v0.2.4 PS-menu refresh and append-only diagnostics candidate
+
+- Source changes: keep paced framebuffer flips active during `SYSUTIL_MENU_OPEN`, while leaving the static image idle otherwise; open the diagnostic log in append mode; cap each launch independently at 16 KiB with a `LOG_SESSION_CAPPED` marker. The first `APP_START` record in each run carries its UTC launch timestamp.
+- Version: app/package `0.2.4`; SFO APP_VER/VERSION `00.44`.
+- Build and physical validation: pending.

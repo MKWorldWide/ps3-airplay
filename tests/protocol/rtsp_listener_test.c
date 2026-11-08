@@ -124,7 +124,7 @@ int main(void)
 {
 	char path[] = "/tmp/ps3-airplay-log-XXXXXX";
 	char response[256];
-	char log_contents[RECEIVER_LOG_MAX_BYTES + 1];
+	char log_contents[(RECEIVER_LOG_MAX_BYTES * 2) + 1024];
 	char long_request[512];
 	int temporary_fd = mkstemp(path);
 	FILE *readback;
@@ -139,6 +139,8 @@ int main(void)
 	assert(temporary_fd >= 0);
 	close(temporary_fd);
 	assert(receiver_log_file_open(&log, path));
+	assert(receiver_log_file_event(&log, "2026-11-06T18:00:00Z",
+		"APP_START", 0, 0));
 	assert(receiver_log_file_event(&log, "2026-11-06T18:00:00Z",
 		"ANNOUNCE_CONTENT_TYPE_CHECK_START", 0, 64));
 	assert(rtsp_listener_open(&listener, 0, &log));
@@ -174,25 +176,45 @@ int main(void)
 	assert(strstr(log_contents, "RTSP_OPTIONS") != NULL);
 	assert(strstr(log_contents, "RTSP_UNSUPPORTED") != NULL);
 	assert(strstr(log_contents, "ANNOUNCE_CONTENT_TYPE_CHECK_START") != NULL);
+	assert(strstr(log_contents, "APP_START") != NULL);
 
 	assert(receiver_log_file_open(&log, path));
+	assert(receiver_log_file_event(&log, "2026-11-06T18:01:00Z",
+		"APP_START", 0, 0));
+	assert(stat(path, &metadata) == 0);
+	{
+		off_t first_session_bytes = metadata.st_size;
+		int capped = 0;
 	for (i = 0; i < 400; ++i) {
 		(void)snprintf(long_request, sizeof(long_request),
 			"%04u-11-06T18:00:00Z", i);
-		assert(receiver_log_file_event(&log, long_request,
-			"RTSP_HEARTBEAT", (int)i, i));
+		if (!receiver_log_file_event(&log, long_request,
+			"RTSP_HEARTBEAT", (int)i, i)) {
+			capped = 1;
+			break;
+		}
+	}
+	assert(capped);
+	assert(!receiver_log_file_event(&log, "2026-11-06T18:02:00Z",
+		"AFTER_CAP", 0, 0));
+	assert(first_session_bytes > 0);
 	}
 	receiver_log_file_close(&log);
 
 	assert(stat(path, &metadata) == 0);
-	assert((size_t)metadata.st_size <= RECEIVER_LOG_MAX_BYTES);
+	assert((size_t)metadata.st_size > RECEIVER_LOG_MAX_BYTES);
+	assert((size_t)metadata.st_size <= (RECEIVER_LOG_MAX_BYTES * 2) + 1024);
 	readback = fopen(path, "rb");
 	assert(readback != NULL);
 	amount = fread(log_contents, 1, sizeof(log_contents) - 1, readback);
 	log_contents[amount] = '\0';
 	assert(fclose(readback) == 0);
-	assert(strstr(log_contents, "event=LOG_WRAPPED") != NULL);
+	assert(strstr(log_contents, "2026-11-06T18:00:00Z event=APP_START") != NULL);
+	assert(strstr(log_contents, "2026-11-06T18:01:00Z event=APP_START") != NULL);
+	assert(strstr(log_contents, "ANNOUNCE_CONTENT_TYPE_CHECK_START") != NULL);
+	assert(strstr(log_contents, "event=LOG_SESSION_CAPPED") != NULL);
+	assert(strstr(log_contents, "event=LOG_WRAPPED") == NULL);
 	assert(unlink(path) == 0);
-	puts("rtsp listener and capped log: PASS");
+	puts("rtsp listener and append-only per-launch capped log: PASS");
 	return 0;
 }
