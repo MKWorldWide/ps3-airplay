@@ -162,6 +162,12 @@ cc -std=c11 -Wall -Wextra -Werror -g -fsanitize=address,undefined \
 	"$PROJECT_ROOT/tests/audio/pcm_ring_test.c" -o "$PCM_RING_TEST"
 "$PCM_RING_TEST"
 
+PCM_QUALITY_TEST="$PROJECT_ROOT/build/lima-crypto/pcm_quality_test"
+cc -std=c11 -Wall -Wextra -Werror -g -fsanitize=address,undefined \
+	-I"$PROJECT_ROOT/src/audio" "$PROJECT_ROOT/src/audio/pcm_ring.c" \
+	"$PROJECT_ROOT/tests/audio/pcm_quality_test.c" -lm -o "$PCM_QUALITY_TEST"
+"$PCM_QUALITY_TEST"
+
 PCM_GAIN_TEST="$PROJECT_ROOT/build/lima-crypto/pcm_gain_test"
 cc -std=c11 -Wall -Wextra -Werror -g -fsanitize=address,undefined \
 	-I"$PROJECT_ROOT/src/audio" "$PROJECT_ROOT/src/audio/pcm_gain.c" \

@@ -6,7 +6,6 @@
 #include "raop_mdns_service.h"
 #include "pcm_ring.h"
 #include "pcm_gain.h"
-#include "diagnostic_tone.h"
 #include "raop_receiver.h"
 #include "diagnostic_screen.h"
 
@@ -44,6 +43,7 @@ mbedtls_ms_time_t mbedtls_ms_time(void)
 #endif
 #define RTSP_PORT RAOP_RTSP_PORT
 #define RTP_BASE_PORT 6000
+#define GAMEOS_AUDIO_RATE 48000U
 #define AUDIO_PORT_LEVEL 0.25f
 #define NET_IP_WAIT_US 5000000ULL
 #define NET_IP_POLL_US 100000U
@@ -65,9 +65,7 @@ static receiver_log_file diagnostic_log;
 static raop_alac_decoder *decoder;
 static raop_pcm_ring pcm_ring;
 static raop_pcm_gain stream_gain;
-static raop_diagnostic_tone diagnostic_tone;
 static diagnostic_screen screen;
-static int diagnostic_tone_logged;
 static uint8_t decoded_pcm[RAOP_ALAC_PCM_MAX];
 static uint64_t decoded_packet_count;
 static uint64_t decode_attempts;
@@ -217,24 +215,12 @@ static void render_next_audio_block(const audioPortConfig *config,
 	float *audio_data = (float *)(uintptr_t)config->audioDataStart;
 	float *block = audio_data + next_block * config->channelCount *
 		AUDIO_BLOCK_SAMPLES;
-	if (!raop_diagnostic_tone_complete(&diagnostic_tone)) {
-		(void)raop_diagnostic_tone_render(&diagnostic_tone, block,
-			AUDIO_BLOCK_SAMPLES);
-		if (!diagnostic_tone_logged &&
-			raop_diagnostic_tone_complete(&diagnostic_tone)) {
-			diagnostic_tone_logged = 1;
-			(void)log_event("AUDIO_TEST_TONE_COMPLETE",
-				(int)RAOP_DIAGNOSTIC_TONE_FREQUENCY,
-				RAOP_DIAGNOSTIC_TONE_FRAMES);
-		}
-		return;
-	}
 	if (!stream_ready) {
 		raop_pcm_ring_render_silence(block, AUDIO_BLOCK_SAMPLES);
 		return;
 	}
 	(void)raop_pcm_ring_render_float(&pcm_ring, active_sample_rate,
-		RAOP_DIAGNOSTIC_TONE_RATE, block, AUDIO_BLOCK_SAMPLES);
+		GAMEOS_AUDIO_RATE, block, AUDIO_BLOCK_SAMPLES);
 	raop_pcm_gain_apply(&stream_gain, block, AUDIO_BLOCK_SAMPLES);
 	audio_port_frames_submitted += AUDIO_BLOCK_SAMPLES;
 }
@@ -420,10 +406,6 @@ int main(void)
 	}
 	audio_port_started = 1;
 	(void)log_event("AUDIO_READY", (int)audio_config.channelCount, 0);
-	raop_diagnostic_tone_init(&diagnostic_tone);
-	(void)log_event("AUDIO_TEST_TONE_START",
-		(int)RAOP_DIAGNOSTIC_TONE_FREQUENCY,
-		RAOP_DIAGNOSTIC_TONE_FRAMES);
 	printf("RAOP diagnostic receiver ready. Log: %s\n", RECEIVER_LOG_PATH);
 
 	while (!exit_requested) {

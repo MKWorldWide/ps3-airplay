@@ -1,5 +1,12 @@
 # Project state
 
+## v0.2.0 / SFO 00.40 candidate update (2026-11-07)
+
+- The user requested that the app's startup diagnostic tone be removed and the next package label be `0.2.0`; SFO `APP_VER` advances from `00.39` to `00.40`.
+- Production `main.c` now submits silence until receiver PCM is ready. The diagnostic tone source/test remains in the repository for deliberate host-side use, but the standalone receiver no longer links it or logs startup tone events.
+- `tests/audio/pcm_quality_test.c` measures the production PCM ring's 44.1 kHz to 48 kHz output for six sine frequencies. It emits frame count, RMS/peak error, SNR, amplitude ratio, input frames consumed, and underflows as JSON. First baseline: no underflows and exactly 48,000 output frames; measured SNR is 92.30 dB at 100 Hz, 54.64 dB at 1 kHz, 26.78 dB at 5 kHz, 15.03 dB at 10 kHz, 8.47 dB at 15 kHz, and 4.17 dB at 20 kHz. This is an objective resampler baseline, not a claim these pure tones represent the program material or explain the hardware artifacts.
+- The label `0.2.0` is user-directed, but this package is a candidate, not a stable-milestone claim: no fresh PS3 test, reliable controller exit, settings/toggles, or dropout fix has been established. Physical console remains at XMB and is not modified in this pass.
+
 ## Architecture
 
 PS3 AirPlay is an experimental AirPlay 1 / RAOP receiver for PS3 homebrew. The intended audio path is DNS-SD/mDNS discovery, bounded RTSP session control, UDP RTP receive, decryption and ALAC decode, bounded PCM buffering, and output through the standalone GameOS audio API.

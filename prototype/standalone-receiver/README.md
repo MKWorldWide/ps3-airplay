@@ -60,12 +60,10 @@ allocation, `-8` framebuffer mapping, `-9` display-buffer registration, and
 `-10` screen flip. `CONTROLLER_READY` and `USER_EXIT_START` record input setup
 and the explicit exit action.
 
-At startup the app emits a five-second, 440 Hz stereo diagnostic through the
-same GameOS audio block queue used for receiver playback. Its level is capped
-at five percent full scale with 50 ms fades at both ends. The capped log records
-`AUDIO_TEST_TONE_START` and `AUDIO_TEST_TONE_COMPLETE`; neither event means the
-sound was actually audible. A PS3 and connected display/audio system are still
-required to verify that.
+The app no longer emits a diagnostic tone at startup. Before streamed audio is
+ready, it submits silence to the GameOS audio blocks. The standalone tone
+generator and host test remain available for deliberate diagnostics, but they
+are not linked into the receiver package.
 
 This runtime behavior is not yet hardware-tested. The mDNS TXT values now
 match the implemented stereo ALAC, no/RSA encryption, 44.1 kHz, 16-bit UDP

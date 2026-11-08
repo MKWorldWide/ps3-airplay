@@ -34,13 +34,12 @@ PROJECT_CFILES := \
 	../../src/codec/raop_alac.c \
 	../../src/audio/pcm_ring.c \
 	../../src/audio/pcm_gain.c \
-	../../src/audio/diagnostic_tone.c \
 	../../src/observability/receiver_log.c
 INCLUDES := include
 TITLE := PS3 AirPlay 1 Receiver
 APPID := AIRPLAY02
 CONTENTID := UP0001-$(APPID)_00-0000000000000000
-APP_VERSION ?= 0.1.39
+APP_VERSION ?= 0.2.0
 RTSP_PORT ?= 5000
 
 ifeq ($(LEGACY_RUNTIME),1)

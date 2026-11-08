@@ -1,6 +1,6 @@
 # Roadmap
 
-**Current status (2026-11-07):** Production AIRPLAY02 v0.1.39 / SFO 00.39 was installed and run on the physical PS3. Its retained log reaches encrypted 44.1 kHz RAOP recording, RTP receive/decrypt, ALAC decoding, and PCM submission. Across two logged 512-packet batches, 99 sequence gaps were reported; resend recovery counters show 112 recovered packets and 16 concealed frames across separate sampling windows. The bounded log wrapped, and no underflow or ALAC failure appears in the retained streaming segment. User reports controller/PS input unresponsive. Remote webMAN exit reached SYSUTIL_EXIT_GAME and complete cleanup; read-only status now shows XMB. Visible display and user-audible quality remain human-confirmation gates. The observed run proves the pipeline reached GameOS PCM submission, not the exact sound at HDMI.
+**Current status (2026-11-07):** The last physical build was AIRPLAY02 v0.1.39 / SFO 00.39. Its retained log reaches encrypted 44.1 kHz RAOP recording, RTP receive/decrypt, ALAC decoding, and PCM submission. Across two logged 512-packet batches, 99 sequence gaps were reported; resend recovery counters show 112 recovered packets and 16 concealed frames across separate sampling windows. The bounded log wrapped, and no underflow or ALAC failure appears in the retained streaming segment. User reports controller/PS input unresponsive. Remote webMAN exit reached SYSUTIL_EXIT_GAME and complete cleanup; read-only status showed XMB. The current source candidate removes the startup diagnostic tone and requests app/package label 0.2.0 with SFO 00.40. It is not yet hardware-tested and does not meet the stable 0.2.0 milestone; visible display, controller exit, settings/toggles, and audible quality remain open gates.
 
 ## Milestones
 
@@ -18,7 +18,7 @@
 
 ## Current implementation
 
-Portable components cover bounded DNS-SD/mDNS, RTSP/SDP session handling, UDP RTP, timing probes, retransmission requests and validation, RAOP crypto, ALAC decoding, PCM buffering, and capped diagnostics. The standalone app plays one five-second, low-level 440 Hz startup diagnostic through GameOS audio blocks before normal PCM rendering. Real Spotify audio over AirPlay was previously confirmed on v0.1.33, with crackle/dropouts and XMB-resume flicker. The preceding physical capture (v0.1.35) recorded active starvation without ALAC decode failures; it is not evidence for the current v0.1.39 run. The resident candidate remains separate and discards decoded PCM.
+Portable components cover bounded DNS-SD/mDNS, RTSP/SDP session handling, UDP RTP, timing probes, retransmission requests and validation, RAOP crypto, ALAC decoding, PCM buffering, and capped diagnostics. The standalone app now submits silence until receiver PCM is ready; the diagnostic tone is no longer part of application startup or the receiver package. Real Spotify audio over AirPlay was previously confirmed on v0.1.33, with crackle/dropouts and XMB-resume flicker. The preceding physical capture (v0.1.35) recorded active starvation without ALAC decode failures; it is not evidence for the current v0.1.39 run. The resident candidate remains separate and discards decoded PCM.
 
 ## Next steps
 

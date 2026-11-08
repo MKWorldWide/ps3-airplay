@@ -1,5 +1,14 @@
 # Test matrix
 
+## v0.2.0 candidate work (2026-11-07)
+
+| Test | Result | Boundary |
+|---|---|---|
+| Startup tone absent from production renderer and link list | PASS by source inspection; tone component remains host-tested but is not linked by the receiver Makefile. | Not yet a rebuilt package/runtime check. |
+| Production PCM ring 44.1 kHz to 48 kHz quality baseline | PASS structurally: six frequencies, 48,000 output frames each, zero underflows, zero dropped frames. Measured SNR: 92.30 dB (100 Hz), 54.64 dB (1 kHz), 26.78 dB (5 kHz), 15.03 dB (10 kHz), 8.47 dB (15 kHz), 4.17 dB (20 kHz). | Host synthetic tones only; indicates linear interpolation attenuation at high frequencies and does not isolate physical dropout causes. |
+| App/package version and SFO version | Requested defaults: package/app `0.2.0`, SFO `00.40`. | Package generation and extraction validation pending. This is not a stable 0.2.0 milestone claim. |
+| PS3/RPCS3 runtime | NOT RUN. | Physical console remains at XMB; no transfer, installation, or launch in this pass. |
+
 This matrix distinguishes portable host evidence and cross-build evidence from real hardware validation. Update rows only when the listed scenario is actually exercised.
 
 **Demonstration target:** PS3 with Evilnat 4.93 CFW; Cobra 8.5 observed. Model not recorded. This configuration is context for future community testing and is not hardware compatibility evidence.

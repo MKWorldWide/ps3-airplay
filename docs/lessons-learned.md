@@ -563,3 +563,17 @@ The v0.1.31 fresh RPCS3 replay verifies the portable-arithmetic correction: the 
 - **Root Cause:** Current counters report sequence gaps and recovery results, not packet arrival-time variation or continuous buffer occupancy. Sampling windows differ, and the capped log discarded older data.
 - **Fix:** Preserve the observed gap/recovery/concealment counts as separate counters. Add monotonic RTP inter-arrival jitter, PCM occupancy extrema/starvation duration, and audio scheduling lateness before tuning buffer sizes.
 - **Prevention Rule:** Do not infer jitter or exact unrecovered loss by subtracting counters sampled at different boundaries.
+
+## Startup test tone is separate from receiver readiness
+
+- **Problem:** A diagnostic tone played automatically at launch even though the user no longer needed it; it could be mistaken for an AirPlay audio result and delayed the useful silent waiting state.
+- **Root Cause:** The tone generator was directly wired into the production audio-block renderer before receiver PCM.
+- **Fix:** Remove tone state, generation, startup/completion events, and the tone object from the receiver link. Submit silence until PCM is ready. Retain the standalone tone component and host test for intentional diagnostics.
+- **Prevention Rule:** Do not make a test signal part of normal playback startup; keep diagnostic stimuli explicitly invoked and report them separately from stream evidence.
+
+## PCM resampling needs an objective high-frequency baseline
+
+- **Problem:** Host PCM tests proved frame flow and lack of underflow but did not quantify frequency-dependent fidelity for 44.1-to-48 kHz conversion.
+- **Root Cause:** Existing tests checked structural ring behavior, not output error against a reference waveform.
+- **Fix:** Add a production-ring measurement over six frequencies and report SNR, amplitude ratio, and errors. The linear interpolation baseline degrades substantially at high frequencies (8.47 dB SNR at 15 kHz and 4.17 dB at 20 kHz in the current test); investigate a bounded higher-quality resampler as a separate measured change.
+- **Prevention Rule:** Compare resampler candidates with aligned reference signals and report CPU cost and frame continuity before changing the production algorithm.

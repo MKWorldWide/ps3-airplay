@@ -2,6 +2,8 @@
 
 AIRPLAY02 follows conservative pre-1.0 versioning. Increment the patch number for each distinct fix or small improvement that produces a new package: `0.1.4`, `0.1.5`, `0.1.6`, and so on. Never reuse a published or tested version number for different package contents. Record the exact package hash beside every result.
 
+**Current candidate:** per the maintainer's explicit version choice, the next app/package label is `0.2.0` and SFO `APP_VER` continues at `00.40`. This is a candidate label, not a claim that the 0.2.0 stable diagnostic milestone has passed; hardware exit, controls, settings/toggles, and fresh-console validation remain outstanding.
+
 ## Milestones
 
 - **0.1.x — focused fixes and validation.** Each package changes one or a few clearly described items and carries a matching SFO and startup-log version. Failed candidates remain documented; the next distinct package increments the final number.
