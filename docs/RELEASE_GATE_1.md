@@ -14,7 +14,7 @@ The user accepted Gate 0 for AIRPLAY02 v0.2.8 / SFO `00.48`: about 45 minutes on
 | License/distribution review | PASS for documented components | Project MIT, ALAC notice, OpenAirPlay key-data notice, Mbed TLS 3.6.7 license, and PS3DK/PSL1GHT/RSX license texts are included in the repository and release asset list. The user explicitly authorized the supplied artwork for public project/PKG use; no broader image license is asserted. |
 | Release branch integration | PENDING | Current work is on the preserved feature branch; integrate the verified candidate into main and build from the exact current `origin/main` tip before publishing. |
 | GitHub tag/release | NOT CREATED | Do not create a tag or release until all required gates pass. |
-| PS3 installation | NOT PERFORMED | Neither PS3 is to be installed, restarted, or altered for this task. |
+| v1.0.0 development-unit installation | PASS | Uploaded by FTP, downloaded back byte-for-byte, installed through webMAN, and verified by exact installed PARAM.SFO/EBOOT hashes. App was not launched in this pass; runtime/display/audio behavior remains untested. The primary PS3 was not changed. |
 
 ## Candidate build path
 

@@ -503,3 +503,8 @@ Display candidate restores the standard GPU-side wait-flip command ordering afte
 - Built app `1.0.0` with fixed-width PS3 SFO `01.00` from source `f3da352809f81daac5e3b61a35d7fc18362bf1cc` in the existing Lima VM. Extracted SFO independently validates `APP_VER=01.00`, `VERSION=01.00`, `TITLE_ID=AIRPLAY02`, and `TITLE=AIR PS3`.
 - Host ASan/UBSan and pinned PPU/ELF/package validation passed. The debug PKG is 3,906,640 bytes, SHA-256 `ef8f0afdacef560e9f5825fa9539247f3eb17e7791282aa6790f086fa8b1288e`; local artifacts and evidence remain ignored under `work/builds/1.0.0/`.
 - This is build validation, not fresh runtime validation. It was built from the preserved feature branch; the GitHub release remains blocked until the reviewed source is integrated into current main and rebuilt from its exact tip. No PS3 was touched.
+
+## v1.0.0 development-unit install and Git identity correction (2026-11-08)
+
+- The v1.0.0 debug PKG was uploaded to the development PS3 over FTP after a webMAN exit-to-XMB request. Download-back matched the local PKG hash. Installation completed; installed PARAM.SFO matched the candidate (`APP_VER=VERSION=01.00`) and installed EBOOT matched byte-for-byte. The app was not launched, so this is installation validation only. The primary PS3 was untouched.
+- The previous local no-reply email belonged to a different GitHub account than the authenticated EsKaye profile, which caused GitHub to attribute commits to `sunnykaye`. Global and repository Git author email are now set to the authenticated account's no-reply address. Existing commit objects and public attribution were not rewritten; new commits must be checked against GitHub's commit API.

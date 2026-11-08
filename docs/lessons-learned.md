@@ -751,3 +751,10 @@ The v0.1.31 fresh RPCS3 replay verifies the portable-arithmetic correction: the 
 - **Root Cause:** Packaging transforms source metadata into PARAM.SFO; stale templates or packaging overrides can diverge from the requested application version.
 - **Fix:** Independently validate extracted `APP_VER`, `VERSION`, title ID, boot metadata, and XMB title. The v1.0.0 candidate contains `01.00` in both version fields.
 - **Prevention Rule:** Treat manifest, build evidence, and the extracted SFO as separate checks; report the actual fixed-width value explicitly.
+
+## Match Git no-reply email to the authenticated GitHub account
+
+- **Problem:** Commits displayed under an unexpected GitHub login even though their author name was `EsKaye`.
+- **Root Cause:** The configured no-reply address contained the numeric ID of a different GitHub account; GitHub associates commit authorship by email identity.
+- **Fix:** Set the global and repository-local Git email to the authenticated EsKaye account's no-reply address. Preserve old published commit objects until a separate, reviewed history-migration decision.
+- **Prevention Rule:** After changing GitHub accounts or usernames, verify a new commit's author and committer login through the GitHub API; matching the display name alone is insufficient.
