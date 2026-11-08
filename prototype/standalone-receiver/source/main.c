@@ -208,7 +208,7 @@ static void poll_controls(int enabled)
             last_pad_buttons[pad] = buttons;
         }
 
-        if (data.BTN_START) {
+        if (buttons & (1U << 0)) {
             (void)log_event("USER_EXIT_START", pad, 0);
             exit_requested = 1;
             break;

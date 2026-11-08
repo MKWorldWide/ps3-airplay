@@ -34,6 +34,13 @@
 | v0.2.2 install and launch | PASS: FTP download-back hash match; installed SFO exact; installed EBOOT equals package SELF plus 32 zero bytes; fresh `PKG_VERSION_0.2.2` log. | Installed and launched on PS3. |
 | v0.2.2 controller retest: manual reboot/direct XMB launch | FAIL: user reports no buttons work, same as webMAN launch. Fresh log records `SYSUTIL_MENU_OPEN` but no close, no raw digital-mask transition, no START, and no app stop. | Manual launch does not distinguish or fix the issue. Callback delivery is not proof that the menu appeared. Console left under user control; isolate START-first then PS behavior on a fresh launch. |
 
+## v0.2.3 controller START fallback candidate
+
+| Test | Result | Boundary |
+|---|---|---|
+| START action uses normalized digital state | PASS by source inspection: action condition now consumes the same normalized bit that includes the raw `PAD_CTRL_START` fallback. | PPU build, package validation, and PS3 START-first hardware retest pending. |
+| PS-button visible system menu | FAIL by user report on v0.2.2: PS pressed first, no menu appeared visibly. | v0.2.3 changes only the START action path and does not claim to fix PS-menu presentation. |
+
 This matrix distinguishes portable host evidence and cross-build evidence from real hardware validation. Update rows only when the listed scenario is actually exercised.
 
 **Demonstration target:** PS3 with Evilnat 4.93 CFW; Cobra 8.5 observed. Model not recorded. This configuration is context for future community testing and is not hardware compatibility evidence.

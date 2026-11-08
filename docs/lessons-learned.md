@@ -613,3 +613,10 @@ The v0.1.31 fresh RPCS3 replay verifies the portable-arithmetic correction: the 
 - **Root Cause:** Not established. The run showed no digital mask transition or START event; a `SYSUTIL_MENU_OPEN` callback arrived without a close. This is insufficient to decide whether button data is missing or whether the system menu is open and intercepting app input.
 - **Fix:** No speculative code change. Record the fresh run and next isolate START-first from PS-button behavior.
 - **Prevention Rule:** Compare launch paths only with matching, controlled button order and visible-result observations; do not treat a system callback as evidence that the UI appeared.
+
+## START raw-mask fallback must reach the exit action
+
+- **Problem:** Controller code decoded START from both PSL1GHT's `BTN_START` field and the raw digital mask, but app exit still tested only `data.BTN_START`.
+- **Root Cause:** The fallback was wired into diagnostic/normalized button state but not into the action condition.
+- **Fix:** Use the normalized START bit for the exit action so either supported representation triggers the same behavior.
+- **Prevention Rule:** Keep input decoding and action dispatch on the same normalized state; add a focused regression check for fallback-driven START dispatch.

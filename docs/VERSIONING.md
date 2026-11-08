@@ -2,7 +2,7 @@
 
 AIRPLAY02 follows conservative pre-1.0 versioning. Increment the patch number for each distinct fix or small improvement that produces a new package: `0.1.4`, `0.1.5`, `0.1.6`, and so on. Never reuse a published or tested version number for different package contents. Record the exact package hash beside every result.
 
-**Latest hardware package:** AIRPLAY02 `0.2.2`, SFO `00.42`, installed and launched. User reports START and PS still do nothing. The log records no digital-mask change or START event, but does record a PS menu-open callback without close. A manual reboot and direct XMB launch reproduced the same failure, so launch method is not the differentiator. Fresh manual-run log: 3,672 bytes, SHA-256 `d51d7fb882e0ddb5dc60cae08449bb1aab4292c59c700ecb0fde5a1b051c0c9f`; it records a PS menu-open callback without close and no raw button transition or START. No controller fix is confirmed.
+**Latest hardware-tested package:** AIRPLAY02 `0.2.2`, SFO `00.42`. Manual reboot/direct XMB launch reproduced the no-buttons report. User confirms PS was pressed first and the system menu never appeared visibly. Source review found a concrete START fallback gap: raw START is normalized into `buttons`, but exit checked only `data.BTN_START`. Candidate v0.2.3 / SFO `00.43` fixes that path; build and hardware validation pending. PS-menu visibility remains unresolved.
 
 ## v0.2.0 candidate package record
 

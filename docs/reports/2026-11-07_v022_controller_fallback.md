@@ -27,4 +27,4 @@ The manual launch did not change the reported behavior, so webMAN launch is not 
 
 ## Next controlled observation
 
-On a fresh launch, test START first, before PS, and report whether the app exits. If it remains open, press PS once and report separately whether the system menu visibly appears and responds. This isolates app button handling from the PS system-menu event ordering. Do not change source or produce another package until this distinguishes the input path.
+The user confirms PS was pressed first and the system menu never appeared visibly. Source inspection then found the START fallback was incomplete: normalized `buttons` included raw `PAD_CTRL_START`, but the exit action still checked only `data.BTN_START`. v0.2.3 changes the exit action to use the normalized state. After that candidate is built and installed, test START first; this will not establish that the PS menu is fixed.
