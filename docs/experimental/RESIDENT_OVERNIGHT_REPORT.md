@@ -1,6 +1,6 @@
 # AIR PS3 Resident Development Report
 
-**Updated:** 2026-11-08 17:16 EST
+**Updated:** 2026-11-08 17:23 EST
 **Branch:** `experimental/resident-airplay`
 **Source baseline:** `53e24116e8d9a26db80deeafd568be72bf8cf6d6`
 **Scope:** RPCS3 lifecycle and diagnostic harness; no physical PS3 was contacted.
@@ -17,6 +17,9 @@ RPCS3 cannot open the resident's file-log path. A small diagnostics structure
 passed by the test harness permits lifecycle-only testing in that environment;
 normal resident startup still fails when its required log cannot be opened.
 The module did not receive a synthetic AirPlay stream and does not output PCM.
+An app-level RPCS3 `cellAudio` probe now initializes an audio port, submits a
+five-second tone, and cleans the port up successfully; this does not yet test
+audio calls from the resident PRX or prove audible output.
 
 **Hardware readiness: NOT READY.** The repeated lifecycle is now demonstrated
 in RPCS3, but audio output, real-network receive, physical PRX loading, memory
@@ -35,6 +38,7 @@ candidate on a physical console based on emulator lifecycle alone.
 | Three RPCS3 lifecycle cycles | PASS | All three load/start/ready/stop/worker-exit/unload cycles completed. Stop and unload returned zero each time. |
 | Module-list baseline | PASS | RPCS3 reported six modules before the run and after each unload; no module entry accumulated. This does not measure all sockets or memory allocations. |
 | Resident file logger in RPCS3 | BLOCKED | Each run published `MODULE_LOG_UNAVAILABLE`; lifecycle diagnostics still worked through the harness-provided structure. The underlying filesystem/logger incompatibility remains unresolved. |
+| RPCS3 cellAudio port probe | PASS (app-level API) | `cellAudioInit`, port open/start, 940 stereo blocks at 48 kHz, stop/close, and `cellAudioQuit` all returned zero. The 5-second 440 Hz tone was submitted through RPCS3's audio path; acoustic audibility was not independently recorded, and the PRX did not submit this tone. |
 | Synthetic RAOP session in RPCS3 | UNTESTED | The harness does not yet drive a synthetic sender through the resident's RTSP/RTP path. |
 | Valid PCM from resident PRX | UNTESTED | Host decoder tests produce valid PCM, but the RPCS3 lifecycle run did not send audio packets. |
 | Resident audio output | UNTESTED | The PRX currently clears decoded PCM and has no cellAudio submission path. |
@@ -87,9 +91,9 @@ are not committed.
 | `ps3-airplay-receiver.prx` | `427445fa5313779af8344d9005906d5423662aee519022cf1754fa4ec6f50ef0` |
 | `ps3-airplay-receiver.sprx` | `20b5ea0827275a219b544d9ad00cea671445e3ae6c09c80f413ca3aaa52e39db` |
 | `ps3-airplay-receiver.fake.sprx` | `5f21acdd1e7111ba5ad42bfe76f6aef2180ffaa7d89291b4b701a925fb3b1786` |
-| `ps3-airplay-resident-harness.elf` | `8b032e79f17f98e6bf1dfa542fb48d9d802198e8df620583a32959239d440d3a` |
-| `ps3-airplay-resident-harness.self` | `a8d8d4324056af8c7b5b7bf8034a99301ae6b55d70e9b1150b2ca59d37f687d9` |
-| `ps3-airplay-resident-harness.pkg` | `f809ed046cec0cdc6230ee5b5ed7a0542b9c00463f12e3ff953b67cc314365dc` |
+| `ps3-airplay-resident-harness.elf` | `abf4ff126450ab80ae891217194f2bc97200444ee9515fbf226ad789a2bb97ed` |
+| `ps3-airplay-resident-harness.self` | `750eb723a913eccde1f5f085d44b11d670dbac149301dfdc05dad71694a8ec3f` |
+| `ps3-airplay-resident-harness.pkg` | `50c2c7160d5d2c1679c96a56359477c599ec6806cbbe2e50911d2060192009a1` |
 
 ## Safe next steps
 

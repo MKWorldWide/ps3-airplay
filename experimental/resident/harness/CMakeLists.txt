@@ -26,6 +26,7 @@ target_include_directories(ps3-airplay-resident-harness PRIVATE
 target_compile_options(ps3-airplay-resident-harness PRIVATE
 	-Wall -Wextra -Werror)
 target_link_libraries(ps3-airplay-resident-harness PRIVATE lv2)
+target_link_libraries(ps3-airplay-resident-harness PRIVATE audio m)
 
 ps3_add_self(ps3-airplay-resident-harness)
 ps3_add_pkg(ps3-airplay-resident-harness

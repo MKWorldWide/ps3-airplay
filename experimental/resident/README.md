@@ -64,10 +64,12 @@ The 2026-11-08 RPCS3 run completed three clean load/start/stop/unload cycles.
 Each cycle reached `RECEIVER_READY`, stopped its worker, unloaded successfully,
 and returned the module count to baseline six. RPCS3 does not permit this
 module's file logger to open its path; the harness reports `LOG_UNAVAILABLE`
-through a diagnostics structure passed to the module. No audio output,
-synthetic RAOP session, Cobra compatibility, hardware loading, or in-game
-coexistence is established. See the overnight report for exact status and
-artifact hashes.
+through a diagnostics structure passed to the module. The separate test app
+also successfully initialized a `cellAudio` port and submitted a 5-second
+440 Hz test tone; this validates the app-level RPCS3 API path only, not PRX
+audio, independently heard sound, synthetic RAOP receive, Cobra compatibility,
+hardware loading, or in-game coexistence. See the overnight report for exact
+status and artifact hashes.
 
 ## Mocked host lifecycle simulation
 

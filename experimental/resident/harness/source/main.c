@@ -1,5 +1,7 @@
 #include <sys/prx.h>
+#include <cell/audio.h>
 
+#include <math.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
@@ -14,6 +16,8 @@
 #define EVENT_POLL_US 25000U
 #define ACTIVE_HOLD_US 250000U
 #define MODULE_LIST_CAPACITY 256U
+#define AUDIO_PROBE_BLOCKS 940U
+#define AUDIO_PROBE_AMPLITUDE 0.12f
 
 static FILE *app_log;
 
@@ -55,6 +59,69 @@ static int get_module_count(unsigned int *count)
 		return -1;
 	*count = modules.count;
 	return 0;
+}
+
+static void run_audio_probe(void)
+{
+	CellAudioPortParam params = {
+		CELL_AUDIO_PORT_2CH, CELL_AUDIO_BLOCK_8, 0, 1.0f
+	};
+	uint32_t port = 0;
+	float samples[CELL_AUDIO_BLOCK_SAMPLES * 2U];
+	float phase = 0.0f;
+	const float phase_step = 6.2831853071795864769f * 440.0f / 48000.0f;
+	unsigned int block;
+	unsigned int frame;
+	int initialized = 0;
+	int opened = 0;
+	int started = 0;
+	int result = cellAudioInit();
+	event("AUDIO_INIT_RESULT", result);
+	if (result != 0)
+		return;
+	initialized = 1;
+	result = cellAudioPortOpen(&params, &port);
+	event("AUDIO_PORT_OPEN_RESULT", result);
+	if (result != 0)
+		goto cleanup;
+	opened = 1;
+	result = cellAudioPortStart(port);
+	event("AUDIO_PORT_START_RESULT", result);
+	if (result != 0)
+		goto cleanup;
+	started = 1;
+	for (block = 0; block < AUDIO_PROBE_BLOCKS; ++block) {
+		for (frame = 0; frame < CELL_AUDIO_BLOCK_SAMPLES; ++frame) {
+			float sample = sinf(phase) * AUDIO_PROBE_AMPLITUDE;
+			samples[frame * 2U] = sample;
+			samples[frame * 2U + 1U] = sample;
+			phase += phase_step;
+			if (phase >= 6.2831853071795864769f)
+				phase -= 6.2831853071795864769f;
+		}
+		result = cellAudioAdd2chData(port, samples,
+			CELL_AUDIO_BLOCK_SAMPLES, 1.0f);
+		if (result != 0) {
+			event("AUDIO_SUBMIT_FAILED", result);
+			goto cleanup;
+		}
+		(void)usleep(5333U);
+	}
+	event("AUDIO_BLOCKS_SUBMITTED", (int)block);
+
+cleanup:
+	if (started) {
+		result = cellAudioPortStop(port);
+		event("AUDIO_PORT_STOP_RESULT", result);
+	}
+	if (opened) {
+		result = cellAudioPortClose(port);
+		event("AUDIO_PORT_CLOSE_RESULT", result);
+	}
+	if (initialized) {
+		result = cellAudioQuit();
+		event("AUDIO_QUIT_RESULT", result);
+	}
 }
 
 static int stop_and_unload(sys_prx_id_t module_id,
@@ -198,6 +265,7 @@ int main(int argc, const char **argv)
 		return 1;
 	}
 	event("MODULE_COUNT_BASELINE", (int)baseline_module_count);
+	run_audio_probe();
 	for (cycle = 1; cycle <= TEST_CYCLES; ++cycle) {
 		if (!run_cycle(cycle, baseline_module_count)) {
 			event("HARNESS_FAIL", (int)cycle);
