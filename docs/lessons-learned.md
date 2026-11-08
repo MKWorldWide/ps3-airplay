@@ -765,3 +765,10 @@ The v0.1.31 fresh RPCS3 replay verifies the portable-arithmetic correction: the 
 - **Root Cause:** Conversational summaries omit test steps and measurements unless explicitly stated.
 - **Fix:** Record the user's exact qualitative result and list the missing duration, logs, and individual checks separately.
 - **Prevention Rule:** Never infer a soak duration, audible stream, reconnect, or clean exit from a general positive report; update each acceptance row only from explicit evidence.
+
+## Bind each release artifact to the exact source revision
+
+- **Problem:** A locally valid package can still carry evidence for an obsolete commit after attribution or branch integration changes.
+- **Root Cause:** Package version and equal source trees do not make an old source-SHA record valid for a new release commit.
+- **Fix:** Rebuild in Lima from the exact committed `main` SHA and retain the package, manifest, and generated evidence together; compare component hashes without assuming a PKG hash is reusable.
+- **Prevention Rule:** Run the complete release script again after the final documentation commit, and verify the evidence source SHA equals the immutable release tag target before staging.

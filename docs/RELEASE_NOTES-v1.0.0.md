@@ -2,7 +2,7 @@
 
 AIR PS3 is a standalone AirPlay 1 (RAOP) audio receiver for compatible PS3 homebrew/CFW environments. An iPhone remains the audio source; this is not Spotify Connect and does not run Spotify on the PS3.
 
-This candidate carries forward the v0.2.8 receiver with app version `1.0.0` and SFO `APP_VER`/`VERSION` `01.00`. It preserves title ID `AIRPLAY02`, XMB title **AIR PS3**, service name **AirPS3**, and the maintainer-approved artwork. The release package is a type-1 debug PKG; installation on retail firmware is not promised.
+This release carries forward the v0.2.8 receiver with app version `1.0.0` and SFO `APP_VER`/`VERSION` `01.00`. It preserves title ID `AIRPLAY02`, XMB title **AIR PS3**, service name **AirPS3**, and the maintainer-approved artwork. The release package is a type-1 debug PKG; installation on retail firmware is not promised.
 
 The user accepted the v0.2.8 run after about 45 minutes and four XMB open/close cycles. The user-supplied summary reported no PCM underflows, ALAC failures, RTP queue drops, concealed/skipped frames, or screen presentation failures. A maximum audio-service interval near 45 ms occurred on XMB resume and remains a known brief hitch. This is summarized user evidence, not a fresh independent raw-log audit.
 

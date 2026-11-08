@@ -4,8 +4,8 @@
 
 - Version source is `release.json`: app `1.0.0`, SFO `01.00`, title ID `AIRPLAY02`, XMB title `AIR PS3`, RAOP service name `AirPS3`.
 - Gate 0 is user-accepted from the v0.2.8 dev-unit run: about 45 minutes, four XMB cycles, no reported PCM underflows, ALAC failures, RTP queue drops, concealed/skipped frames, or screen-presentation failures. The user accepted a brief ~45 ms service interval on XMB resume as a known hitch. This is summarized user evidence, not a new raw-log audit.
-- The maintainer reports v1.0.0 is running beautifully on the development PS3; this is qualitative feedback, not a measured soak or a list of individually verified features. The candidate must be rebuilt from one exact `main` source revision with the full Lima gate. A GitHub Release is not published yet.
-- Public release distribution remains gated on review of third-party notices, artwork permission/provenance, exact debug-PKG contents, automated candidate verification, and release-branch integration. Neither PS3 is changed as part of release preparation.
+- The maintainer reports v1.0.0 is running beautifully on the development PS3; this is qualitative feedback, not a measured soak or a list of individually verified features. The exact-main Lima gate passed at `38f13ba2b3255352a9957160c3d075e5426cd069`; package evidence is in the linked release report and gate.
+- The release candidate is integrated into `main`. Draft staging and the manual publication workflow are the remaining release steps. Neither PS3 is changed as part of release preparation.
 
 ## Release path
 
@@ -18,11 +18,10 @@
 
 ## Priority order
 
-1. Integrate the reviewed release source into `main`, then complete the exact-source Lima build for app `1.0.0` / SFO `01.00` and record package, ELF, and extracted-payload evidence.
-2. Finish the privacy, license/notice, package-format, and release-branch reviews. Keep the tag and GitHub Release absent while any gate is open.
-3. Stage a reviewable draft only after every Gate 1 check passes; publish through the manual workflow.
-4. Retain the ~45 ms XMB-resume service interval as a known polish item. Gate 0 is user accepted; no fresh PS3 installation occurs during this work.
-5. Start metadata, DualShock, and display-setting phases independently after the focused stable receiver release.
+1. Stage the verified app `1.0.0` / SFO `01.00` candidate as a draft and publish it through the manual workflow after its validation succeeds.
+2. Verify the resulting GitHub Release assets and hashes against the local release evidence.
+3. Retain the ~45 ms XMB-resume service interval as a known polish item. Gate 0 is user accepted; no fresh PS3 installation occurs during this work.
+4. Start metadata, DualShock, and display-setting phases independently after the focused stable receiver release.
 
 ## Scope boundaries
 

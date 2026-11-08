@@ -2,7 +2,7 @@
 
 **Status checked:** 2026-11-08
 **Release target:** AIRPLAY02 app `1.0.0` / SFO `01.00`, XMB title `AIR PS3`, RAOP name `AirPS3`
-**Repository:** `MKWorldWide/ps3-airplay` is public; `main` is the default branch. No GitHub Release exists. The working checkout is preserved on its current feature branch; release must wait until the candidate source is integrated into the intended release branch.
+**Repository:** `MKWorldWide/ps3-airplay` is public and `main` is the default branch. This plan records the stable-release gates and does not make a claim about current tag or release publication state.
 
 This release stays focused on the standalone AirPlay 1 receiver. Now Playing, extra controller transport controls, and visual settings remain later work.
 
