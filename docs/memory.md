@@ -465,3 +465,9 @@ Display candidate restores the standard GPU-side wait-flip command ordering afte
 
 - Canonical local checkout: `PS3 Airplay`, branch `main`; v0.2.7 fidelity source and forensic branch history are integrated. Physical console state is not changed by migration verification.
 - The one-command Lima release gate now builds crypto/tests, PPU ELF, derives `build/diagnostic-background.rgb` from the checked-in JPEG, and packages/validates AIRPLAY02. Image conversion requires Pillow (`python3-pil` on Ubuntu). App behavior and release version remain unchanged by this pipeline correction.
+
+## Consolidation complete
+
+- Canonical development checkout is `PS3 Airplay` on `main`. The fidelity implementation and forensic-history integration are preserved; local linked worktrees and their local branches were safely removed after backup and archive verification.
+- The combined Lima release gate now generates every package input. The relocated-source v0.2.7 gate passes, with a validated local PKG retained under ignored `work/builds/consolidation/`. The original validated artifact and rollback tags remain available.
+- GitHub main and the `baseline-v0.2.7` source tag are synced. Remote development branches are intentionally retained for separate review. No public Release or PS3 deployment occurred during consolidation.

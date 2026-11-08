@@ -704,3 +704,10 @@ The v0.1.31 fresh RPCS3 replay verifies the portable-arithmetic correction: the 
 - **Root Cause:** The package script required the generated background while the combined release script omitted its image-conversion step; the Lima guest also lacked Pillow.
 - **Fix:** Add the deterministic JPEG-to-RGB conversion to the combined release gate, document Pillow as a host dependency, and install Ubuntu's `python3-pil` in the existing Lima guest.
 - **Prevention Rule:** Verify the release command from a fresh tracked-source export, not a worktree carrying ignored build outputs; include every generated package input in the orchestrator.
+
+## Separate project payload manifests from volatile Git metadata
+
+- **Problem:** A post-copy full-tree comparison reported changes after normal commits, despite all source and ignored project files being preserved.
+- **Root Cause:** Git index, reflogs, and object storage legitimately change as commits and tests are performed; these are not stable file-manifest inputs.
+- **Fix:** Keep the pre-cutover full-copy manifest as evidence, compare project files separately from `.git`, and validate repository integrity with `git fsck`, refs, status, and worktree checks.
+- **Prevention Rule:** Use content manifests for project files and Git-native integrity checks for repository metadata; investigate all non-Git deltas explicitly.
