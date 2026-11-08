@@ -27,9 +27,10 @@ The experimental resident PRX now has a bounded worker cleanup wait, preserves n
 | RTP order/loss/recovery stress | PASS (host simulation) | Sequence wrap, reordering, delayed retransmission, concealment deadline, resend rejection, flush reset, a 10,000-packet jitter schedule, and bounded resend retries passed. A gap counter records temporary sequence gaps even when an out-of-order packet later fills them; interpret it as a gap observation, not definitive lost audio. |
 | Repeated Linux forensic suite | PASS | A further AddressSanitizer/UndefinedBehaviorSanitizer run passed the RTP queue stress, long SRC, 10,000-packet jitter schedule, display-resume checks, ALAC parse/decode, resend bounds, aggregation, and timing probes. These remain host-side tests. |
 | Targeted receiver repetitions | PASS | Ten consecutive runs of the existing RAOP receiver test passed persistent RTSP, UDP RTP loopback, and bounded slow-reader disconnect checks. This reduces, but does not eliminate, concern about the earlier 500 ms observation timeout. |
-| Mocked resident lifecycle simulation | PASS (host only) | AddressSanitizer/UndefinedBehaviorSanitizer ran actual `module_start`/`module_stop` control flow with mocked PS3 APIs and no network. Seven startup/stop/error-retry scenarios passed in four consecutive full runs; the six original scenarios also passed in eight earlier runs. This does not establish PS3 syscall or PRX runtime behavior. |
+| Mocked resident lifecycle simulation | PASS (host only) | AddressSanitizer/UndefinedBehaviorSanitizer ran actual `module_start`/`module_stop` control flow with mocked PS3 APIs and no network. Eight startup/stop/error-retry cases passed in four consecutive full runs, including NetCtl-init recovery and retry after a join error. This does not establish PS3 syscall or PRX runtime behavior. |
 | Long PCM stress | PASS (host simulation) | 600-second-equivalent resampling workload completed with zero underflows and phase reset to zero. |
 | Resident PPU build | PASS | PS3DK 0.27.0 / Mbed TLS 3.6.7 linked the PRX and emitted `.sprx` and `.fake.sprx` containers. |
+| Final full build and package integrity | PASS | Re-ran the full Lima host/build/package workflow. Host regression tests, PRX structure check, harness SELF/PKG build, and extracted PRX byte comparison passed; hashes below are from this rebuilt candidate. |
 | PRX structural validation | PASS | `prx-gen check`: one load segment, 6,094 relocations, one management export, four import libraries (`sys_net`, `cellSysmodule`, `cellNetCtl`, `sysPrxForUser`). |
 | Harness package | PASS | Diagnostic package title ID `RPRX90001`; package listing contains the module. The extracted module compared byte-for-byte with the current built PRX. |
 | Harness module-count baseline check | BLOCKED | The harness compiles a check that `sys_prx_get_module_list` returns to its pre-test count after each of three unloads, and fails closed on query errors or a full 256-entry list. The package was not run, so counts and runtime API behavior are unknown. This check does not measure sockets or all allocations. |
@@ -71,7 +72,7 @@ Local artifacts are in the ignored `build/rpcs3-candidate/` directory and are no
 | `ps3-airplay-receiver.fake.sprx` | `2ff8f15d3c6635c7658416c15f731051c6b7870e26ff93c2c28358e87dbd8e68` |
 | `ps3-airplay-resident-harness.elf` | `427269f496c1795ee95c5757f8d2183915af21987cf6fb5d2cfd8dc899be34b5` |
 | `ps3-airplay-resident-harness.self` | `fbe79c23ffb392cd4a5ebb7cd89aa7422df91d15afe41286bc722cf405fae85b` |
-| `ps3-airplay-resident-harness.pkg` | `2ee2df634cf53600c8947feb06e5e850d0ecdffa810c5d4d28c5cac2a6db3d75` |
+| `ps3-airplay-resident-harness.pkg` | `05fa6c8daff14f253d3d7e48a36e99d17dbf4852103350700fa33721edecd715` |
 
 The PRX embedded in the PKG was extracted and matched the PRX hash above. Recompute hashes after any rebuild; signed package/container values may vary.
 

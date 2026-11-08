@@ -37,7 +37,9 @@ typedef struct {
 } thread_start;
 
 static int fail_thread_create;
+static int fail_thread_join;
 static int fail_net_init;
+static int fail_netctl_init;
 static int fail_netctl_unload;
 static int fail_net_finalize;
 static int fail_net_unload;
@@ -136,6 +138,10 @@ int sysThreadCreate(sys_ppu_thread_t *thread, void (*entry)(void *), void *arg,
 int sysThreadJoin(sys_ppu_thread_t thread, uint64_t *result)
 {
 	void *thread_result = NULL;
+	if (fail_thread_join) {
+		--fail_thread_join;
+		return -7007;
+	}
 	int status = pthread_join(thread, &thread_result);
 	if (status == 0 && result != NULL)
 		*result = (uint64_t)(uintptr_t)thread_result;
@@ -215,6 +221,10 @@ int sys_net_finalize_network(void)
 int cellNetCtlInit(void)
 {
 	++netctl_init_calls;
+	if (fail_netctl_init) {
+		--fail_netctl_init;
+		return -7008;
+	}
 	return 0;
 }
 
@@ -410,7 +420,9 @@ void __libc_fini_array(void)
 static void reset_mocks(void)
 {
 	fail_thread_create = 0;
+	fail_thread_join = 0;
 	fail_net_init = 0;
+	fail_netctl_init = 0;
 	fail_netctl_unload = 0;
 	fail_net_finalize = 0;
 	fail_net_unload = 0;
@@ -509,6 +521,22 @@ static void test_startup_rollback_on_network_init_failure(void)
 	puts("startup rollback after network-init failure: PASS");
 }
 
+static void test_netctl_init_failure_cleanup(void)
+{
+	reset_mocks();
+	fail_netctl_init = 1;
+	assert(module_start(0, NULL) == SYS_PRX_RESIDENT);
+	wait_for_log_event("event=NETCTL_INIT_FAILED", 2000);
+	wait_for_log_event("event=RECEIVER_READY", 2000);
+	assert(module_stop(0, NULL) == SYS_PRX_STOP_OK);
+	assert(netctl_init_calls == 1 && netctl_term_calls == 0);
+	assert(netctl_unload_calls == 1);
+	assert(net_finalize_calls == 1 && net_unload_calls == 1);
+	assert_log_event("event=WORKER_STOPPED");
+	assert_log_event("event=MODULE_STOP");
+	puts("NetCtl-init failure with receiver cleanup: PASS");
+}
+
 static void test_netctl_unload_retry(void)
 {
 	reset_mocks();
@@ -587,12 +615,17 @@ static void test_worker_poll_error_cleanup(void)
 	mock_poll_error_once = 1;
 	assert(module_start(0, NULL) == SYS_PRX_RESIDENT);
 	wait_for_log_event("event=RECEIVER_ERROR", 2000);
+	wait_for_log_event("event=WORKER_STOPPED", 2000);
+	fail_thread_join = 1;
+	assert(module_stop(0, NULL) == SYS_PRX_STOP_FAILED);
+	assert(netctl_unload_calls == 0);
+	assert(net_finalize_calls == 0 && net_unload_calls == 0);
 	assert(module_stop(0, NULL) == SYS_PRX_STOP_OK);
 	assert(netctl_unload_calls == 1);
 	assert(net_finalize_calls == 1 && net_unload_calls == 1);
 	assert_log_event("event=WORKER_STOPPED");
 	assert_log_event("event=MODULE_STOP");
-	puts("worker poll-error cleanup and join: PASS");
+	puts("worker poll-error cleanup and retry after join failure: PASS");
 }
 
 int main(void)
@@ -600,6 +633,7 @@ int main(void)
 	(void)setvbuf(stdout, NULL, _IONBF, 0);
 	test_startup_rollback_on_thread_failure();
 	test_startup_rollback_on_network_init_failure();
+	test_netctl_init_failure_cleanup();
 	test_netctl_unload_retry();
 	test_net_finalize_retry();
 	test_net_unload_retry();
