@@ -4,7 +4,7 @@
 
 **Candidate:** v0.2.8 / SFO `00.48`; XMB title `AIR PS3`; RAOP friendly suffix `AirPS3`
 
-**Status:** source implemented; Lima release gate pending
+**Status:** source implemented; first exact-source Lima gate exposed a host portability issue; fix committed and gate rerunning
 **Hardware:** no PS3 was accessed, installed, restarted, or modified for this candidate.
 
 ## Forensic input and confidence
@@ -38,9 +38,9 @@ The committed artwork manifest records SHA-256 values for the metadata-free sour
 
 ## Build and package results
 
-Pending exact-source Lima release-gate run:
+The first exact-source Lima gate completed the protocol, codec, audio, RTP timing, display-resume, and earlier PPU component checks, then stopped compiling the host observability suite: strict Ubuntu C mode did not expose `clock_gettime` without a POSIX feature-test macro. A host-only `_POSIX_C_SOURCE=200809L` definition was added before system headers. The PS3 implementation remains on `sysGetSystemTime()` and is unchanged by this correction. The corrected revision is undergoing the full release gate; values below will be filled from that run.
 
-- Source revision: pending
+- Source revision: pending corrected exact-source run
 - PPU ELF size/SHA-256: pending
 - PKG filename/size/SHA-256: pending
 - SFO APP_VER/VERSION: pending validation of `00.48`

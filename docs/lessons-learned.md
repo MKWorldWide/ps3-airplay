@@ -717,6 +717,13 @@ The v0.1.31 fresh RPCS3 replay verifies the portable-arithmetic correction: the 
 - **Fix:** Add the deterministic JPEG-to-RGB conversion to the combined release gate, document Pillow as a host dependency, and install Ubuntu's `python3-pil` in the existing Lima guest.
 - **Prevention Rule:** Verify the release command from a fresh tracked-source export, not a worktree carrying ignored build outputs; include every generated package input in the orchestrator.
 
+## Declare host POSIX APIs before system headers
+
+- **Problem:** The strict Ubuntu host build rejected `clock_gettime` and `CLOCK_MONOTONIC` in the shared diagnostic logger.
+- **Root Cause:** The host translation unit did not request the POSIX API declarations when compiled in strict C mode. macOS had allowed the same source to compile, so local host validation did not expose the portability gap.
+- **Fix:** Define `_POSIX_C_SOURCE=200809L` before any system header for non-PSL1GHT builds; keep the PS3 `sysGetSystemTime()` path unchanged.
+- **Prevention Rule:** Treat the pinned Linux release gate as authoritative for host portability; define feature-test macros at the top of the translation unit before includes.
+
 ## Separate project payload manifests from volatile Git metadata
 
 - **Problem:** A post-copy full-tree comparison reported changes after normal commits, despite all source and ignored project files being preserved.

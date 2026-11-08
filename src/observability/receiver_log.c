@@ -1,3 +1,7 @@
+#if !defined(RAOP_USE_PSL1GHT) && !defined(_POSIX_C_SOURCE)
+#define _POSIX_C_SOURCE 200809L
+#endif
+
 #include "receiver_log.h"
 
 #include <string.h>

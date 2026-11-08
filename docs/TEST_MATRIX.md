@@ -413,3 +413,12 @@ The emitter used a paced diagnostic fixture; target output submission is not pro
 | Audio service/read-index aggregator and cost probes | PASS host |Physical PS3 timing still unmeasured; maxima are observations |
 | v0.2.7 physical receiver run | PARTIAL | Dev log confirms 30m03s app runtime, three RECORD sessions, RTP/decrypt/ALAC/PCM progress and clean START cleanup. 26,814 PCM underflow output frames; no acoustic measurement. |
 | v0.2.7 physical XMB resume/display | NOT VERIFIED | No XMB menu/resume cycle in the captured playback session; visible restoration and flicker remain user-observation gates. |
+
+## v0.2.8 reliability/branding candidate
+
+| Check | Result | Boundary |
+|---|---|---|
+| RTP live-edge resynchronization and discontinuity recovery | PASS on host sanitizer tests | Synthetic queue/socket backlog; PS3 scheduler and acoustic recovery remain untested. |
+| Exact-source Lima release gate | IN PROGRESS after a first run exposed missing POSIX feature declarations for host `clock_gettime`; host-only feature-test macro committed for rerun. | No console deployment. |
+| PPU/ELF/SELF/PKG/SFO/artwork validation | Pending corrected exact-source gate | Candidate v0.2.8 / SFO 00.48. |
+| Display, XMB resume, discovery, audio playback and clean exit | NOT TESTED | Physical hardware test remains separate. |
