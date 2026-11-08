@@ -1,6 +1,6 @@
 # AIR PS3 Resident Overnight Report
 
-**Report timestamp:** 2026-11-08 06:55 EDT
+**Report timestamp:** 2026-11-08 07:20 EDT
 
 **Branch:** `experimental/resident-airplay`
 
@@ -27,6 +27,7 @@ The experimental resident PRX now has a bounded worker cleanup wait, preserves n
 | RTP order/loss/recovery stress | PASS (host simulation) | Sequence wrap, reordering, delayed retransmission, concealment deadline, resend rejection, flush reset, a 10,000-packet jitter schedule, and bounded resend retries passed. A gap counter records temporary sequence gaps even when an out-of-order packet later fills them; interpret it as a gap observation, not definitive lost audio. |
 | Repeated Linux forensic suite | PASS | A further AddressSanitizer/UndefinedBehaviorSanitizer run passed the RTP queue stress, long SRC, 10,000-packet jitter schedule, display-resume checks, ALAC parse/decode, resend bounds, aggregation, and timing probes. These remain host-side tests. |
 | Targeted receiver repetitions | PASS | Ten consecutive runs of the existing RAOP receiver test passed persistent RTSP, UDP RTP loopback, and bounded slow-reader disconnect checks. This reduces, but does not eliminate, concern about the earlier 500 ms observation timeout. |
+| Mocked resident lifecycle simulation | PASS (host only) | AddressSanitizer/UndefinedBehaviorSanitizer ran actual `module_start`/`module_stop` control flow with mocked PS3 APIs and no network. Six startup/stop/retry scenarios passed in eight complete runs; the last four synchronize on poll entry before testing the stop timeout. This does not establish PS3 syscall or PRX runtime behavior. |
 | Long PCM stress | PASS (host simulation) | 600-second-equivalent resampling workload completed with zero underflows and phase reset to zero. |
 | Resident PPU build | PASS | PS3DK 0.27.0 / Mbed TLS 3.6.7 linked the PRX and emitted `.sprx` and `.fake.sprx` containers. |
 | PRX structural validation | PASS | `prx-gen check`: one load segment, 6,094 relocations, one management export, four import libraries (`sys_net`, `cellSysmodule`, `cellNetCtl`, `sysPrxForUser`). |
@@ -44,6 +45,7 @@ The experimental resident PRX now has a bounded worker cleanup wait, preserves n
 - NetCtl/Net module unload and network finalize errors are logged. The ownership flag stays set and stop fails so the callback can retry. `cellNetCtlTerm` has a void API, so it cannot report a failure.
 - The resident target uses a 64 KiB worker stack. The linked PPU image reports 719,914 bytes text, 24,432 data, and 594,200 BSS; runtime allocations and peak RSS were not measured.
 - Host tests verify synthetic RAOP protocol/audio behavior only. They do not establish PS3 scheduler behavior, NetCtl behavior, PRX loader compatibility, physical discovery, or audible output.
+- The mocked lifecycle simulation compiles the resident module's actual start/stop functions but replaces PS3 APIs, receiver, mDNS, logs, and address-probe socket calls. It verifies selected control-flow/error-retry paths only; it cannot prove that the PS3 or RPCS3 APIs behave the same way.
 - The installed RPCS3 build corresponds to source commit `13a3cd4266158911a8c555dda59005bc20fd2a66`; its [`sysPrxForUser` implementation](https://github.com/RPCS3/rpcs3/blob/13a3cd4266158911a8c555dda59005bc20fd2a66/rpcs3/Emu/Cell/Modules/sys_prx_.cpp) registers PRX load/start/stop/unload. The harness APIs are therefore present in that build's source, while actual loading and callback behavior remain untested.
 - The same build's [LV2 PRX loader](https://github.com/RPCS3/rpcs3/blob/13a3cd4266158911a8c555dda59005bc20fd2a66/rpcs3/Emu/Cell/lv2/sys_prx.cpp) resolves the supplied VFS path, decrypts/parses the module, initializes it, and returns explicit unsupported-type or illegal-library errors on relevant failures. This informed the harness error logging; it does not predict this candidate's result.
 - The experimental harness uses a separate log and ports 5001/6100. The ordinary receiver defaults remain log `/dev_hdd0/tmp/ps3-airplay.log` and ports 5000/6000.

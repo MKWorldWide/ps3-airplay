@@ -65,6 +65,21 @@ RPCS3 because the local desktop was locked. No emulator result, Cobra
 compatibility, hardware loading, resident audio output, or in-game coexistence
 is established. See the overnight report for exact status and artifact hashes.
 
+## Mocked host lifecycle simulation
+
+`bash scripts/test-resident-host-lifecycle.sh` compiles the actual resident
+`module.c` against mocked PS3 system-module, thread, receiver, logging, and
+network-call interfaces. AddressSanitizer and UndefinedBehaviorSanitizer run
+startup rollback, worker-create failure, worker stop, bounded stop timeout,
+and retry after injected NetCtl unload, network finalize, and network-module
+unload errors. The address-probe socket calls are stubbed and assert the
+expected multicast target; the test sends no packets and opens no socket.
+
+This checks resident control flow and error-state retention with host mocks. It
+does not check PS3 syscall semantics, PRX loading, the PS3 scheduler, real
+network behavior, or hardware compatibility. Set `MBEDTLS_INCLUDE` to the
+pinned Mbed TLS 3.6.7 include directory before running the script in Lima.
+
 ## Limits and safety gates
 
 - A format-valid PS3DK PRX is not yet proven compatible with Evilnat/Cobra 8.5

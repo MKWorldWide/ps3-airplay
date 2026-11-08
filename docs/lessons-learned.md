@@ -849,3 +849,10 @@ The v0.1.31 fresh RPCS3 replay verifies the portable-arithmetic correction: the 
 - **Root Cause:** The copied script lacks executable mode, and the dependency include root is nested under the pinned Mbed TLS 3.6.7 source directory.
 - **Fix:** Invoke it with `bash scripts/run-forensic-tests.sh` and set `MBEDTLS_INCLUDE` to the 3.6.7 `include` directory; the full suite then passed.
 - **Prevention Rule:** For Lima validation, run non-executable scripts through Bash and use the exact pinned dependency include root rather than a broad parent directory.
+
+## Wait for lifecycle events in mocked thread tests
+
+- **Problem:** A first bounded-stop simulation failed because it expected a fixed 700 ms delay to be enough for the mock worker to exit.
+- **Root Cause:** The module stop loop can hit its independent yield-count cap before the configured elapsed-time limit, so return timing is not fixed at five seconds.
+- **Fix:** The test now synchronizes on mock receiver-poll entry before stopping, then waits for the worker's flushed `WORKER_STOPPED` event with its own bounded deadline before retrying stop.
+- **Prevention Rule:** In asynchronous lifecycle tests, synchronize on the actual completion event and use a timeout; do not assume a configured maximum wait consumes its full duration.
