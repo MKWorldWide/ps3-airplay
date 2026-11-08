@@ -758,3 +758,10 @@ The v0.1.31 fresh RPCS3 replay verifies the portable-arithmetic correction: the 
 - **Root Cause:** The configured no-reply address contained the numeric ID of a different GitHub account; GitHub associates commit authorship by email identity.
 - **Fix:** Set the global and repository-local Git email to the authenticated EsKaye account's no-reply address. Preserve old published commit objects until a separate, reviewed history-migration decision.
 - **Prevention Rule:** After changing GitHub accounts or usernames, verify a new commit's author and committer login through the GitHub API; matching the display name alone is insufficient.
+
+## Keep qualitative hardware reports distinct from measured tests
+
+- **Problem:** A positive summary such as “running beautifully” can be mistaken for a duration, protocol, audio, or controller validation result.
+- **Root Cause:** Conversational summaries omit test steps and measurements unless explicitly stated.
+- **Fix:** Record the user's exact qualitative result and list the missing duration, logs, and individual checks separately.
+- **Prevention Rule:** Never infer a soak duration, audible stream, reconnect, or clean exit from a general positive report; update each acceptance row only from explicit evidence.

@@ -14,7 +14,8 @@ The user accepted Gate 0 for AIRPLAY02 v0.2.8 / SFO `00.48`: about 45 minutes on
 | License/distribution review | PASS for documented components | Project MIT, ALAC notice, OpenAirPlay key-data notice, Mbed TLS 3.6.7 license, and PS3DK/PSL1GHT/RSX license texts are included in the repository and release asset list. The user explicitly authorized the supplied artwork for public project/PKG use; no broader image license is asserted. |
 | Release branch integration | PENDING | Current work is on the preserved feature branch; integrate the verified candidate into main and build from the exact current `origin/main` tip before publishing. |
 | GitHub tag/release | NOT CREATED | Do not create a tag or release until all required gates pass. |
-| v1.0.0 development-unit installation | PASS | Uploaded by FTP, downloaded back byte-for-byte, installed through webMAN, and verified by exact installed PARAM.SFO/EBOOT hashes. App was not launched in this pass; runtime/display/audio behavior remains untested. The primary PS3 was not changed. |
+| v1.0.0 development-unit installation | PASS | Uploaded by FTP, downloaded back byte-for-byte, installed through webMAN, and verified by exact installed PARAM.SFO/EBOOT hashes. No launch was performed during this install step; the maintainer's later qualitative run report is separate. The primary PS3 was not changed. |
+| v1.0.0 maintainer hardware report | PASS, qualitative report | Maintainer says v1.0.0 is running beautifully on the development PS3. No duration, measurements, fresh log, or specific playback/control checks were supplied; no broader hardware claim is inferred. |
 
 ## Candidate build path
 
@@ -31,6 +32,6 @@ The package format is a PS3 type-1 debug PKG. The workflow is intentionally a pu
 
 No tag or GitHub Release was created for this blocked candidate.
 
-Build evidence and host-only boundary are recorded in [the candidate build report](reports/air_ps3_v1_0_0_candidate_build.md); that build pass did not change either PS3.
+Build evidence and host-only boundary are recorded in [the candidate build report](reports/air_ps3_v1_0_0_candidate_build.md); that build pass did not change either PS3. The later user-reported hardware observation is separately recorded [here](reports/air_ps3_v1_0_0_user_report.md).
 
 The commit identity correction and rewritten public refs are documented in [the attribution migration report](reports/git_author_attribution_migration.md).

@@ -38,7 +38,7 @@ The current release gate is recorded in `RELEASE_GATE_1.md`. A v1.0.0 tag and Gi
 
 - Rebuild v1.0.0 from one committed source revision and record hashes/evidence.
 - Verify exact artifact identity and the debug package's CFW-only scope; keep host and hardware results separate.
-- Preserve Gate 0 as user-accepted evidence. A fresh v1.0.0 hardware launch is still a useful follow-up, but this task does not install or alter either PS3.
+- Preserve Gate 0 as user-accepted evidence. The maintainer now reports v1.0.0 is running beautifully on the development PS3; no duration, measurements, log, or individual playback/control checks accompanied that report. Do not extend it into a soak-test claim.
 - Retain the accepted resume hitch as a known polish item; avoid claiming flawless XMB composition or zero latency.
 - Confirm release notes, installation/removal/recovery steps, exact notices, artwork authorization, and the candidate assets before publication.
 
