@@ -10,5 +10,5 @@
 - RPCS3 remains blocked by the locked Mac after a second UI check; no package was installed/run and no console was contacted. Next: after manual unlock, run the three harness cycles, capture results, and reassess the hardware gate.
 - A separate `rpcs3 --help` probe also produced no output or exit in ten seconds; only that probe was stopped. Existing emulator process/settings remain untouched. No headless route is established.
 - Ten additional targeted RAOP receiver loopback runs passed; the historical one-time audio observation timeout remains noted as unreproduced, not resolved.
-- Mocked ASan/UBSan lifecycle simulation passed four consecutive full runs across nine cases, including NetCtl load/init recovery, worker poll-error cleanup, and retry after join failure. OS socket/network APIs are stubbed; no PRX or RPCS3 runtime claim.
-- Final Lima host/build/package workflow passed again; refreshed ignored candidate artifacts and updated their SHA-256 values in the overnight report.
+- Added a receiver-open failure case; it exposed missing `WORKER_STOPPED` diagnostics on early worker exits. Added those events, then passed ten mocked ASan/UBSan lifecycle cases in four consecutive full runs. OS socket/network APIs are stubbed; no RPCS3 runtime claim.
+- Rebuilt the full Lima host/build/package candidate after the diagnostic fix; PRX structural validation and extracted-PRX identity passed. Latest hashes are in the overnight report. Next: commit/push the documented pass to the experimental branch, then verify branch and stable checkout state.

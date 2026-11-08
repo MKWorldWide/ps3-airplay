@@ -41,6 +41,7 @@ static int fail_thread_join;
 static int fail_net_init;
 static int fail_netctl_load;
 static int fail_netctl_init;
+static int fail_receiver_open;
 static int fail_netctl_unload;
 static int fail_net_finalize;
 static int fail_net_unload;
@@ -272,6 +273,10 @@ int raop_receiver_open(raop_receiver *receiver, uint16_t rtsp_port,
 {
 	(void)rtp_base_port;
 	memset(receiver, 0, sizeof(*receiver));
+	if (fail_receiver_open) {
+		--fail_receiver_open;
+		return 0;
+	}
 	receiver->tcp_fd = 1;
 	receiver->audio_fd = 2;
 	receiver->control_fd = 3;
@@ -429,6 +434,7 @@ static void reset_mocks(void)
 	fail_net_init = 0;
 	fail_netctl_load = 0;
 	fail_netctl_init = 0;
+	fail_receiver_open = 0;
 	fail_netctl_unload = 0;
 	fail_net_finalize = 0;
 	fail_net_unload = 0;
@@ -559,6 +565,21 @@ static void test_netctl_load_failure_cleanup(void)
 	puts("NetCtl-load failure with receiver cleanup: PASS");
 }
 
+static void test_receiver_open_failure_cleanup(void)
+{
+	reset_mocks();
+	fail_receiver_open = 1;
+	assert(module_start(0, NULL) == SYS_PRX_RESIDENT);
+	wait_for_log_event("event=RECEIVER_OPEN_FAILED", 2000);
+	wait_for_log_event("event=WORKER_STOPPED", 2000);
+	assert(module_stop(0, NULL) == SYS_PRX_STOP_OK);
+	assert(netctl_term_calls == 1 && netctl_unload_calls == 1);
+	assert(net_finalize_calls == 1 && net_unload_calls == 1);
+	assert(host_socket_calls == 0 && host_connect_calls == 0);
+	assert_log_event("event=MODULE_STOP");
+	puts("receiver-open failure and exited-worker cleanup: PASS");
+}
+
 static void test_netctl_unload_retry(void)
 {
 	reset_mocks();
@@ -657,6 +678,7 @@ int main(void)
 	test_startup_rollback_on_network_init_failure();
 	test_netctl_load_failure_cleanup();
 	test_netctl_init_failure_cleanup();
+	test_receiver_open_failure_cleanup();
 	test_netctl_unload_retry();
 	test_net_finalize_retry();
 	test_net_unload_retry();

@@ -135,11 +135,13 @@ static void receiver_worker(void *argument)
 	if (!raop_receiver_open(&receiver, RESIDENT_RTSP_PORT,
 		RESIDENT_RTP_BASE_PORT, &receiver_log)) {
 		(void)log_event("RECEIVER_OPEN_FAILED", -1, 0);
+		(void)log_event("WORKER_STOPPED", -1, 0);
 		__atomic_store_n(&worker_exited, 1, __ATOMIC_RELEASE);
 		sysThreadExit(0);
 	}
 	if (!log_event("RECEIVER_READY", raop_receiver_rtsp_port(&receiver), 0)) {
 		raop_receiver_close(&receiver);
+		(void)log_event("WORKER_STOPPED", -1, 0);
 		__atomic_store_n(&worker_exited, 1, __ATOMIC_RELEASE);
 		sysThreadExit(0);
 	}
