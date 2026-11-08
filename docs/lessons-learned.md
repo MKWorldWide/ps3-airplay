@@ -867,6 +867,6 @@ The v0.1.31 fresh RPCS3 replay verifies the portable-arithmetic correction: the 
 ## Audio submission success does not qualify worker teardown
 
 - **Problem:** The audio-enabled RPCS3 harness passed two module cycles, then faulted during cycle three before stop/unload could be confirmed.
-- **Root Cause:** Unknown. RPCS3 reported a fatal null-address execution fault in `ps3-airplay-audio` at PRX offset `0x001201c8`. The built PRX maps that offset to the instruction after the `sc` in its `sysThreadExit` import stub. This is location evidence, not a proven explanation.
+- **Root Cause:** Unknown. RPCS3 reported a fatal null-address execution fault in `ps3-airplay-audio` and a module location of `0x001201c8`. PRX relocation prevents confident mapping of that reported address to a named function using the raw `.text` address alone; an earlier `sysThreadExit` attribution was withdrawn.
 - **Fix:** No fix is claimed. Preserve the two passing cycles and the third-cycle failure. Keep the candidate off hardware until a repeatable audio-enabled stop/unload run returns the module list to baseline.
 - **Prevention Rule:** Validate full load/start/audio/stop/join/unload cycles independently from audio API submission; a PCM-submitted event or successful port call does not prove the worker exited or can be safely unloaded.

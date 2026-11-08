@@ -19,10 +19,11 @@ separate `cellAudio` ports. The resident signaled that it submitted its
 diagnostic PCM while the foreground harness submitted 940 blocks. Cycles 1 and
 2 stopped and unloaded cleanly. Cycle 3 **FAIL**: RPCS3 terminated the
 `ps3-airplay-audio` thread with a fatal null-address execution fault. The GUI
-log places the thread at PRX offset `0x001201c8`; matching the built PRX shows
-that offset is the instruction immediately after the `sc` instruction in the
-`sysThreadExit` import stub. This is a strong location match, not proof of the
-underlying cause. No cycle-3 stop/unload or module-baseline result was recorded.
+log reports a module location of `0x001201c8`, but relocation means a direct
+comparison with the raw PRX `.text` address is not enough to identify a named
+function. An earlier attribution of this offset to the `sysThreadExit` stub is
+withdrawn. The exact call site and root cause remain unknown. No cycle-3
+stop/unload or module-baseline result was recorded.
 The three-cycle two-port run therefore fails and audio-thread teardown remains
 unresolved. A prior lifecycle-only harness run completed three clean cycles;
 that result does not qualify the new audio-thread path.
@@ -52,7 +53,7 @@ Only a later reviewed gate may propose a nonpersistent hardware test.
 | RPCS3 fake-SPRX load/start | PASS | The harness package loads and the PRX reaches ready state. The raw PRX is not accepted by this RPCS3 configuration. |
 | Audio submission in RPCS3 | PASS (API submission only) | Resident diagnostic PCM and foreground tone submissions succeeded through separate ports. Sound was not independently confirmed. |
 | Two-port coexistence | PASS (submission only) | Both ports accepted audio submissions during the test interval; this does not establish real mixing quality or game coexistence. |
-| Three-cycle audio teardown | FAIL | Cycles 1 and 2 passed; cycle 3 crashed in the resident audio thread at a null target near the `sysThreadExit` stub. |
+| Three-cycle audio teardown | FAIL | Cycles 1 and 2 passed; cycle 3 crashed in the resident audio thread at a null execution target. The reported module offset is not reliably mapped to a named PRX function. |
 | Cycle-3 module baseline | UNTESTED | Crash occurred before stop/unload completion and baseline query. |
 | Synthetic RAOP decode-to-output | UNTESTED | No RAOP packets were sent; only a diagnostics-only PCM seed exercised output. |
 | Physical console / Cobra / in-game audio | UNTESTED | No physical PS3 was contacted. |
