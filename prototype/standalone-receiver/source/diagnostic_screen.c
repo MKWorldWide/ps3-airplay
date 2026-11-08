@@ -195,7 +195,7 @@ void diagnostic_screen_invalidate(diagnostic_screen *screen)
 {
  if (screen == NULL || !screen->initialized) return;
  screen->redraw_mask = 3U;
- screen->resume_until_us = sysGetSystemTime() + 2000000U;
+ screen->resume_until_us = sysGetSystemTime() + DIAGNOSTIC_SCREEN_RESUME_US;
  /* The compositor may have held a flip while its menu was active. */
  if (screen->flip_pending) screen->flip_started_us = sysGetSystemTime();
 }

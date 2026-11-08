@@ -24,3 +24,10 @@ if [[ "$(uname -s)" == Linux && -n "${MBEDTLS_INCLUDE:-}" ]]; then
 else
  echo 'Private resend-policy reproduction requires Linux and MBEDTLS_INCLUDE; skipped.'
 fi
+
+"$CC" -O2 -std=c11 -Wall -Wextra -Werror -fsanitize=address,undefined \
+ -DPROBE_TEST -Isrc/audio tests/audio/resampler_probe.c src/audio/pcm_ring.c -o build/forensic/timing
+build/forensic/timing
+"$CC" -O2 -std=c11 -Wall -Wextra -Werror -Isrc/observability \
+ tests/observability/log_cost_test.c src/observability/receiver_log.c -o build/forensic/log-cost
+build/forensic/log-cost

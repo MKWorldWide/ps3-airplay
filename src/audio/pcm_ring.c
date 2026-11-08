@@ -1,6 +1,7 @@
 #include "pcm_ring.h"
 
 #include <string.h>
+#include "resampler_coefficients.h"
 
 static int16_t read_le16(const uint8_t *bytes)
 {
@@ -38,6 +39,8 @@ void raop_pcm_ring_clear(raop_pcm_ring *ring)
 	ring->write_index = 0;
 	ring->count = 0;
 	ring->phase = 0;
+	ring->fir_index = 0;
+	memset(ring->fir_history, 0, sizeof(ring->fir_history));
 	ring->current[0] = ring->current[1] = 0;
 	ring->next[0] = ring->next[1] = 0;
 	ring->have_current = 0;
@@ -108,6 +111,12 @@ size_t raop_pcm_ring_render_float(raop_pcm_ring *ring, uint32_t input_rate,
 				continue;
 			}
 			ring->have_current = 1;
+            /* Edge extension gives deterministic startup without stale history. */
+            ring->fir_index = 0;
+            for (unsigned int k = 0; k < 64; ++k) {
+                ring->fir_history[k][0] = ring->current[0];
+                ring->fir_history[k][1] = ring->current[1];
+            }
 			ring->phase = 0;
 		}
 		if (!ring->have_next) {
@@ -120,17 +129,22 @@ size_t raop_pcm_ring_render_float(raop_pcm_ring *ring, uint32_t input_rate,
 			}
 			ring->have_next = 1;
 		}
-		for (channel = 0; channel < 2; ++channel) {
-			int64_t weighted = (int64_t)ring->current[channel] *
-				(output_rate - ring->phase) +
-				(int64_t)ring->next[channel] * ring->phase;
-			output[rendered * 2U + channel] =
-				(float)weighted / ((float)output_rate * 32768.0f);
-		}
+        /* phase is an exact multiple of 300: the 160 rational phases
+         * never accumulate floating-point timing error. */
+        const float *coeff = raop_src_coefficients[ring->phase / 300U];
+        for (channel = 0; channel < 2; ++channel) {
+            float sum = 0.0f;
+            for (unsigned int k = 0; k < 64; ++k)
+                sum += coeff[k] * ring->fir_history[(ring->fir_index - k) & 63U][channel];
+            output[rendered * 2U + channel] = sum / 32768.0f;
+        }
 		ring->phase += input_rate;
 		while (ring->phase >= output_rate) {
 			ring->current[0] = ring->next[0];
 			ring->current[1] = ring->next[1];
+            ring->fir_index = (ring->fir_index + 1U) & 63U;
+            ring->fir_history[ring->fir_index][0] = ring->current[0];
+            ring->fir_history[ring->fir_index][1] = ring->current[1];
 			if (!pop_frame(ring, ring->next)) {
 				ring->have_current = 0;
 				ring->have_next = 0;

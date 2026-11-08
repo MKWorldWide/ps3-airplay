@@ -77,7 +77,7 @@ static void measure_tone(unsigned int frequency, int comma)
 	/* Compare the steady-state output with the ideal 48 kHz tone. */
 	for (n = 100; n < OUTPUT_RATE - 100U; ++n) {
 		double phase = 2.0 * AUDIO_PI * (double)frequency *
-			(double)n / (double)OUTPUT_RATE;
+			((double)n / (double)OUTPUT_RATE - 31.0 / INPUT_RATE);
 		double expected = (TONE_PEAK * 32767.0 / 32768.0) * sin(phase);
 		double error = (double)output[n] - expected;
 		sum_error += error * error;
@@ -94,6 +94,10 @@ static void measure_tone(unsigned int frequency, int comma)
 	amplitude_ratio = amplitude / (TONE_PEAK * 32767.0 / 32768.0);
 	snr_db = 20.0 * log10(rms_signal / rms_error);
 
+	if (snr_db < 65.0 || fabs(20.0 * log10(amplitude_ratio)) > 0.02) {
+        fprintf(stderr, "SRC fidelity regression at %u Hz\n", frequency);
+        exit(1);
+    }
 	printf("%s{\"frequency_hz\":%u,\"output_frames\":%zu,"
 		"\"rms_error\":%.9g,\"peak_error\":%.9g,"
 		"\"snr_db\":%.6f,\"amplitude_ratio\":%.9g,"
@@ -106,7 +110,7 @@ static void measure_tone(unsigned int frequency, int comma)
 int main(void)
 {
 	static const unsigned int frequencies[] = {100U, 1000U, 5000U,
-		10000U, 15000U, 20000U};
+		10000U, 15000U, 18000U, 20000U};
 	size_t i;
 	puts("{\"test\":\"production_pcm_ring_44k1_to_48k\",\"cases\":[");
 	for (i = 0; i < sizeof(frequencies) / sizeof(frequencies[0]); ++i)

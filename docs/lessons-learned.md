@@ -667,3 +667,18 @@ The v0.1.31 fresh RPCS3 replay verifies the portable-arithmetic correction: the 
 - Root Cause: unproven; immediate return to static scanout may precede compositor completion, and DRAW event state was not tracked.
 - Fix: candidate tracks DRAW state, paces a bounded two-second resume interval, then restores both images. Mocked tests verify presenter state transitions and timeout; visual hardware acceptance remains pending.
 - Prevention Rule: preserve input responsiveness and require physical PS-menu/resume/START confirmation before labeling display restoration fixed.
+
+
+## Fidelity and clock attribution
+
+- Problem: Healthy PCM and zero ALAC errors coexist with imperfect sound.
+- Root Cause: Linear interpolation is measurably inaccurate at high frequencies; output block pacing and oscillator drift are independent unknowns.
+- Fix: A bounded FIR candidate is reference-tested; low-rate service/render/log timing aggregates are added before tuning clocks.
+- Prevention Rule: Preserve exact nominal ratio and disclose filter transition limits; evaluate connection epochs separately and never equate healthy buffering with an on-time HDMI block.
+
+## XMB guard test horizon
+
+- Problem: The expanded 500/750ms guard tests failed the rapid-cycle static assertion.
+- Root Cause: The test allowed only30ticks regardless of the selected guard.
+- Fix: Derive the test horizon from the guard plus bounded flip completion.
+- Prevention Rule: Test time bounds relative to the configured deadline and verify the default separately against the product target.

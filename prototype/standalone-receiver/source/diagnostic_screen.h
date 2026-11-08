@@ -3,6 +3,10 @@
 
 #include <stdint.h>
 
+#ifndef DIAGNOSTIC_SCREEN_RESUME_US
+#define DIAGNOSTIC_SCREEN_RESUME_US 350000U
+#endif
+
 typedef struct {
 	void *context;
 	void *host_memory;

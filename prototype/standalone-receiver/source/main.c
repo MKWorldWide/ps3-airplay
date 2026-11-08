@@ -1,3 +1,4 @@
+#include "../../../src/audio/audio_timing.h"
 #include <sys/types.h>
 #include <sys/time.h>
 
@@ -84,6 +85,8 @@ static uint32_t active_sample_rate = 48000;
 static uint32_t logged_volume_updates;
 /* Frames copied into GameOS blocks; this is not an audible-output counter. */
 static uint64_t audio_port_frames_submitted;
+static raop_audio_timing audio_timing;
+static uint64_t main_log_max_us;
 
 static int bounded_counter_delta(uint64_t current, uint64_t previous)
 {
@@ -129,13 +132,17 @@ static void on_system_event(u64 status, u64 param, void *userdata)
 
 static int log_event(const char *event, int value, size_t bytes)
 {
+	uint64_t started_us = sysGetSystemTime();
 	time_t now = time(NULL);
 	struct tm *utc = gmtime(&now);
 	char timestamp[21];
 	if (utc == NULL || strftime(timestamp, sizeof(timestamp),
 		"%Y-%m-%dT%H:%M:%SZ", utc) == 0)
 		memcpy(timestamp, "1970-01-01T00:00:00Z", sizeof(timestamp));
-	return receiver_log_file_event(&diagnostic_log, timestamp, event, value, bytes);
+	int ok = receiver_log_file_event(&diagnostic_log, timestamp, event, value, bytes);
+    uint64_t elapsed = sysGetSystemTime() - started_us;
+    if (elapsed > main_log_max_us) main_log_max_us = elapsed;
+    return ok;
 }
 
 static void poll_controls(int enabled)
@@ -308,18 +315,24 @@ static void render_next_audio_block(const audioPortConfig *config,
 	int stream_ready)
 {
 	volatile u64 *read_index = (volatile u64 *)(uintptr_t)config->readIndex;
-	u32 next_block = (u32)((*read_index + 1U) % config->numBlocks);
+	u64 started_us = sysGetSystemTime();
+    u32 observed_index = (u32)*read_index;
+    u32 next_block = (u32)((observed_index + 1U) % config->numBlocks);
 	float *audio_data = (float *)(uintptr_t)config->audioDataStart;
 	float *block = audio_data + next_block * config->channelCount *
 		AUDIO_BLOCK_SAMPLES;
 	if (!stream_ready) {
 		raop_pcm_ring_render_silence(block, AUDIO_BLOCK_SAMPLES);
+        raop_audio_timing_observe(&audio_timing, started_us,
+            sysGetSystemTime()-started_us, observed_index, (u32)config->numBlocks);
 		return;
 	}
 	(void)raop_pcm_ring_render_float(&pcm_ring, active_sample_rate,
 		GAMEOS_AUDIO_RATE, block, AUDIO_BLOCK_SAMPLES);
 	raop_pcm_gain_apply(&stream_gain, block, AUDIO_BLOCK_SAMPLES);
 	audio_port_frames_submitted += AUDIO_BLOCK_SAMPLES;
+    raop_audio_timing_observe(&audio_timing, started_us,
+        sysGetSystemTime()-started_us, observed_index, (u32)config->numBlocks);
 }
 
 static void close_audio(int started, int notify_set, int port_open,
@@ -361,6 +374,7 @@ int main(void)
 	u64 next_heartbeat_us = 0;
 	u64 next_audio_stats_us = 0;
 	int screen_result;
+	uint64_t stats_previous_us = 0;
 	uint64_t reported_underflows = 0;
 	uint64_t reported_drops = 0;
 	uint64_t reported_pcm_frames_written = 0;
@@ -554,6 +568,9 @@ int main(void)
 				receiver.session.offer.fmtp[10];
 			raop_pcm_ring_init(&pcm_ring,
 				decoder == NULL ? 2 : (uint8_t)receiver.session.offer.fmtp[6]);
+			stats_previous_us = sysGetSystemTime();
+			raop_audio_timing_reset_interval(&audio_timing);
+			main_log_max_us = 0;
 			reported_underflows = 0;
 			reported_drops = 0;
 			audio_port_frames_submitted = 0;
@@ -587,6 +604,9 @@ int main(void)
 			active_sample_rate = 48000;
 			memset(decoded_pcm, 0, sizeof(decoded_pcm));
 			raop_pcm_ring_init(&pcm_ring, 2);
+			stats_previous_us = sysGetSystemTime();
+			raop_audio_timing_reset_interval(&audio_timing);
+			main_log_max_us = 0;
 			reported_underflows = 0;
 			reported_drops = 0;
 			audio_port_frames_submitted = 0;
@@ -695,7 +715,19 @@ int main(void)
   }
 		if ((u64)sysGetSystemTime() >= next_audio_stats_us) {
 			if (decoder != NULL) {
-				/* Periodic counters contain only numeric stream-health data. */
+				/* Aggregates only: no per-block file writes. Includes silence services. */
+                uint64_t stats_now_us = sysGetSystemTime();
+                (void)log_event("AUDIO_STATS_ELAPSED_MS",
+                    bounded_counter_delta((stats_now_us-stats_previous_us)/1000U,0),0);
+                stats_previous_us = stats_now_us;
+                (void)log_event("AUDIO_SERVICE_US_MAX",bounded_counter_delta(audio_timing.max_gap_us,0),0);
+                (void)log_event("AUDIO_RENDER_US_MAX",bounded_counter_delta(audio_timing.max_render_us,0),0);
+                (void)log_event("AUDIO_READ_REPEAT",bounded_counter_delta(audio_timing.repeats,0),0);
+                (void)log_event("AUDIO_READ_SKIP",bounded_counter_delta(audio_timing.skips,0),0);
+                (void)log_event("AUDIO_OBSERVED_BLOCKS",bounded_counter_delta(audio_timing.blocks,0),0);
+                (void)log_event("MAIN_LOG_US_MAX",bounded_counter_delta(main_log_max_us,0),0);
+                main_log_max_us=0;
+                raop_audio_timing_reset_interval(&audio_timing);
     (void)log_event("RTP_INVALID_BATCH",
      bounded_counter_delta(receiver.audio_queue.stats.malformed_packets, reported_invalid_rtp), 0);
     reported_invalid_rtp = receiver.audio_queue.stats.malformed_packets;

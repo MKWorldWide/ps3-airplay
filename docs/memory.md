@@ -451,3 +451,11 @@ Display candidate restores the standard GPU-side wait-flip command ordering afte
 - User reports stuttering has mostly stopped, with slight audio unsteadiness remaining. Current log identifies AIRPLAY02 v0.2.6, APP_START 03:28:34Z, RECORD 03:28:51Z, and continuous counters through 03:31:55Z. Encrypted 44.1 kHz AirPlay, 352-sample ALAC frames and PCM submission are active.
 - In ~3m04s of streaming, 3,282 missing RTP sequence numbers reconcile to 3,174 recovered plus 108 concealed (96.7% recovered). Concealment is ~0.86 seconds at 352 samples/44.1 kHz. Zero ALAC failures, PCM underflow events, PCM drops, or malformed RTP deltas were logged. PCM ring occupancy was 12,077-12,635/16,384 and RTP queue depth 87-102/256. These counters support reduced stuttering and no observed PCM starvation; slight subjective instability remains unexplained.
 - The display log reached `SCREEN_RESUME_SETTLED` after MENU/DRAW begin/end callbacks; physical brightness and visual stability remain unconfirmed. This is a short sample, not a soak. See `reports/2026-11-07_v026_first_playback.md`. Raw log remains private and ignored.
+
+
+## v0.2.7 fidelity candidate (isolated branch)
+
+- v0.2.6 binary correspondence verified; baseline-v0.2.6 pins packaged source. Production main/console unchanged.
+- Latest 26m35s log has five connections, 122 concealments, zero ALAC/malformed failures and one 3,457-frame underflow near reconnect. Preliminary 4,833/4,725/108 totals reproduce exactly; counters across resets need separate epochs.
+- Candidate replaces linear SRC with bounded 160-phase 64-tap FIR; 31-input-frame delay, 40 KiB table plus 256-byte history, exact sample ratio. Host reference20k SNR75.09dB, fullband transition remains limited. Adds five-second audio-service/log-cost aggregates; no clock correction or resend policy changes.
+- Display guard is 350 ms with existing flip completion/timeout and double-buffer restoration. Host mocks settle below500ms; hardware remains unverified. Build/package validation pending. See fidelity report.

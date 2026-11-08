@@ -12,6 +12,8 @@ typedef struct {
 	uint32_t write_index;
 	uint32_t count;
 	uint32_t phase;
+	uint32_t fir_index;
+	int16_t fir_history[64][2];
 	int16_t current[2];
 	int16_t next[2];
 	uint64_t frames_written;
@@ -29,7 +31,7 @@ void raop_pcm_ring_clear(raop_pcm_ring *ring);
 /* Input is signed 16-bit little-endian mono/stereo. Returns frames accepted. */
 size_t raop_pcm_ring_push_le16(raop_pcm_ring *ring, const uint8_t *pcm,
 	size_t byte_length);
-/* Outputs stereo float frames, linearly resampling 44.1/48 kHz to 48 kHz. */
+/* Stereo float output at 48 kHz. 44.1 kHz FIR adds 31 input frames of delay. */
 size_t raop_pcm_ring_render_float(raop_pcm_ring *ring, uint32_t input_rate,
 	uint32_t output_rate, float *output, size_t output_frames);
 /* Fill output with intentional silence without counting stream underflows. */
