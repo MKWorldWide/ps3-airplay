@@ -1,6 +1,6 @@
 # AIR PS3 Resident Overnight Report
 
-**Report timestamp:** 2026-11-08 06:38 EDT
+**Report timestamp:** 2026-11-08 06:48 EDT
 
 **Branch:** `experimental/resident-airplay`
 
@@ -25,6 +25,7 @@ The experimental resident PRX now has a bounded worker cleanup wait, preserves n
 | Malformed input and ALAC bounds | PASS (host only) | Boundary-size ALAC frames and sanitizer smoke passed, including 4,096 seeded mutations plus 256 random packets. |
 | PCM ring and resampling | PASS (host only) | 44.1→48 kHz tests produced 48,000 frames per case with zero underflows; SNR ranged from 94.75 dB at 100 Hz to 75.07 dB at 20 kHz. Gain/mute/ramp tests passed. |
 | RTP order/loss/recovery stress | PASS (host simulation) | Sequence wrap, reordering, delayed retransmission, concealment deadline, resend rejection, flush reset, a 10,000-packet jitter schedule, and bounded resend retries passed. A gap counter records temporary sequence gaps even when an out-of-order packet later fills them; interpret it as a gap observation, not definitive lost audio. |
+| Repeated Linux forensic suite | PASS | A further AddressSanitizer/UndefinedBehaviorSanitizer run passed the RTP queue stress, long SRC, 10,000-packet jitter schedule, display-resume checks, ALAC parse/decode, resend bounds, aggregation, and timing probes. These remain host-side tests. |
 | Long PCM stress | PASS (host simulation) | 600-second-equivalent resampling workload completed with zero underflows and phase reset to zero. |
 | Resident PPU build | PASS | PS3DK 0.27.0 / Mbed TLS 3.6.7 linked the PRX and emitted `.sprx` and `.fake.sprx` containers. |
 | PRX structural validation | PASS | `prx-gen check`: one load segment, 6,094 relocations, one management export, four import libraries (`sys_net`, `cellSysmodule`, `cellNetCtl`, `sysPrxForUser`). |

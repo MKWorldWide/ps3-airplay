@@ -842,3 +842,10 @@ The v0.1.31 fresh RPCS3 replay verifies the portable-arithmetic correction: the 
 - **Root Cause:** API success and worker events do not independently show that the loaded-module list returned to its starting state.
 - **Fix:** Record the module-list count before testing and compare after every unload; fail closed if the query fails or its 256-entry buffer is full.
 - **Prevention Rule:** Keep module lifecycle checks separate from socket/memory checks, and do not treat a successful unload return as proof that all resources returned to baseline.
+
+## Run Lima shell scripts with their required interpreter and headers
+
+- **Problem:** A repeated forensic run first returned `Permission denied` when invoked directly and then stopped at the optional resend test because the Mbed TLS include directory was set too high in the tree.
+- **Root Cause:** The copied script lacks executable mode, and the dependency include root is nested under the pinned Mbed TLS 3.6.7 source directory.
+- **Fix:** Invoke it with `bash scripts/run-forensic-tests.sh` and set `MBEDTLS_INCLUDE` to the 3.6.7 `include` directory; the full suite then passed.
+- **Prevention Rule:** For Lima validation, run non-executable scripts through Bash and use the exact pinned dependency include root rather than a broad parent directory.
