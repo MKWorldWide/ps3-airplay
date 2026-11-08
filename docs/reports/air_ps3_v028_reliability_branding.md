@@ -4,7 +4,7 @@
 
 **Candidate:** v0.2.8 / SFO `00.48`; XMB title `AIR PS3`; RAOP friendly suffix `AirPS3`
 
-**Status:** source implemented; first exact-source Lima gate exposed a host portability issue; fix committed and gate rerunning
+**Status:** exact-source Linux release gate passed; candidate package retained locally
 **Hardware:** no PS3 was accessed, installed, restarted, or modified for this candidate.
 
 ## Forensic input and confidence
@@ -38,15 +38,18 @@ The committed artwork manifest records SHA-256 values for the metadata-free sour
 
 ## Build and package results
 
-The first exact-source Lima gate completed the protocol, codec, audio, RTP timing, display-resume, and earlier PPU component checks, then stopped compiling the host observability suite: strict Ubuntu C mode did not expose `clock_gettime` without a POSIX feature-test macro. A host-only `_POSIX_C_SOURCE=200809L` definition was added before system headers. The PS3 implementation remains on `sysGetSystemTime()` and is unchanged by this correction. The corrected revision is undergoing the full release gate; values below will be filled from that run.
+The first exact-source Lima gate completed protocol/audio and PPU component checks, then stopped compiling the host logger because strict Ubuntu C mode did not expose `clock_gettime`. A host-only `_POSIX_C_SOURCE=200809L` definition was added before system headers; the PS3 `sysGetSystemTime()` path is unchanged. The corrected commit completed the full release gate and was independently rechecked after copying the artifacts back to the Mac.
 
-- Source revision: pending corrected exact-source run
-- PPU ELF size/SHA-256: pending
-- PKG filename/size/SHA-256: pending
-- SFO APP_VER/VERSION: pending validation of `00.48`
-- Title ID/content ID continuity: pending
-- Extracted EBOOT/ICON0/PIC1/runtime background: pending
-- Host ASan/UBSan, PPU, ELF, SFO and package-envelope checks: pending
+- Source revision: `9f7af0027b7c3e9470a1583bbfbf676f9525f72d`
+- Toolchain: existing Lima Ubuntu 24.04 x86_64 guest; PS3DK v0.27.0, PSL1GHT, and the pinned Mbed TLS dependency.
+- CellOS PPU ELF: 2,755,120 bytes; SHA-256 `106ee5b6ac445583924fbc0e5bd136aa45b74f726b1693a2b45c84deb00d6868`; validated as PPC64 CellOS executable with five load segments.
+- PKG: `ps3-airplay-receiver-0.2.8.pkg`, 3,906,640 bytes; SHA-256 `e70d957de4a0fe2b0f8a7bd3a87f63cabaab2f12726e6341508a5f9b8c5de383`; debug package with six items.
+- SFO: `APP_VER=00.48`, `VERSION=00.48`, `TITLE_ID=AIRPLAY02`, `TITLE=AIR PS3`; all launch-metadata checks passed. Existing content ID remains `UP0001-AIRPLAY02_00-0000000000000000`.
+- Extracted SELF/EBOOT: 494,288 bytes; SHA-256 `a45223dd996c0cb14522d8803a070acbdc2d0349b7fb78836d84d2c42bf58103`.
+- Extracted `ICON0.PNG`, `PIC1.PNG`, and generated `background.rgb` byte-match the checked-in/generator outputs. SHA-256 values are respectively `ffcabffe7550599c67a1cbdb4a1e7bcd8d8866fd83813a5f78e9886975234183`, `1dca1304d818df4275f13d7efb6401d5c7e4d520c72d92ac1bd4dc496fdf964c`, and `602d7df8352a816a27cb1152a18f5062ff25e709c31bf564787b0da02980efde`.
+- Host ASan/UBSan and protocol/audio regressions passed, including deterministic ALAC mutation smoke, 1,416-byte encrypted ALAC exact PCM, FFmpeg PCM comparison, RTP sequence wrap/loss/reorder/retry/flush cases, 600-second sample-ratio conservation, 10,000-packet jitter simulation, RTSP/RTP loopback and bounded slow-reader disconnect, logger tests, and display-resume state-machine mocks.
+- Host-only cost probe (Lima x86_64 emulation): logger write/flush mean 12,281 ns, p99 40,999 ns, max 515,987 ns; 256-frame SRC mean 324,561 ns, p99 362,991 ns, max 1,011,976 ns against a nominal 5.333 ms block. These are host probe measurements, not PS3 timing guarantees.
+- ELF, SFO, package-envelope, package extraction, and artwork validators all passed. The original failed run is documented above; the full corrected run completed successfully.
 
 ## Acceptance boundary
 
@@ -54,7 +57,7 @@ The first exact-source Lima gate completed the protocol, codec, audio, RTP timin
 |---|---|
 | Host RTP queue delay/recovery test | PASS |
 | Mac host forensic/regression script | PASS; Linux-only resend-policy reproduction skipped on macOS |
-| Exact PS3 PPU and package gate | Pending |
+| Exact PS3 PPU and package gate | PASS on pinned Lima source `9f7af00`; local artifact hashes and extracted assets independently verified |
 | Installed version / physical display / START exit | Not tested |
 | AirPlay discovery and RTSP | Not tested |
 | RTP reception, decryption, ALAC, PCM output | Not tested |
@@ -62,4 +65,4 @@ The first exact-source Lima gate completed the protocol, codec, audio, RTP timin
 
 ## Rollback and next actions
 
-Keep the v0.2.7 artifact and `baseline-v0.2.7` tag untouched. This candidate is not deployed. After the Lima gate passes, perform an authorized hardware test as a separate operation: confirm XMB title/art, visible/responsive display, START exit, one AirPlay connection, fresh verbose log, and audible audio. If queue resync occurs, verify its count and time to stable occupancy; if the logger queue overruns or writer fails, preserve the exact log tail and avoid claiming that instrumentation is complete.
+Keep the v0.2.7 artifact and `baseline-v0.2.7` tag untouched. The v0.2.8 candidate is retained locally under ignored `work/builds/0.2.8/`; it was not installed, launched, transferred, or tested in RPCS3 or on a physical console. A later hardware pass must verify XMB title/art, visible/responsive display, START exit, one AirPlay connection, a fresh verbose log, and audible audio. If queue resync occurs, check its count and time to stable occupancy; if the logger queue overruns or writer fails, preserve the exact log tail and avoid claiming complete instrumentation.

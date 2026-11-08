@@ -1,6 +1,6 @@
 # Active project context
 
-- v0.2.8 / SFO 00.48 candidate is on `lily/air-ps3-v028`; main and PS3s are untouched.
-- Candidate includes async logging, RTSP timing, RTP live-edge recovery, supplied artwork, and AIR PS3/AirPS3 branding.
-- First pinned-Lima gate exposed missing strict-C POSIX declarations in the host logger; host-only feature-test macro is committed and exact-source gate must be rerun.
-- Next: finish corrected Lima gate; record package/SFO/ELF/artwork checksums, privacy-review report changes, commit and push results. Do not install this candidate until separately requested.
+- v0.2.8 / SFO 00.48 source and release record are committed on `lily/air-ps3-v028`.
+- Exact-source Lima gate passed; local ignored candidate artifacts are retained under `work/builds/0.2.8/`.
+- No RPCS3 or physical PS3 installation/launch test was performed. Preserve that distinction in any handoff.
+- Next separate validation: when hardware use is explicitly in scope, install and test display/resume, controller exit, discovery, session, RTP/ALAC/PCM and audible playback with fresh logs.

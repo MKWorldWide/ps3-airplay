@@ -419,6 +419,6 @@ The emitter used a paced diagnostic fixture; target output submission is not pro
 | Check | Result | Boundary |
 |---|---|---|
 | RTP live-edge resynchronization and discontinuity recovery | PASS on host sanitizer tests | Synthetic queue/socket backlog; PS3 scheduler and acoustic recovery remain untested. |
-| Exact-source Lima release gate | IN PROGRESS after a first run exposed missing POSIX feature declarations for host `clock_gettime`; host-only feature-test macro committed for rerun. | No console deployment. |
-| PPU/ELF/SELF/PKG/SFO/artwork validation | Pending corrected exact-source gate | Candidate v0.2.8 / SFO 00.48. |
+| Exact-source Lima release gate | PASS on corrected source `9f7af0027b7c3e9470a1583bbfbf676f9525f72d`; host sanitizer/forensic, protocol/audio, PPU app, ELF, package and SFO checks passed. | Lima Ubuntu 24.04 x86_64 guest; no console deployment. |
+| PPU/ELF/SELF/PKG/SFO/artwork validation | PASS; PPC64 CellOS ELF 2,755,120 bytes; debug PKG 3,906,640 bytes; SFO `00.48`; AIRPLAY02 / `AIR PS3`; extracted assets byte-matched. | Candidate v0.2.8; package SHA-256 in engineering report. |
 | Display, XMB resume, discovery, audio playback and clean exit | NOT TESTED | Physical hardware test remains separate. |
