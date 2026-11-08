@@ -18,8 +18,8 @@
 
 ## Hardware status
 
-The previously running app was closed through webMAN and its log recorded `SYSUTIL_EXIT_GAME`, screen/audio/receiver cleanup, and `APP_STOP`. v0.2.4 is installed, but no post-install launch check was performed. No claims are made about visible PS-menu output, controller behavior, AirPlay playback, or physical append-only log behavior.
+The previously running app was closed through webMAN and its log recorded `SYSUTIL_EXIT_GAME`, screen/audio/receiver cleanup, and `APP_STOP`. The user later tested v0.2.4 and reports PS opens the menu, resume leaves a dim screen with a frozen loading indicator, START exits to XMB, and AirPlay music streams with short stutters. The log reached `LOG_SESSION_CAPPED` 37 seconds after a later `APP_START`, so hardware append across launches was observed but the 16 KiB per-run cap prevented a long trace. A requested 12-minute passive observation then completed without sending pause, exit, restart, or install commands; the log remained byte-identical after the cap, which cannot establish that playback continued for the full interval.
 
 ## Next test
 
-Launch v0.2.4 once from XMB. Test PS menu visibility and return, then test START. Retrieve the log after exit and verify the new timestamped `APP_START` follows and preserves the previous session.
+After the 5 MiB v0.2.5 logger is built and installed, run a new 10-15 minute AirPlay session and inspect its complete timestamped diagnostics without interrupting playback.

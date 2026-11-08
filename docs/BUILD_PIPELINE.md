@@ -6,9 +6,23 @@ Use the existing x86_64 Lima guest with the pinned PS3DK v0.27.0 PPU toolchain, 
 
 The v01.01 reference decrypted by RPCS3 is an ELF64 big-endian PPC64 `ET_EXEC`, CellOS OSABI `0x66`, entry `0x10000000`. Its first four `PT_LOAD` flags are `0x400005`, `0x600006`, `0x400004`, `0x600006`, followed by the PS3-specific zero-sized segment. The v0.1.6 legacy-linker ELF had the generic first flags `0x5` and `0x6`. Their shared layout is evidence that the PS3DK path preserves the old artifact's executable contract; it does not prove the complete v01.01 build or runtime is reproducible.
 
+## Required per-build release gate
+
+Run one command for every standalone package so host regressions, PPU component checks, the standalone ELF build, and package validation cannot be accidentally skipped:
+
+```sh
+export PS3DK_SOURCE="$HOME/ps3-airplay-host/ps3-sdk-src-v0.27.0"
+export SOURCE_REVISION="$(git rev-parse HEAD)"
+export APP_VERSION=0.2.5
+export SFO_VERSION=00.45
+bash scripts/release-lima-standalone-receiver.sh
+```
+
+The release gate requires a clean tracked worktree and a full matching source revision. It runs `build-lima-crypto.sh`, `build-lima-standalone-receiver.sh`, then `package-lima-standalone-receiver.sh` with fail-fast behavior. Keep build outputs and package files under ignored `work/`; never deploy a package that failed any stage. Record the exact source revision and output hash. The first physical launch remains a separate hardware test.
+
 The release path is:
 
-1. Run `scripts/build-lima-crypto.sh` for portable protocol/audio tests and PPU object checks.
+1. Run `scripts/release-lima-standalone-receiver.sh` for the combined fail-fast gate; its first stage runs `scripts/build-lima-crypto.sh` for portable protocol/audio tests and PPU object checks.
 2. Export the pinned toolchain paths, exact source revision, and next unused `APP_VERSION`.
 3. Run `scripts/build-lima-standalone-receiver.sh`. It builds Mbed TLS, clean-builds the receiver, and validates the resulting ELF against the v01.01 ABI/layout reference. It emits a build manifest with the source revision, compiler/linker versions, PSL1GHT revision, and ELF hash.
 4. Run `scripts/package-lima-standalone-receiver.sh`. It verifies the ELF again, creates the NPDRM SELF and matching SFO/content ID, builds the package under a relative content-ID directory, extracts and checks the unfinalized package (including APP_VER and asset bytes), then validates a type-1 debug package matching v01.01. Finalized NPDRM format is an explicit optional mode. The bundled `pkg` reader cannot extract finalized NPDRM type `0x80000001`, so extraction is deliberately checked before finalization. The script refuses to overwrite a versioned package or intermediate.
@@ -111,7 +125,7 @@ Keep the generated package, build manifest, and test logs outside Git. Record pa
 
 ## Current release identity
 
-APP_VERSION=0.1.30 controls filename and application logging; SFO_VERSION=00.30 controls APP_VER/VERSION. Keep both explicit for every release. The 0.30 artifact was actually tested on hardware before the maintainer corrected its release label; preserve that historical identity in reports. Build from a committed archive stamped with its full SHA. Opening the app truncates the previous diagnostic log, so retrieve evidence before relaunching.
+APP_VERSION controls the package filename and application logging; SFO_VERSION controls APP_VER/VERSION. Keep both explicit for every release. The 0.30 artifact was actually tested on hardware before the maintainer corrected its release label; preserve that historical identity in reports. Build from a committed archive stamped with its full SHA. Current logs append and use UTC-timestamped APP_START markers; the per-launch cap must be large enough for the planned test duration.
 
 ## v0.2.2 controller raw-mask build and hardware test
 

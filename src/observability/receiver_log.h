@@ -4,7 +4,7 @@
 #include <stddef.h>
 #include <stdio.h>
 
-#define RECEIVER_LOG_MAX_BYTES 16384
+#define RECEIVER_LOG_MAX_BYTES (5U * 1024U * 1024U)
 #define RECEIVER_LOG_PATH_MAX 256
 #define RECEIVER_LOG_EVENT_MAX 48
 

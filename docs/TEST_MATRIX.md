@@ -363,4 +363,17 @@ The emitter used a paced diagnostic fixture; target output submission is not pro
 | BUILD-24-02 | Standalone ELF and package checks | PASS; CellOS PPC64 ELF, five load segments; AIRPLAY02, SFO 00.44, content ID, assets, extraction and debug PKG envelope validated. | Host build boundary only. |
 | BUILD-24-03 | Package identity | PASS; 3,231,984 bytes, SHA-256 `a27d5c7b5d2d84f12fbb82ee4e164b9b50ccc825b5104b9b749f053d72a42bf7`; source `f870d823f15398691a6a38e6393f8d1376161bee`. | Artifact retained locally under ignored `work/builds/0.2.4/`. |
 | DEPLOY-24-01 | Stage package and verify download-back | PASS; FTP download-back is byte-identical to local PKG. | New versioned filename; prior staged packages preserved. |
-| DEPLOY-24-02 | Install and verify title payload | PASS; installed SFO exact 00.44; installed EBOOT exactly matches package SELF. | Installation confirmed; post-install launch not yet tested. |
+| DEPLOY-24-02 | Install and verify title payload | PASS; installed SFO exact 00.44; installed EBOOT exactly matches package SELF. | User later launched and reported runtime results below. |
+
+| PS3-24-01 | PS menu, resume, and START | PASS: user reports PS menu opens and START exits to XMB. | Resume shows a dim screen with a frozen loading indicator; fix pending. |
+| PS3-24-02 | AirPlay music | PASS to user-confirmed streamed music. | Brief stutters/cuts remain; XMB scrolling no longer appears to worsen them. |
+| PS3-24-03 | Active-stream diagnostics | PASS to encrypted 44.1 kHz RTP decrypt, ALAC frame decode, and PCM submission; ALAC failures 0. A 512-packet batch reported 62 missing sequence numbers; RTP queue depth 79/256. | v0.2.4 reached its 16 KiB cap 37 seconds after APP_START, so logs do not cover the requested 10-15 minute run. |
+| PS3-24-04 | Append preservation | PASS for observed bytes: two timestamped v0.2.4 APP_START records appear after the earlier log, whose 7,270 bytes match the prefix of the combined log. | Log growth stops at the current session cap; the long run has no newer telemetry. |
+| PS3-24-05 | Passive 12-minute observation | PASS for non-interference: no pause, exit, restart, or install action was sent during the window; repeated FTP snapshots remained byte-identical after the cap. | Does not prove audio remained continuous throughout the interval; logger was capped 37 seconds into the active-stream session. |
+
+## v0.2.5 candidate gate
+
+| Test | Result | Boundary |
+|---|---|---|
+| Append-only 5 MiB cap regression | Pending: fill one session to the configured 5 MiB cap; verify cap marker, rejection after cap, and preservation of earlier session data. | Host/sanitizer test. |
+| One-command release gate | Pending: clean source revision must run all host/sanitizer, PPU, ELF and package validations. | Guest build test; hardware launch remains separate. |

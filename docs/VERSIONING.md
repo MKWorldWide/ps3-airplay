@@ -2,7 +2,9 @@
 
 AIRPLAY02 follows conservative pre-1.0 versioning. Increment the patch number for each distinct fix or small improvement that produces a new package: `0.1.4`, `0.1.5`, `0.1.6`, and so on. Never reuse a published or tested version number for different package contents. Record the exact package hash beside every result.
 
-**Latest installed package:** AIRPLAY02 `0.2.4`, SFO `00.44`, built from `f870d823f15398691a6a38e6393f8d1376161bee`. PKG size 3,231,984 bytes; SHA-256 `a27d5c7b5d2d84f12fbb82ee4e164b9b50ccc825b5104b9b749f053d72a42bf7`. Installed SFO and EBOOT match the validated package. The new build has not yet been launched on hardware; PS-menu rendering and append-only log behavior remain to be tested. Previous v0.2.3 reports remain: START exited once, but a later PS press yielded no visible menu and START then stopped working.
+**Latest hardware-tested package:** AIRPLAY02 `0.2.4`, SFO `00.44`, built from `f870d823f15398691a6a38e6393f8d1376161bee`. PKG size 3,231,984 bytes; SHA-256 `a27d5c7b5d2d84f12fbb82ee4e164b9b50ccc825b5104b9b749f053d72a42bf7`. Installed SFO and EBOOT match the validated package. The user confirms PS opens the menu, START exits to XMB, and streamed AirPlay music works; resuming leaves a dim screen/frozen loading icon and short audio stutters remain. The 16 KiB run cap was reached in about 37 seconds.
+
+**Known-safe functional baseline:** AIRPLAY02 `0.2.4` / SFO `00.44`. User confirms PS opens the system menu, START exits cleanly to XMB, and AirPlay streams music. Resume returns with a dimmed screen and frozen loading indicator; brief audio stutters remain. The 16 KiB per-launch diagnostic cap was reached about 37 seconds into the observed active-stream session. This is a functional rollback baseline, not a quality/stability release.
 
 ## v0.2.0 candidate package record
 
@@ -271,4 +273,11 @@ Live read-only evidence captured while AIRPLAY02 v0.1.35 was running: installed 
 - ELF: 2,754,776 bytes, CellOS PPC64 executable, five PT_LOAD segments; SHA-256 `bd492c726b12e503d268e00cf03dee82c2c3d6f2aac7fa8f4f07c85a68b2e8ae`.
 - Build: existing Lima VM, PS3DK v0.27.0 PPU compiler 16.1.0, GNU ld 2.42, PSL1GHT revision `dd4e8c9be744e3273d665c393fa6d97a87402e2e`.
 - Checks: full Lima host ASan/UBSan and PPU component suite; standalone ELF validation; package extraction, launch metadata, content ID, assets and debug NPDRM envelope PASS.
-- Deployment: FTP upload/download-back hash matched; installed AIRPLAY02 SFO 00.44 matches exactly and installed EBOOT matches the package SELF exactly. Not yet launched after installation.
+- Deployment: FTP upload/download-back hash matched; installed AIRPLAY02 SFO 00.44 matches exactly and installed EBOOT matches the package SELF exactly. Hardware-tested: PS menu opens, START exits, and AirPlay music streams; resume display is dim/frozen and audio stutters. A 12-minute passive observation elapsed, but the old 16 KiB cap stopped telemetry after 37 seconds.
+
+## v0.2.5 diagnostic logging candidate
+
+- Scope: increase the append-only per-launch cap from 16 KiB to 5 MiB; add a combined fail-fast Lima release gate and a regression that exercises the full cap without truncating earlier sessions.
+- Proposed versions: app/package `0.2.5`; SFO APP_VER/VERSION `00.45`.
+- Preserve v0.2.4 as the known-safe functional rollback baseline while audio stutters and dim resume remain open.
+- Build, deployment, and hardware validation: pending.

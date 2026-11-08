@@ -642,3 +642,10 @@ The v0.1.31 fresh RPCS3 replay verifies the portable-arithmetic correction: the 
 - **Root Cause:** The cap applied to the whole file and open truncated it, rather than bounding each launch separately.
 - **Fix:** v0.2.4 appends sessions, timestamps `APP_START` in UTC, caps each session at 16 KiB, writes `LOG_SESSION_CAPPED`, then stops logging until next launch. Host regression passes; hardware append behavior is not yet confirmed.
 - **Prevention Rule:** Bound log volume per session without truncating prior sessions; test append, timestamp and cap semantics across opens.
+
+## A small append-only cap can expire before a stream test
+
+- **Problem:** v0.2.4's log reached its 16 KiB per-run cap roughly 37 seconds after APP_START during active AirPlay, too early for a 10-15 minute stutter investigation.
+- **Root Cause:** Verbose network/session diagnostics filled the per-launch budget quickly; the file then correctly stopped accepting events.
+- **Fix:** Candidate v0.2.5 raises the per-launch budget to 5 MiB and tests the full cap while preserving older sessions.
+- **Prevention Rule:** Size diagnostic budgets against observed event rates and requested test duration; include a release regression that fills and checks the configured cap.
