@@ -33,7 +33,7 @@ None. Application version remains v0.2.7 and SFO remains 00.47.
 - Verified a full three-worktree backup and source/backup manifest before changes.
 - Removed the two clean linked worktrees without force after archiving and hash-verifying ignored build/work contents.
 - Copied the primary checkout to the requested Projects destination; all 4,051 source entries matched at cutover.
-- `git fsck --full`: exit 0, zero non-dangling diagnostics; 161 dangling objects matched the retained old checkout.
+- `git fsck --full`: exit 0, zero non-dangling diagnostics in both final and retained repositories; dangling blobs only, with no pruning.
 - Full `bash scripts/release-lima-standalone-receiver.sh` passed from clean exported commit `a4ff0f2c0c6f30d306a91b61122c5612807f6291` in Lima. Host/sanitizer protocol, RTP, ALAC, PCM, resampler, logging, and display-state tests passed; PPU ELF, SFO, extraction, asset, content-ID, and PKG validators passed.
 - Independent NumPy/SciPy resampler fidelity test passed with exact chunk/restart continuity.
 - Rebuilt package hash `90ea62e641259098b45515c1c96e95acc38412e555faaae92d3b72456e172c11`, 3,273,456 bytes; ELF hash `8da9e671981d8f0354558d03b6953e9c79cd6be5108ec683cd56530c58650fe5`.
@@ -50,7 +50,7 @@ The exact source of NPDRM SELF byte variation was not isolated, and a SELF-norma
 
 ## Risks introduced
 
-The release wrapper now requires Pillow on the build host. No runtime or console risk was introduced. The retained 161 dangling Git objects are pre-existing, unreferenced objects; they were not pruned.
+The release wrapper now requires Pillow on the build host. No runtime or console risk was introduced. Git reports unreferenced dangling blobs; they were not pruned.
 
 ## Decision record
 

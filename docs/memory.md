@@ -471,3 +471,4 @@ Display candidate restores the standard GPU-side wait-flip command ordering afte
 - Canonical development checkout is `PS3 Airplay` on `main`. The fidelity implementation and forensic-history integration are preserved; local linked worktrees and their local branches were safely removed after backup and archive verification.
 - The combined Lima release gate now generates every package input. The relocated-source v0.2.7 gate passes, with a validated local PKG retained under ignored `work/builds/consolidation/`. The original validated artifact and rollback tags remain available.
 - GitHub main and the `baseline-v0.2.7` source tag are synced. Remote development branches are intentionally retained for separate review. No public Release or PS3 deployment occurred during consolidation.
+- The obsolete nested checkout was moved into the private migration backup after validation; it remains recoverable, while `PS3 Airplay` is the only active worktree.

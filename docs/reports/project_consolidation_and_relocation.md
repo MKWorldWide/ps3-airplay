@@ -26,6 +26,8 @@ The sole registered worktree is now `PS3 Airplay` under the existing Projects di
 
 A full local backup remains outside the repository at `$HOME/PS3-Airplay-Migration-Backup-20261108`. It contains copies of all three original worktree roots, private Git/toolchain baselines, and file manifests. The initial backup manifest matched 4,558 source entries across the three trees with no missing, extra, or differing entries.
 
+After the destination passed build and integrity checks, the obsolete nested checkout was moved into this backup area as an additional recoverable copy. It was not permanently deleted.
+
 Before cutover, a complete manifest of the merged primary tree (including Git metadata and ignored data) matched the destination copy exactly: 4,051 entries. Later differences are expected: the release-gate fix and its documentation, and local verification artifacts under ignored `build/` and `work/`. No original project file was missing or unexpectedly changed. Git metadata was verified independently because its index, reflogs, and object directory naturally change after commits and builds.
 
 ## 4–6. Integration decisions and branch history
@@ -40,7 +42,7 @@ Before cutover, a complete manifest of the merged primary tree (including Git me
 
 The relocation copy passed a byte-for-byte file and symlink manifest comparison. After subsequent commits, the non-Git comparison shows no missing original files; the expected deltas are the new decision/report documentation, build-gate correction, and ignored validation outputs. The fidelity archive preserves 15 ignored build entries and 1,940 ignored work entries; the audit archive preserves 37 build entries and 43 work entries. Each copied entry, including symlink targets, was verified.
 
-`git fsck --full` exits successfully with zero non-dangling diagnostics. It reports 161 dangling objects, the same count in the retained pre-relocation checkout. They are unreferenced historical objects, not integrity errors; no garbage collection or pruning was run. `git worktree list --porcelain` reports exactly one worktree. `main` is clean and synced with `origin/main`.
+`git fsck --full` exits successfully with zero non-dangling diagnostics in both the final and retained repositories. Output contains dangling blobs only; counts vary as prior staged documentation versions become unreferenced. These are not integrity errors, and no garbage collection or pruning was run. `git worktree list --porcelain` reports exactly one worktree. `main` is clean and synced with `origin/main`.
 
 ## 9. Build-system path and dependency corrections
 
