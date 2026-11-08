@@ -32,15 +32,15 @@ Earlier v0.2.8 evidence remains in its engineering report and version history, b
 
 ### Publication gate
 
-The current release gate is recorded in `RELEASE_GATE_1.md`. A v1.0.0 tag and GitHub Release must not be created until the exact-source package and privacy, build, package, and licensing reviews all pass. The draft-staging helper checks the gate document and candidate evidence before creating a tag or draft. Publication is a separate manual `workflow_dispatch`; its only write-capable job uses `contents: write`.
+The prepublication gate and completed release evidence are recorded in `RELEASE_GATE_1.md`. AIR PS3 v1.0.0 is now published at [GitHub Releases](https://github.com/MKWorldWide/ps3-airplay/releases/tag/v1.0.0). The draft-staging helper verified candidate evidence before creating the tag/draft; manual workflow `42468858833` passed exact source, asset, checksum, and package-evidence validation before publication. Both workflow jobs use `contents: write`: validation performs GET-only access to draft release assets, and the separate publish job changes the draft state.
 
-## First public stable receiver acceptance
+## First public stable receiver acceptance — v1.0.0
 
-- Rebuild v1.0.0 from one committed source revision and record hashes/evidence.
-- Verify exact artifact identity and the debug package's CFW-only scope; keep host and hardware results separate.
+- Completed: rebuild v1.0.0 from one committed source revision and record hashes/evidence.
+- Completed: verify exact artifact identity and the debug package's CFW-only scope; keep host and hardware results separate.
 - Preserve Gate 0 as user-accepted evidence. The maintainer now reports v1.0.0 is running beautifully on the development PS3; no duration, measurements, log, or individual playback/control checks accompanied that report. Do not extend it into a soak-test claim.
 - Retain the accepted resume hitch as a known polish item; avoid claiming flawless XMB composition or zero latency.
-- Confirm release notes, installation/removal/recovery steps, exact notices, artwork authorization, and the candidate assets before publication.
+- Confirmed release notes, installation/removal/recovery steps, exact notices, artwork authorization, and the published asset set before publication. Post-publication PKG and `SHA256SUMS.txt` download verification passed.
 
 ## Phase 2 — Now Playing metadata and artwork
 

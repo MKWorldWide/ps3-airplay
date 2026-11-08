@@ -771,7 +771,7 @@ The v0.1.31 fresh RPCS3 replay verifies the portable-arithmetic correction: the 
 - **Problem:** A locally valid package can still carry evidence for an obsolete commit after attribution or branch integration changes.
 - **Root Cause:** Package version and equal source trees do not make an old source-SHA record valid for a new release commit.
 - **Fix:** Rebuild in Lima from the exact committed `main` SHA and retain the package, manifest, and generated evidence together; compare component hashes without assuming a PKG hash is reusable.
-- **Prevention Rule:** Run the complete release script again after the final documentation commit, and verify the evidence source SHA equals the immutable release tag target before staging.
+- **Prevention Rule:** Run the complete release script again after the final source commit, and verify the evidence source SHA equals the selected release tag target before staging.
 
 ## Keep release-gate status machine-readable
 
@@ -783,6 +783,6 @@ The v0.1.31 fresh RPCS3 replay verifies the portable-arithmetic correction: the 
 ## Match Actions permissions to draft-release visibility
 
 - **Problem:** After removing the failing `gh release view` precheck, the workflow's release-list API call returned no matching draft.
-- **Root Cause:** The validation job used `contents: read`. GitHub's Releases API documentation says draft listings are only returned to actors with push access; its read-only workflow token did not receive that draft listing. The API asset-ID path remains untested in Actions.
-- **Fix:** Grant `contents: write` to the validation job so it can inspect the draft. The code in that job uses the permission for GET-only release/asset retrieval; the separate publish job remains the only job that mutates release state. Keep exact asset, size, checksum, evidence, and source checks.
-- **Prevention Rule:** When a workflow must inspect unpublished releases, verify the endpoint's draft visibility requirements and match job permissions to the minimum required. Inspect run logs to distinguish API permission/visibility from an empty or malformed asset set.
+- **Root Cause:** The validation job used `contents: read`; its workflow token received no draft record. GitHub documents that draft listings are only returned to actors with push access.
+- **Fix:** Grant `contents: write` to the validation job. The job uses it for GET-only release/asset retrieval; a separate publish job performs the visibility change. Workflow `42468858833` then passed exact asset, size, checksum, evidence, and source checks and published v1.0.0.
+- **Prevention Rule:** For unpublished release assets, check the endpoint's draft visibility requirements and give only the isolated inspection job the minimum effective permission. Confirm every stage from run logs and independently verify the published downloads.

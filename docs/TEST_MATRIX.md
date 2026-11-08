@@ -1,6 +1,6 @@
 # Test matrix
 
-## v1.0.0 release gate preparation (2026-11-08)
+## v1.0.0 release validation and publication (2026-11-08)
 
 | Test | Result | Boundary |
 |---|---|---|
@@ -12,7 +12,8 @@
 | v1.0.0 exact-main checkpoint PKG and extracted SFO | PASS: 3,906,640-byte debug PKG, SHA-256 `1244be0bb7ef1e6c8565a2a9f06e82bf7d43ad7d10f570fa1ad30dc394bee259`; SFO validator confirms AIRPLAY02, APP_VER/VERSION `01.00`, XMB title AIR PS3. | Checkpoint package only; final release package/hash are bound in the release assets to the final tag source. No PS3 was modified during this build. |
 | v1.0.0 development-unit transfer and install | PASS: FTP download-back matched the PKG SHA-256; installed PARAM.SFO and EBOOT matched the candidate payload byte-for-byte. | The install step did not launch the app; package identity only. Primary PS3 untouched. |
 | v1.0.0 current hardware report | PASS, user-reported observation: maintainer says v1.0.0 is running beautifully on the development PS3. | Qualitative report only; no duration, log measurements, connection details, or separate START/PS-menu results were provided. This is not a measured soak or protocol test. |
-| GitHub tag/release | READY TO STAGE | Main integration, exact-main build and prepublication gate pass. Draft staging and the manual publication workflow remain to be completed. |
+| GitHub tag/release | PASS: published | Workflow `42468858833` passed tag/source verification, exact 10-asset draft inventory, download sizes, SHA256SUMS, release-evidence, and publish steps. The public release is [v1.0.0](https://github.com/MKWorldWide/ps3-airplay/releases/tag/v1.0.0). |
+| Published package integrity | PASS: downloaded after publication | Public PKG is 3,906,640 bytes, SHA-256 `b815536168c5c1994ff6a5bb79f4aa16ffed6720691239bd9066e0a9e2075c43`; downloaded PKG matched the published `SHA256SUMS.txt`. |
 
 ## v0.2.0 candidate work (2026-11-07)
 
