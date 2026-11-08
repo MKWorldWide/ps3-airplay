@@ -744,3 +744,10 @@ The v0.1.31 fresh RPCS3 replay verifies the portable-arithmetic correction: the 
 - **Root Cause:** Version values were copied across shell scripts, the receiver Makefile, documentation, and generated SFO inputs rather than read from one checked-in configuration.
 - **Fix:** `release.json` now holds app `1.0.0` and SFO `01.00`; build entry points read it, reject conflicting overrides, and have regression checks for `1.0.1`/`01.01` and malformed versions. Evidence ties the package hash and extracted metadata to an exact source SHA.
 - **Prevention Rule:** Change app/SFO versions together in the manifest before a build; never rename an old PKG, edit generated SFO values by hand, or tag until exact-source validation passes.
+
+## Verify the generated SFO inside the package
+
+- **Problem:** A correct version manifest and successful build log are not, by themselves, proof that the installable package contains the intended SFO fields.
+- **Root Cause:** Packaging transforms source metadata into PARAM.SFO; stale templates or packaging overrides can diverge from the requested application version.
+- **Fix:** Independently validate extracted `APP_VER`, `VERSION`, title ID, boot metadata, and XMB title. The v1.0.0 candidate contains `01.00` in both version fields.
+- **Prevention Rule:** Treat manifest, build evidence, and the extracted SFO as separate checks; report the actual fixed-width value explicitly.

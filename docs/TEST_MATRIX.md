@@ -4,11 +4,12 @@
 
 | Test | Result | Boundary |
 |---|---|---|
-| App/SFO version source | PASS: `release.json` reports app `1.0.0`, SFO `01.00`; regression test accepts next `1.0.1` / `01.01` and rejects malformed semantic versions. | Host-side config test only; package SFO pending the Lima build. |
+| App/SFO version source | PASS: `release.json` reports app `1.0.0`, SFO `01.00`; regression test accepts next `1.0.1` / `01.01` and rejects malformed semantic versions. | Configuration regression only; the separately listed PKG test validates actual extracted SFO fields. |
 | Release evidence verifier | PASS: synthetic debug-PKG header accepted when source/hash/check statuses match; mismatched hash and pending validation status were rejected. | Validates metadata and package envelope, not a real release package. |
 | v0.2.8 Gate 0 hardware acceptance | PASS, user accepted: about 45 minutes, four XMB cycles, no reported PCM underflows, ALAC failures, RTP queue drops, concealed/skipped frames, or screen-presentation failures. | User-supplied summary; ~45 ms maximum service interval on XMB resume retained as a known hitch. No fresh raw-log audit in this pass. |
-| v1.0.0 exact-source build and package | PENDING | Must run from the committed source archive in pinned Lima; neither PS3 is modified. |
-| GitHub tag/release | BLOCKED | Do not create until exact-source build, package, privacy, notices, and release-branch gates pass. |
+| v1.0.0 exact-source host/sanitizer and PPU build | PASS: full release script completed from committed source `f3da352809f81daac5e3b61a35d7fc18362bf1cc` in pinned Lima; host ASan/UBSan and PPU build checks passed. | Cross-build and host tests only; no emulator or PS3 runtime validation in this pass. |
+| v1.0.0 PKG and extracted SFO | PASS: 3,906,640-byte debug PKG, SHA-256 `ef8f0afdacef560e9f5825fa9539247f3eb17e7791282aa6790f086fa8b1288e`; SFO validator confirms AIRPLAY02, APP_VER/VERSION `01.00`, XMB title AIR PS3. | Candidate built from feature-branch source; not yet rebuilt from current main tip. Neither PS3 modified. |
+| GitHub tag/release | BLOCKED | Source integration into current main and a fresh exact-main-tip build remain required. No tag or release created. |
 
 ## v0.2.0 candidate work (2026-11-07)
 
