@@ -435,3 +435,5 @@ Display candidate restores the standard GPU-side wait-flip command ordering afte
 - Numeric five-second malformed-RTP/retry deltas added. Existing UTC append-only 5 MiB per-launch logs retained.
 - Display tracks DRAW_BEGIN/END alongside MENU events; after resume, it keeps paced flips for two seconds, restores both buffers, then returns static. Mocked production presenter tests prove bounded progress/timeout, not visible PS3 compositor success. PS/START behavior still needs hardware confirmation.
 - v0.2.6 candidate builds through the existing release pipeline; no console deployment in this implementation pass.
+
+- v0.2.6 exact source `bca0f94901acdd7eb97f3b824e372f53beee7ee3` passed the full release gate including encrypted 1,416-byte reference and presenter mocks. PKG 3,233,072 bytes; SHA-256 `472915766a1b950f44558259a3583b5931c0bb3f8d3a8b0e5f1a044715927ca6`. Built/local only; physical resume and audio comparison pending.

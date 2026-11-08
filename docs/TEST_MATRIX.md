@@ -385,3 +385,5 @@ The emitter used a paced diagnostic fixture; target output submission is not pro
 - Host: synthetic 1,416-byte ALAC parse/decode/reference, encrypted clear-tail pipeline, gap splitting/bounded retries, malformed metadata reset, RTP jitter/wrap and ten-minute SRC conservation.
 - Display: production presenter with deterministic clock/RSX mocks covers paced resume, return to static, and stalled-flip timeout. This is not HDMI/VSH validation.
 - Hardware pending: PS menu opens, close/resume gives bright stable image without frozen overlay, START exits, repeat twice; then same-song AirPlay comparison with malformed/retry/concealment deltas. Keep safe-v0.2.4 rollback.
+
+- v0.2.6 exact-source release gate PASS: encrypted 1,416-byte reference PCM, resend split/retry budgets, presenter mocks, all existing host/sanitizer tests, PPU ELF/NPDRM/PKG/SFO. Physical tests remain pending.

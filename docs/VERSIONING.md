@@ -287,3 +287,7 @@ Live read-only evidence captured while AIRPLAY02 v0.1.35 was running: installed 
 - Checks: combined release gate PASS: host/ASan/UBSan tests, full-cap append regression, PPU component/app build, CellOS ELF validation, AIRPLAY02 identity, SFO `00.45`, package extraction and debug NPDRM envelope.
 - Preserve v0.2.4 as the known-safe functional rollback baseline while audio stutters and dim resume remain open.
 - Package built at `work/builds/0.2.5/`, uploaded under a versioned filename, and installed. FTP download-back matched the local PKG; installed SFO matches 00.45 exactly; installed EBOOT matches the package SELF with 48 trailing zero bytes. Subsequent launch and 33-minute telemetry are documented in the forensic audit.
+
+## v0.2.6 / SFO 00.46
+
+Exact source `bca0f94901acdd7eb97f3b824e372f53beee7ee3`; full release gate PASS, including payload/recovery and mocked production display tests. PKG 3,233,072 bytes, SHA-256 `472915766a1b950f44558259a3583b5931c0bb3f8d3a8b0e5f1a044715927ca6`. Built locally; no deployment. See `docs/reports/2026-11-07_v026_payload_resume.md` for acceptance boundary.

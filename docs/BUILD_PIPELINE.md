@@ -177,3 +177,7 @@ The v0.1.33 hardware log shows repeated RTP sequence gaps while ALAC decode and 
 - The initial package invocation stopped because `PS3DEV` was not exported into the new shell; the second invocation then required the generated background asset. We reused the existing 2,764,800-byte generated RGB asset only after confirming the JPEG source SHA matched this checkout. The completed package passed all validators.
 - FTP upload to a new versioned path and download-back comparison passed. webMAN installed while retaining the staged PKG. Installed SFO validates as 00.43; installed 451,632-byte EBOOT matches the package SELF exactly.
 - A webMAN `play.ps3?AIRPLAY02` request returned HTTP 200 but the console remained at XMB, and no new `APP_START` appeared. Launch and START-first hardware validation remain pending. Do not infer controller behavior from package installation.
+
+## v0.2.6 / SFO 00.46
+
+Exact source `bca0f94901acdd7eb97f3b824e372f53beee7ee3`; full release gate PASS, including payload/recovery and mocked production display tests. PKG 3,233,072 bytes, SHA-256 `472915766a1b950f44558259a3583b5931c0bb3f8d3a8b0e5f1a044715927ca6`. Built locally; no deployment. See `docs/reports/2026-11-07_v026_payload_resume.md` for acceptance boundary.
