@@ -24,12 +24,28 @@ cmake -S "$PROJECT_ROOT/experimental/resident/harness" \
 	-DCMAKE_TOOLCHAIN_FILE="$PS3DK_SOURCE/cmake/ps3-ppu-toolchain.cmake" \
 	-DRESIDENT_PRX="$RESIDENT_BUILD_DIR/ps3-airplay-receiver.prx" \
 	-DHARNESS_PKGFILES="$HARNESS_BUILD_DIR/pkg_files"
+# The SDK helper checks PKGFILES at configure time but omits overlay files from
+# the generated package command's dependencies. Force a fresh package so every
+# PRX rebuild is actually reflected in the artifact.
+rm -f "$HARNESS_BUILD_DIR/ps3-airplay-resident-harness.pkg"
 cmake --build "$HARNESS_BUILD_DIR" \
 	--target ps3-airplay-resident-harness_pkg --parallel "${JOBS:-2}"
 
 "$PS3DEV/bin/prx-gen" check "$RESIDENT_BUILD_DIR/ps3-airplay-receiver.prx"
 "$PS3DK_TOOLS/pkg" \
 	--list "$HARNESS_BUILD_DIR/ps3-airplay-resident-harness.pkg"
+VERIFY_DIR="$(mktemp -d "${TMPDIR:-/tmp}/ps3-airplay-resident-pkg.XXXXXX")"
+trap 'rm -rf "$VERIFY_DIR"' EXIT
+(cd "$VERIFY_DIR" && "$PS3DK_TOOLS/pkg" \
+	--extract "$HARNESS_BUILD_DIR/ps3-airplay-resident-harness.pkg")
+PACKAGED_PRX="$(find "$VERIFY_DIR" -type f \
+	-name ps3-airplay-receiver.prx -print -quit)"
+if [[ -z "$PACKAGED_PRX" ]] || ! cmp -s \
+	"$RESIDENT_BUILD_DIR/ps3-airplay-receiver.prx" "$PACKAGED_PRX"; then
+	echo "The PKG does not embed the current resident PRX" >&2
+	exit 1
+fi
+echo "PKG embeds the current resident PRX: PASS"
 sha256sum \
 	"$RESIDENT_BUILD_DIR/ps3-airplay-receiver.prx" \
 	"$RESIDENT_BUILD_DIR/ps3-airplay-receiver.sprx" \

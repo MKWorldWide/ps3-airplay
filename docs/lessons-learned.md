@@ -821,3 +821,17 @@ The v0.1.31 fresh RPCS3 replay verifies the portable-arithmetic correction: the 
 - **Root Cause:** Not established. A direct rerun and the next complete host suite passed; do not label a single intermittent result as a fixed product bug.
 - **Fix:** Retain the exact failure in the development checkpoint and rerun the isolated test plus full suite once; both passed.
 - **Prevention Rule:** Preserve initial failures as evidence and distinguish flakiness from a reproduced defect before changing production timing or weakening assertions.
+
+## Verify packaged overlays against current build outputs
+
+- **Problem:** A rebuilt harness package retained an older resident PRX even though the overlay directory contained the newer binary and the package target reported success.
+- **Root Cause:** The PS3DK package helper did not include overlay payload files in the PKG command's file dependencies. Target-level ordering ensured the overlay was copied first but did not force an up-to-date package output to be regenerated.
+- **Fix:** Remove the old harness PKG before each build, extract the resulting package, and compare the embedded PRX byte-for-byte with the freshly built PRX.
+- **Prevention Rule:** A package listing proves only that a path exists; compare payload hashes or bytes against the intended build output.
+
+## Preserve module state when network teardown fails
+
+- **Problem:** Resident teardown discarded network finalize/unload errors and cleared state flags, potentially reporting success while system modules remained loaded.
+- **Root Cause:** Cleanup was treated as best effort without propagating failures or retaining retry state.
+- **Fix:** Check network finalize/module unload results, log failures, retain the corresponding state flag, and return `SYS_PRX_STOP_FAILED` so the stop callback can retry. If startup cleanup fails, keep the PRX resident for stop-time cleanup.
+- **Prevention Rule:** Clear resource ownership flags only after the corresponding release call succeeds; don't report stop success while resources remain owned.

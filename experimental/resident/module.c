@@ -241,24 +241,38 @@ static void receiver_worker(void *argument)
 	sysThreadExit(0);
 }
 
-static void release_network(void)
+static int release_network(void)
 {
+	int result;
 	if (netctl_initialized) {
 		cellNetCtlTerm();
 		netctl_initialized = 0;
 	}
 	if (netctl_module_loaded) {
-		(void)cellSysmoduleUnloadModule(CELL_SYSMODULE_NETCTL);
+		result = cellSysmoduleUnloadModule(CELL_SYSMODULE_NETCTL);
+		if (result != 0) {
+			(void)log_event("NETCTL_UNLOAD_FAILED", result, 0);
+			return 0;
+		}
 		netctl_module_loaded = 0;
 	}
 	if (net_initialized) {
-		(void)sys_net_finalize_network();
+		result = sys_net_finalize_network();
+		if (result != 0) {
+			(void)log_event("NET_FINALIZE_FAILED", result, 0);
+			return 0;
+		}
 		net_initialized = 0;
 	}
 	if (net_module_loaded) {
-		(void)cellSysmoduleUnloadModule(CELL_SYSMODULE_NET);
+		result = cellSysmoduleUnloadModule(CELL_SYSMODULE_NET);
+		if (result != 0) {
+			(void)log_event("NET_UNLOAD_FAILED", result, 0);
+			return 0;
+		}
 		net_module_loaded = 0;
 	}
+	return 1;
 }
 
 static void release_crypto(void)
@@ -351,9 +365,13 @@ int module_start(size_t args, void *argp)
 	return SYS_PRX_RESIDENT;
 
 fail:
-	release_network();
-	release_crypto();
 	(void)log_event("MODULE_START_FAILED", result, 0);
+	release_crypto();
+	if (!release_network()) {
+		(void)log_event("MODULE_START_CLEANUP_PENDING", result, 0);
+		/* Remain resident so module_stop can retry retained network resources. */
+		return SYS_PRX_RESIDENT;
+	}
 	receiver_log_file_close(&receiver_log);
 fail_runtime:
 	__libc_fini_array();
@@ -392,9 +410,10 @@ int module_stop(size_t args, void *argp)
 		}
 		worker_started = 0;
 	}
-	(void)log_event("MODULE_STOP", (int)thread_result, 0);
 	release_crypto();
-	release_network();
+	if (!release_network())
+		return SYS_PRX_STOP_FAILED;
+	(void)log_event("MODULE_STOP", (int)thread_result, 0);
 	receiver_log_file_close(&receiver_log);
 	__libc_fini_array();
 	return SYS_PRX_STOP_OK;

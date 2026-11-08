@@ -22,24 +22,13 @@ but there is no scheduled playback-recovery guarantee.
 The existing Lima VM built `ps3-airplay-receiver.prx` plus both PS3DK `SIGN`
 containers (`.sprx` and `.fake.sprx`) using `scripts/build-lima-resident.sh`.
 PS3DK v0.27.0 `prx-gen check` accepted the `.prx`'s single load segment,
-5,993 emitted relocations, 1 management export record, and 4 import records
+6,094 emitted relocations, 1 management export record, and 4 import records
 (`sys_net`, `cellSysmodule`, `cellNetCtl`, `sysPrxForUser`). It does not validate
 the SELF containers or Cobra loading. The build includes ALAC decode, timing
-probes and bounded resend requests. The latest sequence-buffer PRX SHA-256
-from 2026-11-06 is
-`c5be7a6b47d648bd64891dc03b2d9b1e5500fa6d63e579bb7107d4863d5ecb13`.
-Earlier container hashes from the 2026-11-06 21:50 America/New_York build:
-
-| Artifact | SHA-256 |
-|---|---|
-| `.prx` | `c9847b6fe3e66be58fcaff5a0790505ef794011adde54c19e303b036fe1efc21` |
-| `.sprx` | `c805fc00a12b764245210fffd30bc8b91dc61bc939e9e1d8e42fd9c9d4d8eec8` |
-| `.fake.sprx` | `efc2422bb1ef242af7e03c02407cfc1db0f4024597c5f9ae1a386b3847d0a747` |
-
-The raw `.prx` and `.fake.sprx` hashes were stable across two clean builds of
-the final candidate. The real-signed `.sprx` hash changed between those builds;
-the cause was not isolated, so treat that container output as nondeterministic
-and record the hash of the exact artifact being evaluated.
+probes and bounded resend requests. The 2026-11-08 experimental lifecycle
+candidate hashes are recorded in
+`docs/experimental/RESIDENT_OVERNIGHT_REPORT.md`. Build hashes belong to exact
+artifacts; do not substitute the raw PRX hash for a signed-container hash.
 
 The worker uses PS3DK's lower-level `sysThreadCreate` / `sysThreadExit` /
 `sysThreadJoin` path. It avoids the higher-level `sys_ppu_thread_create`
@@ -51,11 +40,27 @@ or `.tbss` sections.
 
 The listener writes RTSP request events from its single worker thread. The
 module's bounded atomic lock serializes its own lifecycle/error writes. On
-stop, a successful worker join precedes final logging and cleanup. If join
-fails, the module returns `SYS_PRX_STOP_FAILED` without closing the log or
-network state; it deliberately skips logging that failure because the listener
-may still be writing to the same stdio stream. This keeps resources resident
-instead of tearing them out from under a live worker.
+stop, the module waits up to five seconds for the worker's cleanup-complete
+signal before joining. If the wait or join fails, it returns
+`SYS_PRX_STOP_FAILED` without closing the log or network state. Network
+finalize/unload errors are logged and retain their resource flags so stop can
+be retried; cleanup does not claim success while an owned module remains.
+
+## RPCS3 lifecycle harness
+
+`scripts/build-lima-resident-rpcs3-harness.sh` builds the diagnostic PRX and a
+separate homebrew test package with title ID `RPRX90001`. It embeds the raw
+`.prx` in `USRDIR`, uses a separate runtime log, and defaults to test ports
+5001/6100 so it does not require changing the receiver's standard 5000/6000
+ports. The app attempts three load/start/stop/unload cycles and checks module
+log events. Each package build is extracted and its PRX is compared byte for
+byte with the current build output, guarding against stale SDK overlays.
+
+The 2026-11-08 pass passed host tests, PPU linking, structural PRX checks, and
+package payload comparison. It did not install or execute the harness in
+RPCS3 because the local desktop was locked. No emulator result, Cobra
+compatibility, hardware loading, resident audio output, or in-game coexistence
+is established. See the overnight report for exact status and artifact hashes.
 
 ## Limits and safety gates
 
