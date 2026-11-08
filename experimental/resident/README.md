@@ -52,9 +52,12 @@ be retried; cleanup does not claim success while an owned module remains.
 separate homebrew test package with title ID `RPRX90001`. It embeds the raw
 `.prx` in `USRDIR`, uses a separate runtime log, and defaults to test ports
 5001/6100 so it does not require changing the receiver's standard 5000/6000
-ports. The app attempts three load/start/stop/unload cycles and checks module
-log events. Each package build is extracted and its PRX is compared byte for
-byte with the current build output, guarding against stale SDK overlays.
+ports. The app attempts three load/start/stop/unload cycles, checks module log
+events, and compares the module-list count with its pre-test baseline after
+every unload. It fails if the 256-entry list capacity is reached, so a
+truncated count cannot pass as leak-free. Each package build is extracted and
+its PRX is compared byte for byte with the current build output, guarding
+against stale SDK overlays.
 
 The 2026-11-08 pass passed host tests, PPU linking, structural PRX checks, and
 package payload comparison. It did not install or execute the harness in

@@ -78,4 +78,4 @@ A normal stop reports `SYS_PRX_STOP_FAILED` if Net module finalize or module unl
 
 ## Next recommended step
 
-Complete local RPCS3 installation and three lifecycle cycles once the desktop is accessible. Record exact syscall results and module logs, then write the overnight report and mark hardware readiness only from verified evidence.
+The overnight report is drafted with a NOT HARDWARE READY decision. If the desktop becomes accessible, install the local package in RPCS3, run the three lifecycle cycles, record exact syscall results and module logs, and update the report from observed evidence.

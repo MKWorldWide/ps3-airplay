@@ -835,3 +835,10 @@ The v0.1.31 fresh RPCS3 replay verifies the portable-arithmetic correction: the 
 - **Root Cause:** Cleanup was treated as best effort without propagating failures or retaining retry state.
 - **Fix:** Check network finalize/module unload results, log failures, retain the corresponding state flag, and return `SYS_PRX_STOP_FAILED` so the stop callback can retry. If startup cleanup fails, keep the PRX resident for stop-time cleanup.
 - **Prevention Rule:** Clear resource ownership flags only after the corresponding release call succeeds; don't report stop success while resources remain owned.
+
+## Check module-list baseline across repeated PRX unloads
+
+- **Problem:** Stop and unload return success and worker log events appear, but repeated module entries could still accumulate.
+- **Root Cause:** API success and worker events do not independently show that the loaded-module list returned to its starting state.
+- **Fix:** Record the module-list count before testing and compare after every unload; fail closed if the query fails or its 256-entry buffer is full.
+- **Prevention Rule:** Keep module lifecycle checks separate from socket/memory checks, and do not treat a successful unload return as proof that all resources returned to baseline.

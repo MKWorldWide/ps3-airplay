@@ -1,5 +1,6 @@
 #include <sys/prx.h>
 
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
@@ -12,6 +13,7 @@
 #define EVENT_WAIT_POLLS 400U
 #define EVENT_POLL_US 25000U
 #define ACTIVE_HOLD_US 250000U
+#define MODULE_LIST_CAPACITY 256U
 
 static FILE *app_log;
 
@@ -61,10 +63,29 @@ static int wait_for_event(long offset, const char *needle)
 	return 0;
 }
 
-static int run_cycle(unsigned int cycle)
+static int get_module_count(unsigned int *count)
+{
+	sys_prx_id_t ids[MODULE_LIST_CAPACITY];
+	sys_prx_get_module_list_t modules;
+	int result;
+	memset(&modules, 0, sizeof(modules));
+	modules.size = sizeof(modules);
+	modules.max = MODULE_LIST_CAPACITY;
+	modules.idlist = (sysPrxUserPprxId)(uintptr_t)ids;
+	result = sys_prx_get_module_list(0, &modules);
+	if (result != 0)
+		return result;
+	if (modules.count >= MODULE_LIST_CAPACITY)
+		return -1;
+	*count = modules.count;
+	return 0;
+}
+
+static int run_cycle(unsigned int cycle, unsigned int baseline_module_count)
 {
 	long log_offset = file_size(MODULE_LOG_PATH);
 	sys_prx_id_t module_id;
+	unsigned int module_count;
 	int module_result = 0;
 	int result;
 	char name[32];
@@ -120,6 +141,16 @@ static int run_cycle(unsigned int cycle)
 		event("MODULE_STOP_EVENT_MISSING", (int)cycle);
 		return 0;
 	}
+	result = get_module_count(&module_count);
+	if (result != 0) {
+		event("MODULE_LIST_FAILED_AFTER_CYCLE", result);
+		return 0;
+	}
+	event("MODULE_COUNT_AFTER_CYCLE", (int)module_count);
+	if (module_count != baseline_module_count) {
+		event("MODULE_COUNT_LEAK", (int)module_count);
+		return 0;
+	}
 	event("CYCLE_PASS", (int)cycle);
 	return 1;
 }
@@ -127,13 +158,23 @@ static int run_cycle(unsigned int cycle)
 int main(int argc, const char **argv)
 {
 	unsigned int cycle;
+	unsigned int baseline_module_count;
+	int result;
 	(void)argc;
 	(void)argv;
 	app_log = fopen(APP_LOG_PATH, "wb");
 	event(app_log != NULL ? "HARNESS_START" : "HARNESS_LOG_OPEN_FAILED", 0);
 	(void)printf("AIR PS3 resident lifecycle test; no audio output is expected.\n");
+	result = get_module_count(&baseline_module_count);
+	if (result != 0) {
+		event("MODULE_LIST_FAILED_AT_START", result);
+		if (app_log != NULL)
+			(void)fclose(app_log);
+		return 1;
+	}
+	event("MODULE_COUNT_BASELINE", (int)baseline_module_count);
 	for (cycle = 1; cycle <= TEST_CYCLES; ++cycle) {
-		if (!run_cycle(cycle)) {
+		if (!run_cycle(cycle, baseline_module_count)) {
 			event("HARNESS_FAIL", (int)cycle);
 			if (app_log != NULL)
 				(void)fclose(app_log);
