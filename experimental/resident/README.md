@@ -75,9 +75,11 @@ worker poll-error exit, retry after thread-join failure, and retry after
 injected NetCtl unload, network finalize, and network-module unload errors.
 It also checks that the receiver starts and cleans up if NetCtl module loading
 or initialization fails, and that receiver-open failure exits with a logged
-worker-stop event and can be joined and cleaned up. The address-probe socket
-calls are stubbed and assert the expected multicast target; the test sends no
-packets and opens no socket. Ten cases passed in four consecutive full runs.
+worker-stop event and can be joined and cleaned up. It also injects a failure
+writing `RECEIVER_READY` and verifies the opened receiver is closed before the
+worker exits. The address-probe socket calls are stubbed and assert the
+expected multicast target; the test sends no packets and opens no socket.
+Eleven cases passed in four consecutive full runs.
 
 This checks resident control flow and error-state retention with host mocks. It
 does not check PS3 syscall semantics, PRX loading, the PS3 scheduler, real

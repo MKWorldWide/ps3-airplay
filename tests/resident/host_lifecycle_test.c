@@ -42,6 +42,8 @@ static int fail_net_init;
 static int fail_netctl_load;
 static int fail_netctl_init;
 static int fail_receiver_open;
+static int fail_receiver_ready_log;
+static int receiver_close_calls;
 static int fail_netctl_unload;
 static int fail_net_finalize;
 static int fail_net_unload;
@@ -330,6 +332,7 @@ int raop_receiver_pop_audio(raop_receiver *receiver, raop_rtp_frame *frame)
 
 void raop_receiver_close(raop_receiver *receiver)
 {
+	++receiver_close_calls;
 	receiver->tcp_fd = receiver->audio_fd = receiver->control_fd =
 		receiver->timing_fd = -1;
 }
@@ -412,6 +415,10 @@ int receiver_log_file_event(receiver_log_file *log, const char *timestamp,
 	const char *event, int value, size_t byte_count)
 {
 	int result;
+	if (fail_receiver_ready_log && strcmp(event, "RECEIVER_READY") == 0) {
+		--fail_receiver_ready_log;
+		return 0;
+	}
 	if (log->stream == NULL)
 		return 0;
 	result = fprintf(log->stream, "%s event=%s value=%d bytes=%zu\n",
@@ -435,6 +442,8 @@ static void reset_mocks(void)
 	fail_netctl_load = 0;
 	fail_netctl_init = 0;
 	fail_receiver_open = 0;
+	fail_receiver_ready_log = 0;
+	receiver_close_calls = 0;
 	fail_netctl_unload = 0;
 	fail_net_finalize = 0;
 	fail_net_unload = 0;
@@ -580,6 +589,21 @@ static void test_receiver_open_failure_cleanup(void)
 	puts("receiver-open failure and exited-worker cleanup: PASS");
 }
 
+static void test_receiver_ready_log_failure_cleanup(void)
+{
+	reset_mocks();
+	fail_receiver_ready_log = 1;
+	assert(module_start(0, NULL) == SYS_PRX_RESIDENT);
+	wait_for_log_event("event=WORKER_STOPPED", 2000);
+	assert(module_stop(0, NULL) == SYS_PRX_STOP_OK);
+	assert(receiver_close_calls == 1);
+	assert(netctl_term_calls == 1 && netctl_unload_calls == 1);
+	assert(net_finalize_calls == 1 && net_unload_calls == 1);
+	assert(host_socket_calls == 0 && host_connect_calls == 0);
+	assert_log_event("event=MODULE_STOP");
+	puts("receiver-ready log failure and cleanup: PASS");
+}
+
 static void test_netctl_unload_retry(void)
 {
 	reset_mocks();
@@ -679,6 +703,7 @@ int main(void)
 	test_netctl_load_failure_cleanup();
 	test_netctl_init_failure_cleanup();
 	test_receiver_open_failure_cleanup();
+	test_receiver_ready_log_failure_cleanup();
 	test_netctl_unload_retry();
 	test_net_finalize_retry();
 	test_net_unload_retry();
