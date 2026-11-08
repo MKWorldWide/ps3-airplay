@@ -373,15 +373,16 @@ static int start_audio_backend(void)
 		(void)log_event("AUDIO_TEST_TONE_QUEUED", 440,
 			AUDIO_TEST_TONE_FRAMES * 4U);
 	}
+	__atomic_store_n(&audio_thread_started, 1, __ATOMIC_RELEASE);
 	result = sysThreadCreate(&audio_thread, audio_worker, NULL, 3000,
 		RESIDENT_AUDIO_STACK, THREAD_JOINABLE, "ps3-airplay-audio");
 	if (result != 0) {
+		__atomic_store_n(&audio_thread_started, 0, __ATOMIC_RELEASE);
 		(void)log_event("AUDIO_WORKER_CREATE_FAILED", result, 0);
 		publish_diagnostic_event(AIRPS3_DIAG_EVENT_AUDIO_FAILED);
 		(void)release_audio();
 		return 0;
 	}
-	audio_thread_started = 1;
 	(void)log_event("AUDIO_READY", (int)audio_port, 0);
 	publish_diagnostic_event(AIRPS3_DIAG_EVENT_AUDIO_READY);
 	return 1;
@@ -490,7 +491,8 @@ static void receiver_worker(void *argument)
 						frame.packet.payload_length, decoder_pcm,
 						sizeof(decoder_pcm), &pcm_length, &samples)) {
 						++decoded_frames;
-						if (audio_thread_started) {
+						if (__atomic_load_n(&audio_thread_started,
+								__ATOMIC_ACQUIRE)) {
 							uint32_t generation = __atomic_load_n(&pcm_generation,
 								__ATOMIC_ACQUIRE);
 							uint8_t channels = (uint8_t)__atomic_load_n(
@@ -593,7 +595,7 @@ int module_start(size_t args, void *argp)
 	stop_requested = 0;
 	worker_exited = 0;
 	worker_started = 0;
-	audio_thread_started = 0;
+	__atomic_store_n(&audio_thread_started, 0, __ATOMIC_RELEASE);
 	audio_module_loaded = 0;
 	audio_initialized_by_module = 0;
 	audio_port_opened = 0;
@@ -741,7 +743,7 @@ int module_stop(size_t args, void *argp)
 		worker_started = 0;
 	}
 	runtime_trace("STOP_RECEIVER_JOINED", 0);
-	if (audio_thread_started) {
+	if (__atomic_load_n(&audio_thread_started, __ATOMIC_ACQUIRE)) {
 		wait_started_us = sys_time_get_system_time();
 		wait_polls = 0;
 		while (!__atomic_load_n(&audio_worker_exited, __ATOMIC_ACQUIRE) &&
@@ -759,7 +761,7 @@ int module_stop(size_t args, void *argp)
 		runtime_trace("STOP_AUDIO_JOIN_RESULT", join_result);
 		if (join_result != 0)
 			return SYS_PRX_STOP_FAILED;
-		audio_thread_started = 0;
+		__atomic_store_n(&audio_thread_started, 0, __ATOMIC_RELEASE);
 	}
 	runtime_trace("STOP_AUDIO_RELEASE_BEGIN", 0);
 	if (!release_audio())

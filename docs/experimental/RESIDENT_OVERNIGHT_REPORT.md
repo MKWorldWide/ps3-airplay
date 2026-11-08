@@ -1,6 +1,6 @@
 # AIR PS3 Resident Development Report
 
-**Updated:** 2026-11-08 19:07 EDT
+**Updated:** 2026-11-08 19:11 EDT
 **Branch:** `experimental/resident-airplay`
 **Source baseline:** `53e24116e8d9a26db80deeafd568be72bf8cf6d6`
 **Scope:** RPCS3 lifecycle and diagnostic harness; no physical PS3 was contacted.
@@ -59,6 +59,26 @@ The RPCS3 desktop reported the Mac locked, so no new emulator result exists
 for these markers. The previous two-cycle pass / third-cycle crash remains the
 latest runtime evidence. The exact crash call site remains unknown.
 
+## Audio-thread startup publication follow-up (2026-11-08 19:11 EDT)
+
+Source review found `audio_thread_started` was written by the module-start/stop
+thread and read by the receiver worker without atomic synchronization. The
+worker now reads it with acquire semantics, and startup publishes the ready
+state with release semantics after queue initialization and before thread
+creation. Thread-creation failure and post-join cleanup clear it atomically.
+This closes a real cross-thread data race; it does not establish the cause of
+the prior third-cycle crash.
+
+Host lifecycle/audio and SPSC concurrency tests passed again. The PPU build and
+`prx-gen check` passed with five imports, one load segment, and 6,298
+relocations. The rebuilt package's overlay fake SPRX matches the new build.
+Latest artifacts: PRX
+`5ebf2ab703df8986d3a62864db03adcc9989d3eb9b39b6507eacce0865fe7355`, fake
+SPRX `e4507877dce48fcf4f7874de352e90ead57c283a84a47fc66b4504603ddb9c14`,
+PKG `d803bfd2daf94e6dbf7a61434330077f5e5b55418831d389a12ffbf0fb888a3c`.
+The earlier trace-only package is preserved in ignored output. RPCS3 remains
+unrun for both candidates because the desktop is still locked.
+
 **Hardware readiness: NOT READY.** First isolate the RPCS3 thread-exit fault,
 restore three clean audio-enabled cycles with module count at baseline after
 each, then validate a synthetic RAOP stream through decode and PCM output.
@@ -74,7 +94,7 @@ Only a later reviewed gate may propose a nonpersistent hardware test.
 | Two-port coexistence | PASS (submission only) | Both ports accepted audio submissions during the test interval; this does not establish real mixing quality or game coexistence. |
 | Three-cycle audio teardown | FAIL | Cycles 1 and 2 passed; cycle 3 crashed in the resident audio thread at a null execution target. The reported module offset is not reliably mapped to a named PRX function. |
 | Cycle-3 module baseline | UNTESTED | Crash occurred before stop/unload completion and baseline query. |
-| Instrumented RPCS3 rerun | BLOCKED | New marker build is ready, but RPCS3 UI reported the Mac locked before package installation. |
+| Instrumented RPCS3 rerun | BLOCKED | Latest trace plus atomic-publication build is ready, but RPCS3 UI reported the Mac locked before package installation. |
 | Synthetic RAOP decode-to-output | UNTESTED | No RAOP packets were sent; only a diagnostics-only PCM seed exercised output. |
 | Physical console / Cobra / in-game audio | UNTESTED | No physical PS3 was contacted. |
 

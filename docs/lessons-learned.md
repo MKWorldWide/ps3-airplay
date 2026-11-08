@@ -870,3 +870,10 @@ The v0.1.31 fresh RPCS3 replay verifies the portable-arithmetic correction: the 
 - **Root Cause:** Unknown. RPCS3 reported a fatal null-address execution fault in `ps3-airplay-audio` and a module location of `0x001201c8`. PRX relocation prevents confident mapping of that reported address to a named function using the raw `.text` address alone; an earlier `sysThreadExit` attribution was withdrawn.
 - **Fix:** No fix is claimed. Preserve the two passing cycles and the third-cycle failure. Keep the candidate off hardware until a repeatable audio-enabled stop/unload run returns the module list to baseline.
 - **Prevention Rule:** Validate full load/start/audio/stop/join/unload cycles independently from audio API submission; a PCM-submitted event or successful port call does not prove the worker exited or can be safely unloaded.
+
+## Publish resident worker readiness across threads atomically
+
+- **Problem:** The receiver worker checked `audio_thread_started` while module startup and stop callbacks wrote the same flag as a plain integer.
+- **Root Cause:** The readiness flag crossed a PPU-thread boundary without atomic synchronization, leaving a C data race and no explicit publication order for the queue/thread state.
+- **Fix:** Initialize the queue first, publish the ready flag with a release store before creating the audio worker, read it with acquire semantics in the receiver, and clear it atomically on creation failure and after join.
+- **Prevention Rule:** Any lifecycle flag observed by a different worker thread must use an explicit atomic publication/read pattern; do not infer safety from likely hardware cache coherence.
