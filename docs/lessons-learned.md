@@ -843,6 +843,13 @@ The v0.1.31 fresh RPCS3 replay verifies the portable-arithmetic correction: the 
 - **Fix:** Record the module-list count before testing and compare after every unload; fail closed if the query fails or its 256-entry buffer is full.
 - **Prevention Rule:** Keep module lifecycle checks separate from socket/memory checks, and do not treat a successful unload return as proof that all resources returned to baseline.
 
+## Distinguish RPCS3 PRX container support from lifecycle behavior
+
+- **Problem:** The emulator rejected the raw PRX before its start callback, so repeated lifecycle tests could not exercise resident code.
+- **Root Cause:** RPCS3's loader returned `0x80011148` (`CELL_PRX_ERROR_UNSUPPORTED_PRX_TYPE`) for the raw PRX, while PS3DK's fake-signed SPRX container is accepted by this emulator test setup.
+- **Fix:** Keep the raw PRX for structural/hardware-candidate output; embed `.fake.sprx` in the emulator-only harness package and compare that exact payload during packaging. Pass lifecycle diagnostics through harness module arguments because RPCS3 also cannot open the resident's file-log path.
+- **Prevention Rule:** Record container type and exact loader status before interpreting `module_start`; distinguish test-only emulator workarounds from production signing and logging behavior.
+
 ## Run Lima shell scripts with their required interpreter and headers
 
 - **Problem:** A repeated forensic run first returned `Permission denied` when invoked directly and then stopped at the optional resend test because the Mbed TLS include directory was set too high in the tree.

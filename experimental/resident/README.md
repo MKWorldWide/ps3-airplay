@@ -49,21 +49,25 @@ be retried; cleanup does not claim success while an owned module remains.
 ## RPCS3 lifecycle harness
 
 `scripts/build-lima-resident-rpcs3-harness.sh` builds the diagnostic PRX and a
-separate homebrew test package with title ID `RPRX90001`. It embeds the raw
-`.prx` in `USRDIR`, uses a separate runtime log, and defaults to test ports
-5001/6100 so it does not require changing the receiver's standard 5000/6000
-ports. The app attempts three load/start/stop/unload cycles, checks module log
-events, and compares the module-list count with its pre-test baseline after
-every unload. It fails if the 256-entry list capacity is reached, so a
-truncated count cannot pass as leak-free. Each package build is extracted and
-its PRX is compared byte for byte with the current build output, guarding
-against stale SDK overlays.
+separate homebrew test package with title ID `RPRX90001`. RPCS3 rejected the raw
+`.prx` with `0x80011148` (`CELL_PRX_ERROR_UNSUPPORTED_PRX_TYPE`), so the
+emulator harness embeds PS3DK's `.fake.sprx` container. This container is for
+the local emulator test only and is not evidence of Cobra or hardware
+compatibility. The app uses ports 5001/6100 and runs three load/start/stop/
+unload cycles. It checks diagnostic events and compares the module-list count
+with its pre-test baseline after every unload. It fails if the 256-entry list
+capacity is reached, so a truncated count cannot pass as leak-free. Each
+package build is extracted and its embedded SPRX is compared byte for byte
+with the current build output, guarding against stale SDK overlays.
 
-The 2026-11-08 pass passed host tests, PPU linking, structural PRX checks, and
-package payload comparison. It did not install or execute the harness in
-RPCS3 because the local desktop was locked. No emulator result, Cobra
-compatibility, hardware loading, resident audio output, or in-game coexistence
-is established. See the overnight report for exact status and artifact hashes.
+The 2026-11-08 RPCS3 run completed three clean load/start/stop/unload cycles.
+Each cycle reached `RECEIVER_READY`, stopped its worker, unloaded successfully,
+and returned the module count to baseline six. RPCS3 does not permit this
+module's file logger to open its path; the harness reports `LOG_UNAVAILABLE`
+through a diagnostics structure passed to the module. No audio output,
+synthetic RAOP session, Cobra compatibility, hardware loading, or in-game
+coexistence is established. See the overnight report for exact status and
+artifact hashes.
 
 ## Mocked host lifecycle simulation
 

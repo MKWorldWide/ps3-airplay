@@ -1,0 +1,21 @@
+#ifndef AIRPS3_RESIDENT_DIAGNOSTICS_H
+#define AIRPS3_RESIDENT_DIAGNOSTICS_H
+
+#include <stdint.h>
+
+#define AIRPS3_RESIDENT_DIAGNOSTICS_MAGIC 0x41505258U
+
+typedef struct airps3_resident_diagnostics {
+	uint32_t magic;
+	uint32_t stage;
+	int32_t error;
+	uint32_t events;
+} airps3_resident_diagnostics;
+
+#define AIRPS3_DIAG_EVENT_STARTED        0x01U
+#define AIRPS3_DIAG_EVENT_RECEIVER_READY 0x02U
+#define AIRPS3_DIAG_EVENT_WORKER_STOPPED 0x04U
+#define AIRPS3_DIAG_EVENT_MODULE_STOP    0x08U
+#define AIRPS3_DIAG_EVENT_LOG_UNAVAILABLE 0x10U
+
+#endif

@@ -1,6 +1,7 @@
 #include "raop_receiver.h"
 #include "raop_alac.h"
 #include "raop_mdns_service.h"
+#include "resident_diagnostics.h"
 
 #include <cell/libnet.h>
 #include <cell/libnetctl.h>
@@ -55,6 +56,27 @@ static int crypto_initialized;
 static uint8_t console_mac[6];
 static int have_console_mac;
 static uint8_t decoder_pcm[RAOP_ALAC_PCM_MAX];
+static airps3_resident_diagnostics *active_diagnostics;
+
+static void publish_diagnostic_event(uint32_t event)
+{
+	if (active_diagnostics != NULL)
+		(void)__atomic_fetch_or(&active_diagnostics->events, event,
+			__ATOMIC_RELEASE);
+}
+
+static void publish_start_diagnostic(size_t args, void *argp,
+	uint32_t stage, int result)
+{
+	airps3_resident_diagnostics *diagnostics =
+		(airps3_resident_diagnostics *)argp;
+	if (diagnostics != NULL && args == sizeof(*diagnostics) &&
+		diagnostics->magic == AIRPS3_RESIDENT_DIAGNOSTICS_MAGIC) {
+		active_diagnostics = diagnostics;
+		diagnostics->stage = stage;
+		diagnostics->error = result;
+	}
+}
 
 static uint64_t monotonic_milliseconds(void)
 {
@@ -114,6 +136,10 @@ static int log_event(const char *event, int value, size_t bytes)
 	}
 	if (!acquired)
 		return 0;
+	if (receiver_log.stream == NULL && active_diagnostics != NULL) {
+		__atomic_store_n(&receiver_log_lock, 0, __ATOMIC_RELEASE);
+		return 1;
+	}
 	timestamp_utc(timestamp);
 	logged = receiver_log_file_event(&receiver_log, timestamp, event, value,
 		bytes);
@@ -136,12 +162,15 @@ static void receiver_worker(void *argument)
 		RESIDENT_RTP_BASE_PORT, &receiver_log)) {
 		(void)log_event("RECEIVER_OPEN_FAILED", -1, 0);
 		(void)log_event("WORKER_STOPPED", -1, 0);
+		publish_diagnostic_event(AIRPS3_DIAG_EVENT_WORKER_STOPPED);
 		__atomic_store_n(&worker_exited, 1, __ATOMIC_RELEASE);
 		sysThreadExit(0);
 	}
+	publish_diagnostic_event(AIRPS3_DIAG_EVENT_RECEIVER_READY);
 	if (!log_event("RECEIVER_READY", raop_receiver_rtsp_port(&receiver), 0)) {
 		raop_receiver_close(&receiver);
 		(void)log_event("WORKER_STOPPED", -1, 0);
+		publish_diagnostic_event(AIRPS3_DIAG_EVENT_WORKER_STOPPED);
 		__atomic_store_n(&worker_exited, 1, __ATOMIC_RELEASE);
 		sysThreadExit(0);
 	}
@@ -239,6 +268,7 @@ static void receiver_worker(void *argument)
 	raop_mdns_service_close(&mdns_service);
 	raop_receiver_close(&receiver);
 	(void)log_event("WORKER_STOPPED", 0, 0);
+	publish_diagnostic_event(AIRPS3_DIAG_EVENT_WORKER_STOPPED);
 	__atomic_store_n(&worker_exited, 1, __ATOMIC_RELEASE);
 	sysThreadExit(0);
 }
@@ -288,12 +318,13 @@ static void release_crypto(void)
 int module_start(size_t args, void *argp)
 {
 	int result = -1;
-	(void)args;
-	(void)argp;
+	int log_opened;
+	publish_start_diagnostic(args, argp, 1U, 0);
 
 	/* The process CRT initializes heap and constructors; this PRX owns its
 	 * lifecycle and does not use the TLS-backed sys_ppu_thread_create shim. */
 	__libc_init_array();
+	publish_start_diagnostic(args, argp, 2U, 0);
 	stop_requested = 0;
 	worker_exited = 0;
 	worker_started = 0;
@@ -304,10 +335,26 @@ int module_start(size_t args, void *argp)
 	crypto_initialized = 0;
 	have_console_mac = 0;
 
-	if (!receiver_log_file_open(&receiver_log, RECEIVER_LOG_PATH))
-		goto fail_runtime;
-	if (!log_event("MODULE_START", 0, 0))
+	log_opened = receiver_log_file_open(&receiver_log, RECEIVER_LOG_PATH);
+	(void)printf("AIR PS3 resident: log open %s\n",
+		log_opened ? "ok" : "failed");
+	(void)fflush(stdout);
+	if (!log_opened) {
+		if (active_diagnostics == NULL) {
+			publish_start_diagnostic(args, argp, 11U, -1);
+			goto fail_runtime;
+		}
+		publish_diagnostic_event(AIRPS3_DIAG_EVENT_LOG_UNAVAILABLE);
+	}
+	publish_start_diagnostic(args, argp, 3U, 0);
+	if (!log_event("MODULE_START", 0, 0)) {
+		(void)printf("AIR PS3 resident: MODULE_START log write failed\n");
+		(void)fflush(stdout);
 		goto fail;
+	}
+	publish_start_diagnostic(args, argp, 4U, 0);
+	(void)printf("AIR PS3 resident: MODULE_START logged\n");
+	(void)fflush(stdout);
 
 	result = cellSysmoduleLoadModule(CELL_SYSMODULE_NET);
 	if (result != 0) {
@@ -315,12 +362,14 @@ int module_start(size_t args, void *argp)
 		goto fail;
 	}
 	net_module_loaded = 1;
+	publish_start_diagnostic(args, argp, 5U, 0);
 	result = sys_net_initialize_network();
 	if (result != 0) {
 		(void)log_event("NET_INIT_FAILED", result, 0);
 		goto fail;
 	}
 	net_initialized = 1;
+	publish_start_diagnostic(args, argp, 6U, 0);
 	if (!log_event("NET_READY", 0, 0)) {
 		result = -1;
 		goto fail;
@@ -364,10 +413,15 @@ int module_start(size_t args, void *argp)
 		goto fail;
 	}
 	worker_started = 1;
+	publish_start_diagnostic(args, argp, 7U, 0);
+	publish_diagnostic_event(AIRPS3_DIAG_EVENT_STARTED);
 	return SYS_PRX_RESIDENT;
 
 fail:
+	publish_start_diagnostic(args, argp, 9U, result);
 	(void)log_event("MODULE_START_FAILED", result, 0);
+	(void)printf("AIR PS3 resident: start failed result=%d\n", result);
+	(void)fflush(stdout);
 	release_crypto();
 	if (!release_network()) {
 		(void)log_event("MODULE_START_CLEANUP_PENDING", result, 0);
@@ -376,6 +430,7 @@ fail:
 	}
 	receiver_log_file_close(&receiver_log);
 fail_runtime:
+	publish_start_diagnostic(args, argp, 10U, result);
 	__libc_fini_array();
 	return SYS_PRX_NO_RESIDENT;
 }
@@ -416,7 +471,9 @@ int module_stop(size_t args, void *argp)
 	if (!release_network())
 		return SYS_PRX_STOP_FAILED;
 	(void)log_event("MODULE_STOP", (int)thread_result, 0);
+	publish_diagnostic_event(AIRPS3_DIAG_EVENT_MODULE_STOP);
 	receiver_log_file_close(&receiver_log);
+	active_diagnostics = NULL;
 	__libc_fini_array();
 	return SYS_PRX_STOP_OK;
 }

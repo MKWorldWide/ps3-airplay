@@ -22,7 +22,7 @@ export PATH="$PS3DEV/bin:$PS3DEV/ppu/bin:$PS3DEV/spu/bin:$PATH"
 cmake -S "$PROJECT_ROOT/experimental/resident/harness" \
 	-B "$HARNESS_BUILD_DIR" \
 	-DCMAKE_TOOLCHAIN_FILE="$PS3DK_SOURCE/cmake/ps3-ppu-toolchain.cmake" \
-	-DRESIDENT_PRX="$RESIDENT_BUILD_DIR/ps3-airplay-receiver.prx" \
+	-DRESIDENT_SPRX="$RESIDENT_BUILD_DIR/ps3-airplay-receiver.fake.sprx" \
 	-DHARNESS_PKGFILES="$HARNESS_BUILD_DIR/pkg_files"
 # The SDK helper checks PKGFILES at configure time but omits overlay files from
 # the generated package command's dependencies. Force a fresh package so every
@@ -38,14 +38,14 @@ VERIFY_DIR="$(mktemp -d "${TMPDIR:-/tmp}/ps3-airplay-resident-pkg.XXXXXX")"
 trap 'rm -rf "$VERIFY_DIR"' EXIT
 (cd "$VERIFY_DIR" && "$PS3DK_TOOLS/pkg" \
 	--extract "$HARNESS_BUILD_DIR/ps3-airplay-resident-harness.pkg")
-PACKAGED_PRX="$(find "$VERIFY_DIR" -type f \
-	-name ps3-airplay-receiver.prx -print -quit)"
-if [[ -z "$PACKAGED_PRX" ]] || ! cmp -s \
-	"$RESIDENT_BUILD_DIR/ps3-airplay-receiver.prx" "$PACKAGED_PRX"; then
-	echo "The PKG does not embed the current resident PRX" >&2
+PACKAGED_SPRX="$(find "$VERIFY_DIR" -type f \
+	-name ps3-airplay-receiver.fake.sprx -print -quit)"
+if [[ -z "$PACKAGED_SPRX" ]] || ! cmp -s \
+	"$RESIDENT_BUILD_DIR/ps3-airplay-receiver.fake.sprx" "$PACKAGED_SPRX"; then
+	echo "The PKG does not embed the current fake-signed resident SPRX" >&2
 	exit 1
 fi
-echo "PKG embeds the current resident PRX: PASS"
+echo "PKG embeds the current fake-signed resident SPRX: PASS"
 sha256sum \
 	"$RESIDENT_BUILD_DIR/ps3-airplay-receiver.prx" \
 	"$RESIDENT_BUILD_DIR/ps3-airplay-receiver.sprx" \
