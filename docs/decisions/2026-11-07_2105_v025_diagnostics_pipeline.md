@@ -43,12 +43,12 @@ v0.2.5 is intended to retain enough active-stream diagnostics for a 10-15 minute
 - The user confirms PS-menu open, START exit, working streamed music, dim/frozen resume UI, and brief stutters.
 - 5 MiB sanitizer regression and complete release wrapper rerun passed on source `9d9f60657f117daedc47c6b1bc3285a5982e5ae3`. Package is 3,232,048 bytes, SHA-256 `61e8310a6d4330bad1e4d64213365f9ba27de81a6fa14851a315f5b338894440`; standalone ELF is 2,754,776 bytes, SHA-256 `1ff2513b9823792aa4f202ddf700e161bee5f223e3ccc2fc19e53e39a3f1eead`.
 - First wrapper attempt stopped before packaging because `PS3DEV` was not exported. The wrapper was corrected and the entire gate rerun successfully.
-- No package transfer, install, or launch was performed; hardware validation is pending.
+- Package was subsequently uploaded and installed after the app was exited to XMB. Installed SFO matches 00.45 exactly; installed EBOOT matches the SELF plus 48 zero bytes. Subsequent launch and 33-minute telemetry are documented in the forensic audit.
 - The requested 12-minute passive observation completed without pause, exit, restart, or install commands. FTP snapshots remained byte-identical after the current session cap; they do not prove continued playback after logging stopped.
 
 ## Immediate results
 
-The v0.2.5 candidate and its local package are ready; the v0.2.4 source/artifact remain preserved for rollback. The active console app was not interrupted or replaced.
+The v0.2.5 package is installed; v0.2.4 source/artifact remain preserved for rollback. The app was exited to XMB before install; Subsequent launch is established by the forensic audit.
 
 ## Known limitations / follow-ups
 
@@ -78,4 +78,4 @@ A 5 MiB session can consume more PS3 storage, and each new launch appends anothe
 
 ## Next recommended step
 
-Commit and push the build evidence, preserve v0.2.4 as a tagged rollback baseline, and install v0.2.5 only after v0.2.4 is safely back at XMB.
+Preserve v0.2.4 as the tagged rollback baseline. Launch v0.2.5 from XMB, then test PS-menu resume, START exit, AirPlay, and the 5 MiB log across 10-15 minutes.

@@ -3,11 +3,12 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include "../audio/raop_audio_limits.h"
 
 #include "../protocol/raop_sdp.h"
 
 #define RAOP_ALAC_FRAME_MAX 4096
-#define RAOP_ALAC_INPUT_MAX 1400
+#define RAOP_ALAC_INPUT_MAX RAOP_ENCODED_AUDIO_MAX
 #define RAOP_ALAC_PCM_MAX (RAOP_ALAC_FRAME_MAX * 2U * sizeof(int16_t))
 
 typedef struct raop_alac_decoder raop_alac_decoder;

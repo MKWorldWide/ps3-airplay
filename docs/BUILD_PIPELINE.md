@@ -134,7 +134,7 @@ APP_VERSION controls the package filename and application logging; SFO_VERSION c
 - Full host ASan/UBSan suite and PPU component tests passed. The 5 MiB append test reached its cap and retained the earlier launch record.
 - Standalone ELF: 2,754,776 bytes, SHA-256 `1ff2513b9823792aa4f202ddf700e161bee5f223e3ccc2fc19e53e39a3f1eead`.
 - Debug PKG: 3,232,048 bytes, SHA-256 `61e8310a6d4330bad1e4d64213365f9ba27de81a6fa14851a315f5b338894440`; AIRPLAY02, SFO `00.45`, package extraction and NPDRM envelope validated.
-- Not transferred or installed; physical launch and long-duration diagnostics remain pending.
+- FTP upload/download-back matched the local PKG. Installed SFO is byte-exact; installed EBOOT is the package SELF plus a 48-byte zero pad. Subsequent v0.2.5 launch and 33-minute telemetry are documented in the forensic audit.
 
 ## v0.2.2 controller raw-mask build and hardware test
 

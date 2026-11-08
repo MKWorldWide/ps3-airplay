@@ -3,9 +3,10 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include "../audio/raop_audio_limits.h"
 
 #define RAOP_RTP_HEADER_MAX 264
-#define RAOP_RTP_PAYLOAD_MAX 1400
+#define RAOP_RTP_PAYLOAD_MAX RAOP_ENCODED_AUDIO_MAX
 #define RAOP_RTP_QUEUE_CAPACITY 256
 #define RAOP_RTP_PREBUFFER_PACKETS 128
 #define RAOP_RTP_GAP_WAIT_MS 80U

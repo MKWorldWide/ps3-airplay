@@ -96,3 +96,7 @@ Big-endian PCM bytes and paced target packet/decode/PCM path now validate in RPC
 ## v0.1.37 audio and display work
 
 The v0.1.35 capture aligns missing RTP packet duration with active PCM underruns and records no resend recoveries. v0.1.36 accepts valid in-window resend packets after their tracking entry expires. v0.1.37 pairs that transport recovery with a static-framebuffer policy: no continuous flips, one redraw/flip after menu resume, then an inactive-buffer refresh. This is a measured mitigation, not a proven display fix. Build, RPCS3 replay, and PS3 audio/display/exit tests remain required.
+
+## v0.2.6 targeted correction
+
+Correct valid ALAC payload rejection and bounded resend behavior before changing clocks/resampler. Candidate adds DRAW-aware bounded presentation settling for XMB resume. Physical audio/display acceptance remains required; do not claim stable playback from host checks.

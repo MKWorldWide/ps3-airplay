@@ -17,6 +17,8 @@ typedef struct {
 	uint16_t packet_count;
 	uint16_t received_mask;
 	uint64_t expires_ms;
+	uint64_t retry_ms;
+	uint8_t attempts;
 	uint8_t valid;
 } raop_resend_range;
 
@@ -64,6 +66,7 @@ typedef struct {
 	uint8_t pending_resend_write;
 	uint8_t pending_resend_count;
 	uint64_t resend_requests;
+	uint64_t resend_retries;
 	uint64_t resend_failures;
 	uint64_t resend_recovered;
 	uint64_t resend_rejected;

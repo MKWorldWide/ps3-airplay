@@ -140,6 +140,7 @@ int raop_rtp_queue_push(raop_rtp_queue *queue, const uint8_t *data,
 	raop_rtp_packet parsed;
 	if (queue == NULL || data == NULL)
 		return 0;
+	queue->stats.last_missing_count = 0;
 	if (!raop_rtp_parse(data, length, &parsed)) {
 		++queue->stats.malformed_packets;
 		return 0;

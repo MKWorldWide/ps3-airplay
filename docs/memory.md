@@ -425,4 +425,13 @@ Display candidate restores the standard GPU-side wait-flip command ordering afte
 - Source revision `9d9f60657f117daedc47c6b1bc3285a5982e5ae3`; app 0.2.5 / SFO 00.45; log cap 5 MiB per launch with append-only history and UTC APP_START.
 - `scripts/release-lima-standalone-receiver.sh` passed its complete rerun: host/ASan/UBSan tests, 5 MiB cap/append regression, PPU component objects, standalone CellOS ELF, package/SFO/content ID/extraction/envelope.
 - ELF 2,754,776 bytes, SHA-256 `1ff2513b9823792aa4f202ddf700e161bee5f223e3ccc2fc19e53e39a3f1eead`. PKG 3,232,048 bytes, SHA-256 `61e8310a6d4330bad1e4d64213365f9ba27de81a6fa14851a315f5b338894440`.
-- PKG is kept locally and has not been transferred or installed. Preserve the currently running v0.2.4 session; resume deployment only once it is safely at XMB under the existing install authorization.
+- PKG hash-matched after FTP upload/download-back and was installed after the active v0.2.4 session was closed to XMB. Installed SFO is byte-exact 00.45; EBOOT matches the package SELF with 48 trailing zero bytes. The user confirms installation; v0.2.5 launch and hardware behavior remain pending.
+
+## v0.2.6 / SFO 00.46 correction candidate
+
+- Independent v0.2.5 audit found 6,886 concealed frames (~54.963 seconds at 352/44,100), with zero reported ALAC failures/PCM underflows. Installed artifact identity matched retained package. See the forensic report; this supersedes launch-pending notes above.
+- Encoded RTP/AES/ALAC bounds now share 1,536 bytes, supporting uncompressed 352-sample stereo ALAC; larger compressed frames remain subject to this explicit encoded limit. Queue memory increases about 34 KiB.
+- Resend gaps split into <=16-packet chunks within 16 tracked ranges; initial requests paced >=10ms, at most two retries per range, >=100ms apart and within 1s tracking lifetime. Received/played packets are removed from retry eligibility. Stale gap metadata on malformed input is cleared.
+- Numeric five-second malformed-RTP/retry deltas added. Existing UTC append-only 5 MiB per-launch logs retained.
+- Display tracks DRAW_BEGIN/END alongside MENU events; after resume, it keeps paced flips for two seconds, restores both buffers, then returns static. Mocked production presenter tests prove bounded progress/timeout, not visible PS3 compositor success. PS/START behavior still needs hardware confirmation.
+- v0.2.6 candidate builds through the existing release pipeline; no console deployment in this implementation pass.

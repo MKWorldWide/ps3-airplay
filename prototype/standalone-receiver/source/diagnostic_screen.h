@@ -17,6 +17,7 @@ typedef struct {
 	int flip_pending;
 	uint32_t next_buffer;
 	uint64_t flip_started_us;
+	uint64_t resume_until_us;
 } diagnostic_screen;
 
 enum diagnostic_screen_result {

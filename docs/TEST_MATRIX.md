@@ -379,3 +379,9 @@ The emitter used a paced diagnostic fixture; target output submission is not pro
 | One-command release gate | PASS on source `9d9f60657f117daedc47c6b1bc3285a5982e5ae3`; host/ASan/UBSan, PPU component and standalone app build, ELF validation, package extraction and SFO 00.45 checks all pass. | Lima guest only. Initial run exposed missing PS3DEV export; wrapper was fixed and full gate rerun successfully. |
 | v0.2.5 package identity | PASS; 3,232,048 bytes, SHA-256 `61e8310a6d4330bad1e4d64213365f9ba27de81a6fa14851a315f5b338894440`; ELF 2,754,776 bytes, SHA-256 `1ff2513b9823792aa4f202ddf700e161bee5f223e3ccc2fc19e53e39a3f1eead`. | Built from source `9d9f60657f117daedc47c6b1bc3285a5982e5ae3`; retained locally under ignored `work/builds/0.2.5/`. |
 | Console install/launch | Install PASS: staged download-back matches local PKG; installed SFO exact 00.45; installed EBOOT matches package SELF followed by 48 zero bytes. User reports launching and streaming. | 30-minute soak in progress; retrieve final log and report runtime metrics after the window. |
+
+## v0.2.6 candidate
+
+- Host: synthetic 1,416-byte ALAC parse/decode/reference, encrypted clear-tail pipeline, gap splitting/bounded retries, malformed metadata reset, RTP jitter/wrap and ten-minute SRC conservation.
+- Display: production presenter with deterministic clock/RSX mocks covers paced resume, return to static, and stalled-flip timeout. This is not HDMI/VSH validation.
+- Hardware pending: PS menu opens, close/resume gives bright stable image without frozen overlay, START exits, repeat twice; then same-song AirPlay comparison with malformed/retry/concealment deltas. Keep safe-v0.2.4 rollback.

@@ -54,6 +54,8 @@ mbedtls_ms_time_t mbedtls_ms_time(void)
 
 static volatile int exit_requested;
 static int system_menu_open;
+static int system_drawing;
+static int resume_pending;
 static int presentation_failed;
 static uint64_t screen_flips;
 static int last_pad_mask;
@@ -96,6 +98,17 @@ static void on_system_event(u64 status, u64 param, void *userdata)
 	(void)param;
 	(void)userdata;
 	(void)log_event("SYSUTIL_EVENT", (int)status, 0);
+	if (status == SYSUTIL_DRAW_BEGIN) {
+		system_drawing = 1;
+		(void)log_event("SYSUTIL_DRAW_BEGIN", 1, 0);
+	}
+	if (status == SYSUTIL_DRAW_END) {
+		system_drawing = 0;
+		presentation_failed = 0;
+		diagnostic_screen_invalidate(&screen);
+		resume_pending = 1;
+		(void)log_event("SYSUTIL_DRAW_END", 0, 0);
+	}
 	if (status == SYSUTIL_MENU_OPEN) {
 		system_menu_open = 1;
 		(void)log_event("SYSUTIL_MENU_OPEN", 1, 0);
@@ -104,6 +117,7 @@ static void on_system_event(u64 status, u64 param, void *userdata)
 		system_menu_open = 0;
 		presentation_failed = 0;
 		diagnostic_screen_invalidate(&screen);
+		resume_pending = 1;
 		(void)log_event("SYSUTIL_MENU_CLOSE", 0, 0);
 		(void)log_event("SCREEN_RESUME_REQUEST", 0, 0);
 	}
@@ -353,6 +367,8 @@ int main(void)
 	uint64_t reported_pcm_frames_read = 0;
 	uint64_t reported_audio_port_frames = 0;
 	uint64_t reported_resend_requests = 0;
+	uint64_t reported_resend_retries = 0;
+	uint64_t reported_invalid_rtp = 0;
 	uint64_t reported_resend_recovered = 0;
 	uint64_t reported_resend_untracked_recovered = 0;
 	uint64_t reported_resend_rejected_unmatched = 0;
@@ -496,12 +512,18 @@ int main(void)
 		poll_controls(pad_initialized);
 		if (exit_requested) break;
 		if (!presentation_failed) {
-			int present_result = diagnostic_screen_present(&screen, system_menu_open);
+			int present_result = diagnostic_screen_present(&screen, system_menu_open || system_drawing);
 			if (present_result > 0) ++screen_flips;
 			if (present_result < 0) {
 				(void)log_event("SCREEN_PRESENT_FAILED", present_result, 0);
 				presentation_failed = 1;
 			}
+		}
+		if (resume_pending && !system_menu_open && !system_drawing &&
+			!presentation_failed && screen.resume_until_us == 0 &&
+			!screen.flip_pending && screen.redraw_mask == 0) {
+			resume_pending = 0;
+			(void)log_event("SCREEN_RESUME_SETTLED", 0, 0);
 		}
 		poll_result = raop_receiver_poll(&receiver, 1);
 		if (poll_result < 0) {
@@ -674,6 +696,12 @@ int main(void)
 		if ((u64)sysGetSystemTime() >= next_audio_stats_us) {
 			if (decoder != NULL) {
 				/* Periodic counters contain only numeric stream-health data. */
+    (void)log_event("RTP_INVALID_BATCH",
+     bounded_counter_delta(receiver.audio_queue.stats.malformed_packets, reported_invalid_rtp), 0);
+    reported_invalid_rtp = receiver.audio_queue.stats.malformed_packets;
+    (void)log_event("RTP_RESEND_RETRY_BATCH",
+     bounded_counter_delta(receiver.resend_retries, reported_resend_retries), 0);
+    reported_resend_retries = receiver.resend_retries;
     (void)log_event("STREAM_RATE", (int)active_sample_rate, receiver.session.offer.fmtp[6]);
     (void)log_event("STREAM_ENCRYPTED", receiver.session.has_audio_key,
      receiver.session.offer.has_encryption_type);

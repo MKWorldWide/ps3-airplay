@@ -544,6 +544,34 @@ int main(int argc, char **argv)
 	malformed_smoke(decoder, frame.payload, frame.packet.payload_length);
 	raop_alac_destroy(decoder);
 	puts("ALAC deterministic sanitizer smoke: PASS (4096 seeded mutations + 256 random packets)");
+	/* Incompressible stereo frame crosses the old 1400-byte limit and has
+	 * an 8-byte clear AES tail. Exercise queue -> decrypt -> decode -> PCM. */
+	{
+		uint8_t *noise, *reference;
+		size_t noise_length, reference_length, encrypted_length;
+		noise = read_file("tests/protocol/fixtures/alac-noise-352.packet", &noise_length);
+		reference = read_file("tests/protocol/fixtures/alac-noise-352.pcm", &reference_length);
+		assert(noise_length == 1416);
+		memcpy(rtp + 12, noise, noise_length);
+		encrypted_length = noise_length & ~(size_t)15;
+		memcpy(packet_iv, aes_iv, sizeof(packet_iv));
+		mbedtls_aes_init(&aes);
+		assert(mbedtls_aes_setkey_enc(&aes, aes_key, 128) == 0);
+		assert(mbedtls_aes_crypt_cbc(&aes, MBEDTLS_AES_ENCRYPT, encrypted_length,
+			packet_iv, noise, rtp + 12) == 0);
+		mbedtls_aes_free(&aes);
+		raop_rtp_queue_flush(&receiver.audio_queue);
+		assert(raop_rtp_queue_push(&receiver.audio_queue, rtp, 12 + noise_length));
+		assert(raop_receiver_pop_audio(&receiver, &frame));
+		decoder = raop_alac_create(&receiver.session.offer);
+		assert(decoder != NULL);
+		assert(raop_alac_decode(decoder, frame.payload, noise_length, pcm,
+			sizeof(pcm), &pcm_length, &samples));
+		assert(samples == 352 && pcm_length == reference_length);
+		assert(memcmp(pcm, reference, reference_length) == 0);
+		raop_alac_destroy(decoder);free(noise);free(reference);
+		puts("1416-byte encrypted ALAC with clear AES tail: exact PCM PASS");
+	}
 	raop_crypto_context_free(&crypto);
 	free(encoded);
 	free(expected);

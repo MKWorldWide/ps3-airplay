@@ -656,3 +656,14 @@ The v0.1.31 fresh RPCS3 replay verifies the portable-arithmetic correction: the 
 - **Root Cause:** The wrapper exported `PS3DK_SOURCE` and version values but not the derived asset/tool path expected by the package script.
 - **Fix:** Derive and export `PS3DEV` from `PS3DK_SOURCE` before running the component stages; the corrected full release gate passed.
 - **Prevention Rule:** Run every new build orchestrator end-to-end through package validation; passing unit/build stages alone does not validate its environment handoff.
+
+## v0.2.6: packet validity and VSH transition lifecycle
+
+- Problem: valid uncompressed ALAC exceeded all three former 1,400-byte caps; silence concealment hid this behind healthy PCM counts.
+- Root Cause: separate encoded-size constants were smaller than the 1,416-byte stereo fixture, and pre-decode malformed counters were absent.
+- Fix: shared 1,536-byte bound, exact synthetic PCM regression including AES clear tail, malformed/retry interval counters, bounded large-gap splitting/retries.
+- Prevention Rule: include incompressible encrypted audio and maximum-size boundaries in each release gate; zero decode errors does not establish zero transport drops.
+- Problem: VSH resume could remain dim with a frozen indicator after static presentation stopped.
+- Root Cause: unproven; immediate return to static scanout may precede compositor completion, and DRAW event state was not tracked.
+- Fix: candidate tracks DRAW state, paces a bounded two-second resume interval, then restores both images. Mocked tests verify presenter state transitions and timeout; visual hardware acceptance remains pending.
+- Prevention Rule: preserve input responsiveness and require physical PS-menu/resume/START confirmation before labeling display restoration fixed.

@@ -37,6 +37,8 @@ fi
 
 export PROJECT_ROOT PS3DEV SOURCE_REVISION="$PROJECT_REV" APP_VERSION SFO_VERSION
 bash "$SCRIPT_DIR/build-lima-crypto.sh"
+MBEDTLS_INCLUDE="${DEPS_ROOT:-$HOME/ps3-airplay-host/crypto-deps}/src/mbedtls-3.6.7/include" \
+ bash "$SCRIPT_DIR/run-forensic-tests.sh"
 bash "$SCRIPT_DIR/build-lima-standalone-receiver.sh"
 bash "$SCRIPT_DIR/package-lima-standalone-receiver.sh"
 

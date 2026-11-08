@@ -3,11 +3,12 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include "../audio/raop_audio_limits.h"
 #include <mbedtls/pk.h>
 
 #define RAOP_AES_KEY_SIZE 16
 #define RAOP_AES_IV_SIZE 16
-#define RAOP_AUDIO_PAYLOAD_MAX 1400
+#define RAOP_AUDIO_PAYLOAD_MAX RAOP_ENCODED_AUDIO_MAX
 #define RAOP_BASE64_ENCODED_MAX 512
 #define RAOP_BASE64_DECODED_MAX (RAOP_BASE64_ENCODED_MAX / 4 * 3)
 #define RAOP_AIRPORT_RSA_SIZE 256

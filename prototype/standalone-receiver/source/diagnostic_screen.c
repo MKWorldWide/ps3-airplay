@@ -189,12 +189,13 @@ error:
 	return error;
 }
 
-/* The image is static. A single scanout refresh is sufficient after VSH
- * returns control; continuously flipping identical buffers can flicker. */
+/* Resume needs a bounded sequence of paced flips for VSH fade/composition.
+ * Once settled, restore the static image and stop unnecessary flips. */
 void diagnostic_screen_invalidate(diagnostic_screen *screen)
 {
  if (screen == NULL || !screen->initialized) return;
  screen->redraw_mask = 3U;
+ screen->resume_until_us = sysGetSystemTime() + 2000000U;
  /* The compositor may have held a flip while its menu was active. */
  if (screen->flip_pending) screen->flip_started_us = sysGetSystemTime();
 }
@@ -204,8 +205,16 @@ int diagnostic_screen_present(diagnostic_screen *screen, int system_menu_open)
  uint64_t now;
  uint32_t active_buffer;
  uint32_t buffer;
+ int resume_refresh;
  if (screen == NULL || !screen->initialized) return 0;
  now = sysGetSystemTime();
+ resume_refresh = !system_menu_open && screen->resume_until_us != 0 &&
+  now < screen->resume_until_us;
+ if (!system_menu_open && screen->resume_until_us != 0 && !resume_refresh) {
+  /* Restore both images after VSH has had paced flips to finish fading out. */
+  screen->redraw_mask = 3U;
+  screen->resume_until_us = 0;
+ }
  if (screen->flip_pending) {
   if (gcmGetFlipStatus() != 0)
    return !system_menu_open && now - screen->flip_started_us > 500000U ?
@@ -221,9 +230,9 @@ int diagnostic_screen_present(diagnostic_screen *screen, int system_menu_open)
     screen->width, screen->height, screen->image_rgb);
    screen->redraw_mask &= ~(1U << buffer);
   }
-  if (!system_menu_open && !(screen->redraw_mask & (1U << active_buffer)))
+  if (!system_menu_open && !resume_refresh && !(screen->redraw_mask & (1U << active_buffer)))
    return 0;
- } else if (!system_menu_open && screen->redraw_mask == 0) {
+ } else if (!system_menu_open && !resume_refresh && screen->redraw_mask == 0) {
   return 0;
  }
 

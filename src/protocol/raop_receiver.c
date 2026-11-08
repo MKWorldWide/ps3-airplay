@@ -44,7 +44,9 @@
 #define RAOP_RESPONSE_DEADLINE_MS 2000U
 #define RAOP_CLIENT_IDLE_MS 60000U
 #define RAOP_RESEND_MAX_PACKETS 16U
-#define RAOP_RESEND_MIN_INTERVAL_MS 50U
+#define RAOP_RESEND_MIN_INTERVAL_MS 10U
+#define RAOP_RESEND_RETRY_MS 100U
+#define RAOP_RESEND_MAX_ATTEMPTS 3U
 #define RAOP_RESEND_TRACK_TIMEOUT_MS 1000U
 
 static int bounded_event_count(uint64_t count);
@@ -299,6 +301,7 @@ static void disconnect_client(raop_receiver *receiver)
 	receiver->pending_resend_write = 0;
 	receiver->pending_resend_count = 0;
 	receiver->resend_requests = 0;
+	receiver->resend_retries = 0;
 	receiver->resend_failures = 0;
 	receiver->resend_recovered = 0;
 	receiver->resend_rejected = 0;
@@ -525,23 +528,26 @@ static void write_u16(uint8_t *data, uint16_t value)
 static void queue_missing_audio(raop_receiver *receiver, uint16_t first,
 	uint16_t count)
 {
-	raop_resend_range *range;
-	if (count == 0 || count > RAOP_RESEND_MAX_PACKETS ||
-		receiver->session.peer_control_port == 0)
-		return;
-	if (receiver->pending_resend_count == RAOP_RESEND_TRACKED_RANGES) {
-		++receiver->resend_pending_drops;
-		return;
+	if (receiver->session.peer_control_port == 0) return;
+	while (count != 0) {
+		raop_resend_range *range;
+		uint16_t chunk = count > RAOP_RESEND_MAX_PACKETS ?
+			RAOP_RESEND_MAX_PACKETS : count;
+		if (receiver->pending_resend_count == RAOP_RESEND_TRACKED_RANGES) {
+			++receiver->resend_pending_drops;
+			return;
+		}
+		range = &receiver->pending_resend[receiver->pending_resend_write];
+		memset(range, 0, sizeof(*range));
+		range->first_sequence = first;
+		range->packet_count = chunk;
+		range->valid = 1;
+		receiver->pending_resend_write = (uint8_t)((receiver->pending_resend_write + 1U) %
+			RAOP_RESEND_TRACKED_RANGES);
+		++receiver->pending_resend_count;
+		first = (uint16_t)(first + chunk);
+		count = (uint16_t)(count - chunk);
 	}
-	range = &receiver->pending_resend[receiver->pending_resend_write];
-	range->first_sequence = first;
-	range->packet_count = count;
-	range->received_mask = 0;
-	range->expires_ms = 0;
-	range->valid = 1;
-	receiver->pending_resend_write = (uint8_t)((receiver->pending_resend_write + 1U) %
-		RAOP_RESEND_TRACKED_RANGES);
-	++receiver->pending_resend_count;
 }
 
 static void send_pending_audio_resend(raop_receiver *receiver, uint64_t now_ms)
@@ -553,8 +559,7 @@ static void send_pending_audio_resend(raop_receiver *receiver, uint64_t now_ms)
 	uint16_t first, count;
 	unsigned int i;
 	ssize_t sent;
-	if (receiver->pending_resend_count == 0 ||
-		receiver->session.state != RAOP_SESSION_RECORDING ||
+	if (receiver->session.state != RAOP_SESSION_RECORDING ||
 		receiver->session.peer_control_port == 0)
 		return;
 	if (receiver->resend_last_send_ms != 0 &&
@@ -567,6 +572,49 @@ static void send_pending_audio_resend(raop_receiver *receiver, uint64_t now_ms)
 			candidate->valid = 0;
 		if (!candidate->valid && tracking == NULL)
 			tracking = candidate;
+	}
+	if (receiver->pending_resend_count == 0) {
+		for (i = 0; i < RAOP_RESEND_TRACKED_RANGES; ++i) {
+			raop_resend_range *retry = &receiver->outstanding_resend[i];
+			unsigned int j;
+			if (!retry->valid || now_ms < retry->retry_ms ||
+				retry->attempts >= RAOP_RESEND_MAX_ATTEMPTS) continue;
+			/* Originals may have arrived since the first request. */
+			for (j = 0; j < retry->packet_count; ++j) {
+				uint16_t seq = (uint16_t)(retry->first_sequence + j);
+				size_t k;
+				if (receiver->audio_queue.have_popped_sequence &&
+					(int16_t)(uint16_t)(seq - receiver->audio_queue.last_popped_sequence) <= 0)
+					retry->received_mask &= (uint16_t)~(1U << j);
+				for (k = 0; k < receiver->audio_queue.count; ++k)
+					if (receiver->audio_queue.frames[(receiver->audio_queue.read_index+k) %
+						RAOP_RTP_QUEUE_CAPACITY].packet.sequence == seq) {
+						retry->received_mask &= (uint16_t)~(1U << j);
+						break;
+					}
+			}
+			if (retry->received_mask == 0) { retry->valid = 0; continue; }
+			for (j = 0; j < retry->packet_count; ++j)
+				if (retry->received_mask & (1U << j)) break;
+			first = (uint16_t)(retry->first_sequence + j);
+			count = (uint16_t)(retry->packet_count - j);
+			while (count > 1 &&
+				!(retry->received_mask & (1U << (j + count - 1)))) --count;
+			write_u16(request + 2, ++receiver->resend_sequence);
+			write_u16(request + 4, first);
+			write_u16(request + 6, count);
+			destination = receiver->peer_address;
+			destination.sin_port = htons(receiver->session.peer_control_port);
+			sent = sendto(receiver->control_fd, request, sizeof(request), 0,
+				(struct sockaddr *)&destination, sizeof(destination));
+			receiver->resend_last_send_ms = now_ms;
+			retry->retry_ms = now_ms + RAOP_RESEND_RETRY_MS;
+			++retry->attempts;
+			if (sent == (ssize_t)sizeof(request)) ++receiver->resend_retries;
+			else ++receiver->resend_failures;
+			return;
+		}
+		return;
 	}
 	if (tracking == NULL) {
 		++receiver->resend_tracking_full;
@@ -601,6 +649,8 @@ static void send_pending_audio_resend(raop_receiver *receiver, uint64_t now_ms)
 	tracking->packet_count = count;
 	tracking->received_mask = (uint16_t)((1U << count) - 1U);
 	tracking->expires_ms = now_ms + RAOP_RESEND_TRACK_TIMEOUT_MS;
+	tracking->retry_ms = now_ms + RAOP_RESEND_RETRY_MS;
+	tracking->attempts = 1;
 	tracking->valid = 1;
 	pending->valid = 0;
 	receiver->pending_resend_read = (uint8_t)((receiver->pending_resend_read + 1U) %

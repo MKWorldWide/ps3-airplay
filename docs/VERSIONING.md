@@ -286,4 +286,4 @@ Live read-only evidence captured while AIRPLAY02 v0.1.35 was running: installed 
 - ELF: 2,754,776 bytes; SHA-256 `1ff2513b9823792aa4f202ddf700e161bee5f223e3ccc2fc19e53e39a3f1eead`.
 - Checks: combined release gate PASS: host/ASan/UBSan tests, full-cap append regression, PPU component/app build, CellOS ELF validation, AIRPLAY02 identity, SFO `00.45`, package extraction and debug NPDRM envelope.
 - Preserve v0.2.4 as the known-safe functional rollback baseline while audio stutters and dim resume remain open.
-- Package built and retained locally under ignored `work/builds/0.2.5/`; not transferred or installed while v0.2.4 playback was left undisturbed. Hardware validation pending.
+- Package built at `work/builds/0.2.5/`, uploaded under a versioned filename, and installed. FTP download-back matched the local PKG; installed SFO matches 00.45 exactly; installed EBOOT matches the package SELF with 48 trailing zero bytes. Subsequent launch and 33-minute telemetry are documented in the forensic audit.
