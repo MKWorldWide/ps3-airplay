@@ -26,6 +26,7 @@ v0.2.4 reached its 16 KiB session cap about 37 seconds into an active AirPlay ru
 - `docs/scratchpad.md`
 - `docs/reports/2026-11-07_v024_build_and_install.md`
 - `docs/decisions/2026-11-07_2105_v025_diagnostics_pipeline.md`
+- `docs/reports/2026-11-07_v025_release.md`
 
 ## Architecture / logic changes
 
@@ -40,13 +41,14 @@ v0.2.5 is intended to retain enough active-stream diagnostics for a 10-15 minute
 - Reviewed the v0.2.4 log: it contains two timestamped APP_START records; prior 7,270-byte log is an exact prefix of the combined file.
 - The later session reached RTSP 200, encrypted 44.1 kHz RTP decrypt, ALAC decode, PCM submission, and a 512-packet batch with 62 missing packets, queue depth 79/256, and ALAC failure total zero before the 16 KiB cap at 37 seconds.
 - The user confirms PS-menu open, START exit, working streamed music, dim/frozen resume UI, and brief stutters.
-- 5 MiB sanitizer regression, combined release wrapper, v0.2.5 package, and hardware validation are pending.
-- First wrapper integration attempt passed host tests, PPU objects, standalone link, and ELF validation, then package creation stopped because `PS3DEV` was not exported. The wrapper now derives and exports that value; a complete rerun is pending.
+- 5 MiB sanitizer regression and complete release wrapper rerun passed on source `9d9f60657f117daedc47c6b1bc3285a5982e5ae3`. Package is 3,232,048 bytes, SHA-256 `61e8310a6d4330bad1e4d64213365f9ba27de81a6fa14851a315f5b338894440`; standalone ELF is 2,754,776 bytes, SHA-256 `1ff2513b9823792aa4f202ddf700e161bee5f223e3ccc2fc19e53e39a3f1eead`.
+- First wrapper attempt stopped before packaging because `PS3DEV` was not exported. The wrapper was corrected and the entire gate rerun successfully.
+- No package transfer, install, or launch was performed; hardware validation is pending.
 - The requested 12-minute passive observation completed without pause, exit, restart, or install commands. FTP snapshots remained byte-identical after the current session cap; they do not prove continued playback after logging stopped.
 
 ## Immediate results
 
-The next source iteration is isolated to log budget, test capacity, package version defaults, and release-process enforcement. The v0.2.4 source/artifact remains preserved for rollback. No action was sent to stop the PS3 application during the observation window.
+The v0.2.5 candidate and its local package are ready; the v0.2.4 source/artifact remain preserved for rollback. The active console app was not interrupted or replaced.
 
 ## Known limitations / follow-ups
 
@@ -54,7 +56,7 @@ The 5 MiB target is based on a short observed event rate and should be evaluated
 
 ## Risks introduced
 
-A 5 MiB session can consume more PS3 storage, and each new launch appends another session. The release wrapper intentionally refuses to run on tracked uncommitted changes; build-only ignored artifacts remain permitted.
+A 5 MiB session can consume more PS3 storage, and each new launch appends another session. The release wrapper intentionally refuses to run on tracked uncommitted changes; build-only ignored artifacts remain permitted. The candidate has not been tested on the physical console.
 
 ## Decision record
 
@@ -76,4 +78,4 @@ A 5 MiB session can consume more PS3 storage, and each new launch appends anothe
 
 ## Next recommended step
 
-Commit and push this pass, run the combined gate against that exact source for AIRPLAY02 0.2.5 / SFO 00.45 in Lima, validate the resulting package, then deploy only after the ongoing v0.2.4 observation window completes.
+Commit and push the build evidence, preserve v0.2.4 as a tagged rollback baseline, and install v0.2.5 only after v0.2.4 is safely back at XMB.

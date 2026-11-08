@@ -654,5 +654,5 @@ The v0.1.31 fresh RPCS3 replay verifies the portable-arithmetic correction: the 
 
 - **Problem:** The new release wrapper passed host tests and built the PPU ELF, but package creation stopped because `PS3DEV` was unset in the packaging subprocess.
 - **Root Cause:** The wrapper exported `PS3DK_SOURCE` and version values but not the derived asset/tool path expected by the package script.
-- **Fix:** Derive and export `PS3DEV` from `PS3DK_SOURCE` before running the component stages.
+- **Fix:** Derive and export `PS3DEV` from `PS3DK_SOURCE` before running the component stages; the corrected full release gate passed.
 - **Prevention Rule:** Run every new build orchestrator end-to-end through package validation; passing unit/build stages alone does not validate its environment handoff.

@@ -127,6 +127,15 @@ Keep the generated package, build manifest, and test logs outside Git. Record pa
 
 APP_VERSION controls the package filename and application logging; SFO_VERSION controls APP_VER/VERSION. Keep both explicit for every release. The 0.30 artifact was actually tested on hardware before the maintainer corrected its release label; preserve that historical identity in reports. Build from a committed archive stamped with its full SHA. Current logs append and use UTC-timestamped APP_START markers; the per-launch cap must be large enough for the planned test duration.
 
+## v0.2.5 release gate result
+
+- Combined `scripts/release-lima-standalone-receiver.sh` passed from clean source revision `9d9f60657f117daedc47c6b1bc3285a5982e5ae3`, app version `0.2.5`, SFO `00.45`.
+- The first run found a missing `PS3DEV` export between the app and package stages. The wrapper now derives it from `PS3DK_SOURCE`; the full rerun reached and passed package validation.
+- Full host ASan/UBSan suite and PPU component tests passed. The 5 MiB append test reached its cap and retained the earlier launch record.
+- Standalone ELF: 2,754,776 bytes, SHA-256 `1ff2513b9823792aa4f202ddf700e161bee5f223e3ccc2fc19e53e39a3f1eead`.
+- Debug PKG: 3,232,048 bytes, SHA-256 `61e8310a6d4330bad1e4d64213365f9ba27de81a6fa14851a315f5b338894440`; AIRPLAY02, SFO `00.45`, package extraction and NPDRM envelope validated.
+- Not transferred or installed; physical launch and long-duration diagnostics remain pending.
+
 ## v0.2.2 controller raw-mask build and hardware test
 
 - Source `6151aae43b7ed26dfa940f090afbdd5b13ba53ac` adds PSL1GHT raw digital-mask fallback, mask-change logging, and positive pad-report counts per heartbeat. App version is `0.2.2`; SFO APP_VER/VERSION are `00.42`.

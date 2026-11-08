@@ -6,6 +6,8 @@ AIRPLAY02 follows conservative pre-1.0 versioning. Increment the patch number fo
 
 **Known-safe functional baseline:** AIRPLAY02 `0.2.4` / SFO `00.44`. User confirms PS opens the system menu, START exits cleanly to XMB, and AirPlay streams music. Resume returns with a dimmed screen and frozen loading indicator; brief audio stutters remain. The 16 KiB per-launch diagnostic cap was reached about 37 seconds into the observed active-stream session. This is a functional rollback baseline, not a quality/stability release.
 
+The immutable `safe-v0.2.4` Git tag points to packaged source commit `f870d823f15398691a6a38e6393f8d1376161bee`; it preserves the exact code used for the known-safe package hash above.
+
 ## v0.2.0 candidate package record
 
 - Source: `b8bab2015551a7044dba26717611e524ed43f4ec` on `main` (startup tone removed; PCM ring quality baseline added).
@@ -278,6 +280,10 @@ Live read-only evidence captured while AIRPLAY02 v0.1.35 was running: installed 
 ## v0.2.5 diagnostic logging candidate
 
 - Scope: increase the append-only per-launch cap from 16 KiB to 5 MiB; add a combined fail-fast Lima release gate and a regression that exercises the full cap without truncating earlier sessions.
-- Proposed versions: app/package `0.2.5`; SFO APP_VER/VERSION `00.45`.
+- Version: app/package `0.2.5`; SFO APP_VER/VERSION `00.45`.
+- Source: `9d9f60657f117daedc47c6b1bc3285a5982e5ae3` on `main`.
+- Artifact: `ps3-airplay-receiver-0.2.5.pkg`, 3,232,048 bytes; SHA-256 `61e8310a6d4330bad1e4d64213365f9ba27de81a6fa14851a315f5b338894440`.
+- ELF: 2,754,776 bytes; SHA-256 `1ff2513b9823792aa4f202ddf700e161bee5f223e3ccc2fc19e53e39a3f1eead`.
+- Checks: combined release gate PASS: host/ASan/UBSan tests, full-cap append regression, PPU component/app build, CellOS ELF validation, AIRPLAY02 identity, SFO `00.45`, package extraction and debug NPDRM envelope.
 - Preserve v0.2.4 as the known-safe functional rollback baseline while audio stutters and dim resume remain open.
-- Build, deployment, and hardware validation: pending.
+- Package built and retained locally under ignored `work/builds/0.2.5/`; not transferred or installed while v0.2.4 playback was left undisturbed. Hardware validation pending.

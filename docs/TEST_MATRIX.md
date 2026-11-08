@@ -375,5 +375,7 @@ The emitter used a paced diagnostic fixture; target output submission is not pro
 
 | Test | Result | Boundary |
 |---|---|---|
-| Append-only 5 MiB cap regression | Pending: fill one session to the configured 5 MiB cap; verify cap marker, rejection after cap, and preservation of earlier session data. | Host/sanitizer test. |
-| One-command release gate | Pending: clean source revision must run all host/sanitizer, PPU, ELF and package validations. | Guest build test; hardware launch remains separate. |
+| Append-only 5 MiB cap regression | PASS; fills per-run 5 MiB limit, verifies LOG_SESSION_CAPPED and post-cap rejection, and confirms two timestamped launches plus earlier session data remain. | Host/sanitizer test; hardware writes still need post-deploy confirmation. |
+| One-command release gate | PASS on source `9d9f60657f117daedc47c6b1bc3285a5982e5ae3`; host/ASan/UBSan, PPU component and standalone app build, ELF validation, package extraction and SFO 00.45 checks all pass. | Lima guest only. Initial run exposed missing PS3DEV export; wrapper was fixed and full gate rerun successfully. |
+| v0.2.5 package identity | PASS; 3,232,048 bytes, SHA-256 `61e8310a6d4330bad1e4d64213365f9ba27de81a6fa14851a315f5b338894440`; ELF 2,754,776 bytes, SHA-256 `1ff2513b9823792aa4f202ddf700e161bee5f223e3ccc2fc19e53e39a3f1eead`. | Built from source `9d9f60657f117daedc47c6b1bc3285a5982e5ae3`; retained locally under ignored `work/builds/0.2.5/`. |
+| Console install/launch | Not performed. | v0.2.4 was left untouched for the requested playback run; install after safely returning to XMB. |
