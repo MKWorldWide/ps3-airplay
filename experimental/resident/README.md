@@ -73,9 +73,9 @@ network-call interfaces. AddressSanitizer and UndefinedBehaviorSanitizer run
 startup rollback, worker-create failure, worker stop, bounded stop timeout,
 worker poll-error exit, retry after thread-join failure, and retry after
 injected NetCtl unload, network finalize, and network-module unload errors.
-It also checks that the receiver starts and cleans up if NetCtl initialization
-fails. The address-probe socket calls are stubbed and assert the expected
-multicast target; the test sends no packets and opens no socket.
+It also checks that the receiver starts and cleans up if NetCtl module loading
+or initialization fails. The address-probe socket calls are stubbed and assert
+the expected multicast target; the test sends no packets and opens no socket.
 
 This checks resident control flow and error-state retention with host mocks. It
 does not check PS3 syscall semantics, PRX loading, the PS3 scheduler, real

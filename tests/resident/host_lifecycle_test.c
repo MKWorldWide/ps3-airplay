@@ -39,6 +39,7 @@ typedef struct {
 static int fail_thread_create;
 static int fail_thread_join;
 static int fail_net_init;
+static int fail_netctl_load;
 static int fail_netctl_init;
 static int fail_netctl_unload;
 static int fail_net_finalize;
@@ -170,9 +171,13 @@ int cellSysmoduleLoadModule(int module)
 {
 	if (module == CELL_SYSMODULE_NET)
 		++net_load_calls;
-	else if (module == CELL_SYSMODULE_NETCTL)
+	else if (module == CELL_SYSMODULE_NETCTL) {
 		++netctl_load_calls;
-	else
+		if (fail_netctl_load) {
+			--fail_netctl_load;
+			return -7009;
+		}
+	} else
 		return -EINVAL;
 	return 0;
 }
@@ -422,6 +427,7 @@ static void reset_mocks(void)
 	fail_thread_create = 0;
 	fail_thread_join = 0;
 	fail_net_init = 0;
+	fail_netctl_load = 0;
 	fail_netctl_init = 0;
 	fail_netctl_unload = 0;
 	fail_net_finalize = 0;
@@ -537,6 +543,22 @@ static void test_netctl_init_failure_cleanup(void)
 	puts("NetCtl-init failure with receiver cleanup: PASS");
 }
 
+static void test_netctl_load_failure_cleanup(void)
+{
+	reset_mocks();
+	fail_netctl_load = 1;
+	assert(module_start(0, NULL) == SYS_PRX_RESIDENT);
+	wait_for_log_event("event=NETCTL_LOAD_FAILED", 2000);
+	wait_for_log_event("event=RECEIVER_READY", 2000);
+	assert(module_stop(0, NULL) == SYS_PRX_STOP_OK);
+	assert(netctl_load_calls == 1 && netctl_init_calls == 0);
+	assert(netctl_term_calls == 0 && netctl_unload_calls == 0);
+	assert(net_finalize_calls == 1 && net_unload_calls == 1);
+	assert_log_event("event=WORKER_STOPPED");
+	assert_log_event("event=MODULE_STOP");
+	puts("NetCtl-load failure with receiver cleanup: PASS");
+}
+
 static void test_netctl_unload_retry(void)
 {
 	reset_mocks();
@@ -633,6 +655,7 @@ int main(void)
 	(void)setvbuf(stdout, NULL, _IONBF, 0);
 	test_startup_rollback_on_thread_failure();
 	test_startup_rollback_on_network_init_failure();
+	test_netctl_load_failure_cleanup();
 	test_netctl_init_failure_cleanup();
 	test_netctl_unload_retry();
 	test_net_finalize_retry();
