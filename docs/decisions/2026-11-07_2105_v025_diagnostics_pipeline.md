@@ -41,6 +41,7 @@ v0.2.5 is intended to retain enough active-stream diagnostics for a 10-15 minute
 - The later session reached RTSP 200, encrypted 44.1 kHz RTP decrypt, ALAC decode, PCM submission, and a 512-packet batch with 62 missing packets, queue depth 79/256, and ALAC failure total zero before the 16 KiB cap at 37 seconds.
 - The user confirms PS-menu open, START exit, working streamed music, dim/frozen resume UI, and brief stutters.
 - 5 MiB sanitizer regression, combined release wrapper, v0.2.5 package, and hardware validation are pending.
+- First wrapper integration attempt passed host tests, PPU objects, standalone link, and ELF validation, then package creation stopped because `PS3DEV` was not exported. The wrapper now derives and exports that value; a complete rerun is pending.
 - The requested 12-minute passive observation completed without pause, exit, restart, or install commands. FTP snapshots remained byte-identical after the current session cap; they do not prove continued playback after logging stopped.
 
 ## Immediate results

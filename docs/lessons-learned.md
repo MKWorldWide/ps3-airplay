@@ -649,3 +649,10 @@ The v0.1.31 fresh RPCS3 replay verifies the portable-arithmetic correction: the 
 - **Root Cause:** Verbose network/session diagnostics filled the per-launch budget quickly; the file then correctly stopped accepting events.
 - **Fix:** Candidate v0.2.5 raises the per-launch budget to 5 MiB and tests the full cap while preserving older sessions.
 - **Prevention Rule:** Size diagnostic budgets against observed event rates and requested test duration; include a release regression that fills and checks the configured cap.
+
+## A combined release wrapper must pass toolchain variables downstream
+
+- **Problem:** The new release wrapper passed host tests and built the PPU ELF, but package creation stopped because `PS3DEV` was unset in the packaging subprocess.
+- **Root Cause:** The wrapper exported `PS3DK_SOURCE` and version values but not the derived asset/tool path expected by the package script.
+- **Fix:** Derive and export `PS3DEV` from `PS3DK_SOURCE` before running the component stages.
+- **Prevention Rule:** Run every new build orchestrator end-to-end through package validation; passing unit/build stages alone does not validate its environment handoff.

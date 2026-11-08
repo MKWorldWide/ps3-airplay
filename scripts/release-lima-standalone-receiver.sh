@@ -6,6 +6,7 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 : "${PS3DK_SOURCE:?Set PS3DK_SOURCE to the pinned PS3DK v0.27.0 tree}"
 : "${APP_VERSION:?Set the unique app/package version for this build}"
 : "${SFO_VERSION:?Set the matching XX.YY SFO version for this build}"
+PS3DEV="${PS3DEV:-$PS3DK_SOURCE/stage/ps3dev}"
 
 if git -C "$PROJECT_ROOT" rev-parse --verify HEAD >/dev/null 2>&1; then
 	PROJECT_REV="$(git -C "$PROJECT_ROOT" rev-parse HEAD)"
@@ -34,7 +35,7 @@ if [[ ! "$SFO_VERSION" =~ ^[0-9]{2}\.[0-9]{2}$ ]]; then
 	exit 1
 fi
 
-export PROJECT_ROOT SOURCE_REVISION="$PROJECT_REV" APP_VERSION SFO_VERSION
+export PROJECT_ROOT PS3DEV SOURCE_REVISION="$PROJECT_REV" APP_VERSION SFO_VERSION
 bash "$SCRIPT_DIR/build-lima-crypto.sh"
 bash "$SCRIPT_DIR/build-lima-standalone-receiver.sh"
 bash "$SCRIPT_DIR/package-lima-standalone-receiver.sh"
