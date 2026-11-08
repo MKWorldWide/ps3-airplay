@@ -598,3 +598,10 @@ The v0.1.31 fresh RPCS3 replay verifies the portable-arithmetic correction: the 
 - **Root Cause:** The latest log records a PS menu-open callback, but no close callback, START transition, or button transition after the initial zero sample. `PAD_HEALTH` only proves the pad info call succeeded and a port is present; it does not prove fresh button reports arrived. The log cannot prove the menu was visible.
 - **Fix:** Preserve the separate signals. The next diagnostic pass should log raw digital pad masks and positive report counts, and recognize START from both the PSL1GHT field and its documented raw mask.
 - **Prevention Rule:** Do not infer working controls from pad presence or callback delivery. Correlate raw pad reports, normalized state transitions, sysutil open/close, user-visible menu state, and cleanup.
+
+## A positive pad report does not imply a digital button transition
+
+- **Problem:** v0.2.2 reported two positive `ioPadGetData` reports after the PS menu-open callback, but the user saw no PS response and the log contained no raw digital mask change or START event.
+- **Root Cause:** Report count alone does not identify whether a report contained analog movement, a button edge, or a system-menu side effect. The callback confirms sysutil received a PS-menu-open event, while no close event or visible-menu confirmation exists.
+- **Fix:** Keep the manual-reboot comparison pending and correlate raw masks, app START events, sysutil open/close, and user-visible behavior. Do not treat report count or callback delivery as proof of usable input.
+- **Prevention Rule:** Log and interpret pad report arrival, digital mask changes, button actions, OS menu callbacks, and visible UI as separate evidence.

@@ -113,6 +113,13 @@ Keep the generated package, build manifest, and test logs outside Git. Record pa
 
 APP_VERSION=0.1.30 controls filename and application logging; SFO_VERSION=00.30 controls APP_VER/VERSION. Keep both explicit for every release. The 0.30 artifact was actually tested on hardware before the maintainer corrected its release label; preserve that historical identity in reports. Build from a committed archive stamped with its full SHA. Opening the app truncates the previous diagnostic log, so retrieve evidence before relaunching.
 
+## v0.2.2 controller raw-mask build and hardware test
+
+- Source `6151aae43b7ed26dfa940f090afbdd5b13ba53ac` adds PSL1GHT raw digital-mask fallback, mask-change logging, and positive pad-report counts per heartbeat. App version is `0.2.2`; SFO APP_VER/VERSION are `00.42`.
+- Full Lima host/sanitizer tests, PPU component suite, standalone app build, and package validators passed. PPU ELF: 2,754,776 bytes, SHA-256 `554c2580944bb0cd6d214f96b410c5d2c2395da609beeca9230455d2a3aa1bf6`. Finalized PKG: 3,232,112 bytes, SHA-256 `44886cd6ce7bbeff8089bd2d5d752cce3b76ded01f36b214cfdaff057f6748cd`.
+- Uploaded via FTP to a new filename, downloaded back byte-identically, installed via webMAN, and launched. Installed SFO is exact; EBOOT matches the packaged SELF followed by 32 zero bytes. Fresh log records `PKG_VERSION_0.2.2`, listener, mDNS and audio readiness.
+- User reports START and PS still do nothing. The log has zero input reports in two 10-second windows, then a sysutil menu-open callback and two reports without a raw digital-mask change, START event, or menu-close. The callback does not prove the PS menu was visible. User will reboot and launch manually; wait for the resulting log before any further console command.
+
 ## v0.1.31: PS3 RSA arithmetic ABI fix
 
 Saved RPCS3 v0.1.29 replay contains a PPU fatal invalid-memory read at 0x000a0b40, mapped by the exact ELF's addr2line to mbedtls_mpi_core_mul. Disassembly and upstream bn_mul.h show PPC64 assembly using ld/std on pointer variables, while the surrounding compiler-generated code uses 32-bit lwz/stw pointers. PS3 uses a 64-bit-register / 32-bit-pointer ABI; this assembly path is incompatible.

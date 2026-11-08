@@ -27,9 +27,12 @@
 | Standalone PPU compile/link with changed poller | PASS with `-Wall -Wextra -Werror`. | Package not yet generated. |
 | Full Lima host/sanitizer and PPU component suite | PASS, including RTSP/RTP integration, encrypted RTP-to-ALAC/PCM, ALAC mutation checks, PCM quality/gain, and PPU object checks. | Does not exercise physical controller input. |
 | v0.2.1 finalized package | PASS: 3,231,920 bytes, SHA-256 `f45b2935213dc1cfa62cfc70f958fc7a240925979fbe7aa779822a1a4a8a2c50`; SFO 00.41; extracted payload and envelope validated. | Host/package boundary only. |
-| v0.2.1 install and launch | PASS: installed SFO 00.41; EBOOT package payload prefix matched exactly with 48 zero padding bytes; webMAN launch produced fresh app-version log. | Current app is open; no streamed audio yet in this run. |
+| v0.2.1 install and launch | PASS: installed SFO 00.41; EBOOT package payload prefix matched exactly with 48 zero padding bytes; webMAN launch produced fresh app-version log. | Historical run; no streamed audio in that run. |
 | v0.2.1 input retest | INCONSISTENT: user reports START exited once, then START/PS stopped responding after relaunch. Latest log has no button transition or START exit; a PS menu-open callback occurs without a close callback. | Callback proves event delivery only; no visible menu confirmation. |
-| v0.2.2 raw-mask candidate | Source updated to combine bitfields with PSL1GHT raw digital masks and count positive reports; build pending. | Hardware must confirm mask mapping and normal START/PS behavior. |
+| v0.2.2 PPU build and full host suite | PASS: full Lima host/ASan/UBSan suite, PPU component objects, and standalone ELF validation. | Cross-build does not validate physical input. |
+| v0.2.2 finalized package | PASS: 3,232,112 bytes, SHA-256 `44886cd6ce7bbeff8089bd2d5d752cce3b76ded01f36b214cfdaff057f6748cd`; AIRPLAY02 / SFO 00.42. | ELF, SFO, content ID, assets, extraction, SELF, and finalized package checks passed. |
+| v0.2.2 install and launch | PASS: FTP download-back hash match; installed SFO exact; installed EBOOT equals package SELF plus 32 zero bytes; fresh `PKG_VERSION_0.2.2` log. | Installed and launched on PS3. |
+| v0.2.2 controller retest | FAIL/INCONSISTENT: user reports START/PS do nothing; log records PS menu-open callback but no close, no START, and no digital-mask change. | User will reboot and launch manually; wait for that result before further console commands. |
 
 This matrix distinguishes portable host evidence and cross-build evidence from real hardware validation. Update rows only when the listed scenario is actually exercised.
 
