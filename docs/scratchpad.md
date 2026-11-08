@@ -10,4 +10,4 @@
 - RPCS3 remains blocked by the locked Mac after a second UI check; no package was installed/run and no console was contacted. Next: after manual unlock, run the three harness cycles, capture results, and reassess the hardware gate.
 - A separate `rpcs3 --help` probe also produced no output or exit in ten seconds; only that probe was stopped. Existing emulator process/settings remain untouched. No headless route is established.
 - Ten additional targeted RAOP receiver loopback runs passed; the historical one-time audio observation timeout remains noted as unreproduced, not resolved.
-- Mocked ASan/UBSan lifecycle simulation passed eight complete runs across six startup/stop/retry scenarios; latest four synchronize explicitly on mock poll entry. OS socket/network APIs are stubbed; no PRX or RPCS3 runtime claim.
+- Mocked ASan/UBSan lifecycle simulation passed four consecutive complete runs across seven scenarios, including spontaneous worker poll-error cleanup. The six earlier cases passed in eight prior runs. OS socket/network APIs are stubbed; no PRX or RPCS3 runtime claim.

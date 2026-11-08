@@ -54,6 +54,7 @@ static int host_connect_calls;
 static int host_getsockname_calls;
 static int host_close_calls;
 static unsigned int mock_poll_delay_ms = 1;
+static int mock_poll_error_once;
 static volatile int mock_poll_entered;
 
 int resident_host_socket(int domain, int type, int protocol)
@@ -285,6 +286,10 @@ int raop_receiver_poll(raop_receiver *receiver, unsigned int timeout_ms)
 	(void)receiver;
 	(void)timeout_ms;
 	__atomic_store_n(&mock_poll_entered, 1, __ATOMIC_RELEASE);
+	if (mock_poll_error_once) {
+		--mock_poll_error_once;
+		return -7006;
+	}
 	delay.tv_sec = mock_poll_delay_ms / 1000U;
 	delay.tv_nsec = (long)(mock_poll_delay_ms % 1000U) * 1000000L;
 	(void)nanosleep(&delay, NULL);
@@ -422,6 +427,7 @@ static void reset_mocks(void)
 	host_getsockname_calls = 0;
 	host_close_calls = 0;
 	mock_poll_delay_ms = 1;
+	mock_poll_error_once = 0;
 	__atomic_store_n(&mock_poll_entered, 0, __ATOMIC_RELEASE);
 }
 
@@ -575,6 +581,20 @@ static void test_bounded_worker_stop_retry(void)
 	puts("bounded worker-stop timeout and retry: PASS");
 }
 
+static void test_worker_poll_error_cleanup(void)
+{
+	reset_mocks();
+	mock_poll_error_once = 1;
+	assert(module_start(0, NULL) == SYS_PRX_RESIDENT);
+	wait_for_log_event("event=RECEIVER_ERROR", 2000);
+	assert(module_stop(0, NULL) == SYS_PRX_STOP_OK);
+	assert(netctl_unload_calls == 1);
+	assert(net_finalize_calls == 1 && net_unload_calls == 1);
+	assert_log_event("event=WORKER_STOPPED");
+	assert_log_event("event=MODULE_STOP");
+	puts("worker poll-error cleanup and join: PASS");
+}
+
 int main(void)
 {
 	(void)setvbuf(stdout, NULL, _IONBF, 0);
@@ -584,6 +604,7 @@ int main(void)
 	test_net_finalize_retry();
 	test_net_unload_retry();
 	test_bounded_worker_stop_retry();
+	test_worker_poll_error_cleanup();
 	puts("resident host lifecycle simulation: ALL PASS (mocked platform APIs)");
 	return 0;
 }

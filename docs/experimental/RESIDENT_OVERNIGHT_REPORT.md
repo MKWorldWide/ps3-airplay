@@ -1,6 +1,6 @@
 # AIR PS3 Resident Overnight Report
 
-**Report timestamp:** 2026-11-08 07:20 EDT
+**Report timestamp:** 2026-11-08 07:24 EDT
 
 **Branch:** `experimental/resident-airplay`
 
@@ -27,7 +27,7 @@ The experimental resident PRX now has a bounded worker cleanup wait, preserves n
 | RTP order/loss/recovery stress | PASS (host simulation) | Sequence wrap, reordering, delayed retransmission, concealment deadline, resend rejection, flush reset, a 10,000-packet jitter schedule, and bounded resend retries passed. A gap counter records temporary sequence gaps even when an out-of-order packet later fills them; interpret it as a gap observation, not definitive lost audio. |
 | Repeated Linux forensic suite | PASS | A further AddressSanitizer/UndefinedBehaviorSanitizer run passed the RTP queue stress, long SRC, 10,000-packet jitter schedule, display-resume checks, ALAC parse/decode, resend bounds, aggregation, and timing probes. These remain host-side tests. |
 | Targeted receiver repetitions | PASS | Ten consecutive runs of the existing RAOP receiver test passed persistent RTSP, UDP RTP loopback, and bounded slow-reader disconnect checks. This reduces, but does not eliminate, concern about the earlier 500 ms observation timeout. |
-| Mocked resident lifecycle simulation | PASS (host only) | AddressSanitizer/UndefinedBehaviorSanitizer ran actual `module_start`/`module_stop` control flow with mocked PS3 APIs and no network. Six startup/stop/retry scenarios passed in eight complete runs; the last four synchronize on poll entry before testing the stop timeout. This does not establish PS3 syscall or PRX runtime behavior. |
+| Mocked resident lifecycle simulation | PASS (host only) | AddressSanitizer/UndefinedBehaviorSanitizer ran actual `module_start`/`module_stop` control flow with mocked PS3 APIs and no network. Seven startup/stop/error-retry scenarios passed in four consecutive full runs; the six original scenarios also passed in eight earlier runs. This does not establish PS3 syscall or PRX runtime behavior. |
 | Long PCM stress | PASS (host simulation) | 600-second-equivalent resampling workload completed with zero underflows and phase reset to zero. |
 | Resident PPU build | PASS | PS3DK 0.27.0 / Mbed TLS 3.6.7 linked the PRX and emitted `.sprx` and `.fake.sprx` containers. |
 | PRX structural validation | PASS | `prx-gen check`: one load segment, 6,094 relocations, one management export, four import libraries (`sys_net`, `cellSysmodule`, `cellNetCtl`, `sysPrxForUser`). |
