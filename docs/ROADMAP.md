@@ -4,7 +4,7 @@
 
 - Version source is `release.json`: app `1.0.0`, SFO `01.00`, title ID `AIRPLAY02`, XMB title `AIR PS3`, RAOP service name `AirPS3`.
 - Gate 0 is user-accepted from the v0.2.8 dev-unit run: about 45 minutes, four XMB cycles, no reported PCM underflows, ALAC failures, RTP queue drops, concealed/skipped frames, or screen-presentation failures. The user accepted a brief ~45 ms service interval on XMB resume as a known hitch. This is summarized user evidence, not a new raw-log audit.
-- The maintainer reports v1.0.0 is running beautifully on the development PS3; this is qualitative feedback, not a measured soak or a list of individually verified features. The exact-main Lima gate passed at `38f13ba2b3255352a9957160c3d075e5426cd069`; package evidence is in the linked release report and gate.
+- The maintainer reports v1.0.0 is running beautifully on the development PS3; this is qualitative feedback, not a measured soak or a list of individually verified features. The exact-main build checkpoint and its package evidence are documented in the release report; the candidate must be rebuilt after final source changes and checked against the exact release tag.
 - The release candidate is integrated into `main`. Draft staging and the manual publication workflow are the remaining release steps. Neither PS3 is changed as part of release preparation.
 
 ## Release path

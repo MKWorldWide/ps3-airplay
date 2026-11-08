@@ -772,3 +772,10 @@ The v0.1.31 fresh RPCS3 replay verifies the portable-arithmetic correction: the 
 - **Root Cause:** Package version and equal source trees do not make an old source-SHA record valid for a new release commit.
 - **Fix:** Rebuild in Lima from the exact committed `main` SHA and retain the package, manifest, and generated evidence together; compare component hashes without assuming a PKG hash is reusable.
 - **Prevention Rule:** Run the complete release script again after the final documentation commit, and verify the evidence source SHA equals the immutable release tag target before staging.
+
+## Keep release-gate status machine-readable
+
+- **Problem:** The release staging helper refused a passing gate after its heading was changed to a more descriptive prepublication label.
+- **Root Cause:** `scripts/stage-github-release.sh` intentionally requires the exact `**Release gate status: PASS**` marker.
+- **Fix:** Restore the documented status marker and keep explanatory context in surrounding text; retain the evidence verifier as the independent source/hash check.
+- **Prevention Rule:** Treat release-gate headings and row states as a script interface; add a regression check if the schema is changed.
