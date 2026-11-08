@@ -690,3 +690,10 @@ The v0.1.31 fresh RPCS3 replay verifies the portable-arithmetic correction: the 
 - Root Cause: The short FIR and long reference have different Nyquist transition bands.
 - Fix: Publish both passband fidelity and transition/image measurements; test actual music and per-block cost separately.
 - Prevention Rule: Never summarize a finite resampler as uniformly equivalent to a long reference or extrapolate host cost into PS3 deadline guarantees.
+
+## Consolidate branches by comparing current trees, not branch age
+
+- **Problem:** The newer fidelity work was isolated from main, while the forensic audit branch contained both useful historical evidence and an older source tree.
+- **Root Cause:** Parallel worktrees advanced from different commits; a branch’s unique commit does not imply its whole tip tree should replace newer main content.
+- **Fix:** Compare merge bases and current tree diffs, fast-forward the validated fidelity branch, retain the forensic commit as merge ancestry, and keep newer main reports/tests/source where the older branch diverged.
+- **Prevention Rule:** Back up all worktrees and ignored data, compare exact file contents at branch tips, and make selective integration choices explicit before removing worktrees.

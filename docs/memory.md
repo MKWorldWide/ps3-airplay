@@ -453,11 +453,10 @@ Display candidate restores the standard GPU-side wait-flip command ordering afte
 - The display log reached `SCREEN_RESUME_SETTLED` after MENU/DRAW begin/end callbacks; physical brightness and visual stability remain unconfirmed. This is a short sample, not a soak. See `reports/2026-11-07_v026_first_playback.md`. Raw log remains private and ignored.
 
 
-## v0.2.7 fidelity candidate (isolated branch)
+## v0.2.7 fidelity implementation and hardware evidence
 
-- v0.2.6 binary correspondence verified; baseline-v0.2.6 pins packaged source. Production main/console unchanged.
-- Latest 26m35s log has five connections, 122 concealments, zero ALAC/malformed failures and one 3,457-frame underflow near reconnect. Preliminary 4,833/4,725/108 totals reproduce exactly; counters across resets need separate epochs.
-- Candidate replaces linear SRC with bounded 160-phase 64-tap FIR; 31-input-frame delay, 40 KiB table plus 256-byte history, exact sample ratio. Host reference20k SNR75.09dB, fullband transition remains limited. Adds five-second audio-service/log-cost aggregates; no clock correction or resend policy changes.
-- Display guard is 350 ms with existing flip completion/timeout and double-buffer restoration. Host mocks settle below500ms; hardware remains unverified. Full build/package validation passed as recorded below. See fidelity report.
-
-- v0.2.7 exact source `39e918ce15d70e4dec1a25ec2369a166651057f0` passed full Linux host/sanitizer/PPU/ELF/SELF/PKG gate. Package 3,273,456 bytes, SHA-256 `48251b3d741328fa78a5cda9bccd76ab02a79ec664d49ce29edfd819eb9f9993`, SFO00.47. Candidate remains local and uninstalled; main unchanged. Supplemental SRC/copy performance tests and spectrum/alternative comparisons are preserved for future builds.
+- The validated fidelity branch was fast-forwarded into `main`; packaged application source remains revision `39e918ce15d70e4dec1a25ec2369a166651057f0`. The later branch commit records tests and documentation. The 64-tap, 160-phase FIR preserves the exact 160:147 ratio, adds 31 input frames of delay (~0.703 ms), and retains the 40 KiB coefficient table plus 256-byte history. Five-second aggregate audio-service/log timing was added. No clock correction or resend policy changed.
+- v0.2.7 / SFO 00.47, AIRPLAY02, 3,273,456-byte debug PKG; SHA-256 `48251b3d741328fa78a5cda9bccd76ab02a79ec664d49ce29edfd819eb9f9993`. It was installed on the dev PS3 and on the main PS3 for a one-off deployment. The retained dev log identifies v0.2.7 and a 30m03s application run; the run ended with START cleanup and APP_STOP.
+- In that run, three RTSP RECORD sessions span about 29m23s. The log reports 183,808 RTP packets, 14,982 missing observations, 14,953 recovery insertions and 29 concealed frames; zero ALAC failures, invalid batches or pending drops. PCM underflow totaled 26,814 output frames (~0.56s equivalent at 48kHz), not necessarily a single continuous dropout. Audio-service gap peaked at 35.842ms; render time peaked at 1.885ms. These counters identify an output/pacing concern but do not establish audible quality.
+- The log does not include an XMB menu/resume cycle during playback. Physical XMB resume, display stability and audible output remain unverified. Preserve the raw logs privately; the exact snapshot and aggregate analysis remain in ignored local work data.
+- The full host/ASan/UBSan, PPU, ELF/SELF/PKG gate and independent fidelity tests passed for source revision `39e918c`; final post-relocation rebuild remains required. Package reference hash remains unchanged.

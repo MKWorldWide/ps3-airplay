@@ -82,3 +82,9 @@ Big-endian PCM bytes and paced target packet/decode/PCM path now validate in RPC
 - The supplied MacBook microphone sample is quiet and acoustic; gross-level analysis did not detect hard silence, but it cannot rule out short/subtle dropouts. Do not use it to override packet/underflow telemetry or to claim clean audio.
 - v0.1.35 gates PCM underflow accounting until decoder/prebuffer readiness. Hardware logs must confirm the corrected counters correlate only with active stream output; packet loss can still cause audible gaps even if the PCM ring doesn't empty.
 - v0.1.35 build is validated and staged but not installed. The running v0.1.33 stream must exit before replacing AIRPLAY02; no playback, display, or XMB-resume claim is made for v0.1.35.
+
+## v0.2.7 measured hardware boundary
+
+- The 30m03s dev run reports 26,814 PCM underflow output frames and a maximum audio-service gap of 35.842ms. These are plausible dropout/pacing risks; neither counter establishes an audible artifact or identifies its cause. A controlled same-source listening comparison is still needed.
+- The RTP queue averaged about 136 of 256 slots across the full v0.2.7 application session and peaked at 177. No pending queue drops were reported. Monitor latency/backlog before changing the bound.
+- The capture contains no XMB menu/resume cycle. The 350ms host/mock guard is not physical display acceptance.

@@ -399,4 +399,5 @@ The emitter used a paced diagnostic fixture; target output submission is not pro
 | RTP retry/loss/reorder regressions | PASS |Existing bounded policy preserved; host fixtures only |
 |250/350/500/750ms display guards, repeated/rapid menu/callback cycles | PASS |Default350ms mock settles under500ms, stall timeout retained |
 | Audio service/read-index aggregator and cost probes | PASS host |Physical PS3 timing still unmeasured; maxima are observations |
-| v0.2.7 physical audio / PS menu / resume / START | NOT RUN |No deployment; explicit hardware authorization required |
+| v0.2.7 physical receiver run | PARTIAL | Dev log confirms 30m03s app runtime, three RECORD sessions, RTP/decrypt/ALAC/PCM progress and clean START cleanup. 26,814 PCM underflow output frames; no acoustic measurement. |
+| v0.2.7 physical XMB resume/display | NOT VERIFIED | No XMB menu/resume cycle in the captured playback session; visible restoration and flicker remain user-observation gates. |

@@ -102,6 +102,6 @@ The v0.1.35 capture aligns missing RTP packet duration with active PCM underruns
 Correct valid ALAC payload rejection and bounded resend behavior before changing clocks/resampler. Candidate adds DRAW-aware bounded presentation settling for XMB resume. Physical audio/display acceptance remains required; do not claim stable playback from host checks.
 
 
-### Isolated v0.2.7 candidate
+### v0.2.7 fidelity build integrated
 
-Full release gate passed for the bounded FIR, aggregate audio-service instrumentation and350ms resume guard. See the fidelity report for quantitative evidence and transition-band limits. Keep main/physical v0.2.6 as baseline until authorized hardware tests establish PS/menu/START, physical resume latency and sustained audio quality. No clock correction or further resend tuning is justified yet.
+The bounded FIR, aggregate audio-service instrumentation, 350ms resume guard and regression suite are now on main. The 30m03s dev run confirms the receiver reached RTP, ALAC and PCM processing and exited through START cleanup. It also recorded 26,814 underflow frames and a 35.842ms maximum service gap. Investigate output pacing and obtain a controlled audible comparison. XMB resume/flicker was not exercised in that run. See the fidelity and consolidation reports for limits and provenance. Do not infer a physical audio/display fix from host tests.
