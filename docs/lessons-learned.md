@@ -656,3 +656,17 @@ The v0.1.31 fresh RPCS3 replay verifies the portable-arithmetic correction: the 
 - **Root Cause:** The wrapper exported `PS3DK_SOURCE` and version values but not the derived asset/tool path expected by the package script.
 - **Fix:** Derive and export `PS3DEV` from `PS3DK_SOURCE` before running the component stages; the corrected full release gate passed.
 - **Prevention Rule:** Run every new build orchestrator end-to-end through package validation; passing unit/build stages alone does not validate its environment handoff.
+
+## Valid lossless payloads must fit every layer
+
+- Problem: content-dependent gaps can occur before the decoder despite zero decoder failures.
+- Root Cause: independent 1,400-byte RTP, AES and ALAC bounds reject a valid 1,416-byte uncompressed stereo 352-sample ALAC packet; malformed originals are not logged.
+- Fix: audit reproduction only; copied-source 1,536-byte-bound experiment decodes exact PCM. Production correction is pending, including negotiation constraints for larger frame lengths.
+- Prevention Rule: test incompressible and compressed reference frames across the complete encrypted pipeline; derive one shared bound and report pre-decode drops.
+
+## Healthy PCM occupancy can contain missing music
+
+- Problem: zero underflows was insufficient to explain audible interruptions.
+- Root Cause: whole missing packets are replaced by zeros before PCM queueing; counters named TOTAL can be deltas and sampled events contain sequence IDs.
+- Fix: explicit log-analysis contracts and deterministic tests; current completed intervals show 6,886 silence frames, about 54.963 seconds at 352/44,100.
+- Prevention Rule: distinguish transport concealment, decoder failures, PCM starvation and physical-output deadlines; never add overlapping counter families.

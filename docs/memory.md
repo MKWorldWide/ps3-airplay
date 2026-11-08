@@ -426,3 +426,13 @@ Display candidate restores the standard GPU-side wait-flip command ordering afte
 - `scripts/release-lima-standalone-receiver.sh` passed its complete rerun: host/ASan/UBSan tests, 5 MiB cap/append regression, PPU component objects, standalone CellOS ELF, package/SFO/content ID/extraction/envelope.
 - ELF 2,754,776 bytes, SHA-256 `1ff2513b9823792aa4f202ddf700e161bee5f223e3ccc2fc19e53e39a3f1eead`. PKG 3,232,048 bytes, SHA-256 `61e8310a6d4330bad1e4d64213365f9ba27de81a6fa14851a315f5b338894440`.
 - PKG is kept locally and has not been transferred or installed. Preserve the currently running v0.2.4 session; resume deployment only once it is safely at XMB under the existing install authorization.
+
+## Independent SOL 6.1 forensic audit (2026-11-07)
+
+- Investigation on separate branch; production source and safe-v0.2.4 tag preserved. See `docs/reports/ps3_airplay_sol61_forensic_audit.md`.
+- v0.2.5 installed SFO/EBOOT independently match retained package; log version marker is 0.2.5, but source hash is not embedded. Attribution uses artifact chain.
+- A 1,100,668-byte snapshot contains 33m29s v0.2.5 runtime, 26,994 periodic missing, 20,108 recovery and 6,886 concealment deltas. At 352 samples/44.1kHz, concealment is 54.963 seconds. Zero PCM underflows does not mean uninterrupted audio.
+- Confirmed payload defect: three 1,400-byte bounds reject valid 1,416-byte ALAC. Synthetic fixture fails production; copied-source bound experiment produces exact PCM. Hardware contribution unknown because malformed/oversize telemetry is absent.
+- >16 resend omission and reorder-as-missing reproduced; unanswered requests have no retry. Prioritize these before timeout tuning.
+- Nominal SRC ratio is exact across a simulated 600s and hardware counters (two lookahead frames); high-frequency interpolation error is a separate measured fidelity defect.
+- Audit adds only analysis/tests/docs. No firmware, plugin, package or console execution changes. Host suite passes; no new RPCS3 result claimed.
