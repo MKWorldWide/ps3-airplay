@@ -5,7 +5,7 @@
 
 ## Cause and scope
 
-GitHub attributed user-authored commits to `sunnykaye` because the configured no-reply email identified a different GitHub account from the authenticated `EsKaye` profile. Global and repository-local Git settings now use the authenticated profile's no-reply identity.
+GitHub attributed user-authored commits to a different account because the configured no-reply email identified the wrong GitHub account instead of the authenticated `EsKaye` profile. Global and repository-local Git settings now use the authenticated profile's no-reply identity.
 
 At the user's request, history was corrected across every published branch and tag. The migration changed author/committer identity fields for the user's prior commits and preserved the separate `MKWorldWide`-authored project commit.
 

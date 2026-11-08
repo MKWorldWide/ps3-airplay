@@ -8,6 +8,8 @@ AIR PS3 lets you stream audio from your iPhone to a PlayStation 3 over your loca
 
 **Latest release:** v1.0.0 · **XMB name:** AIR PS3 · **AirPlay destination:** AirPS3
 
+Developed and maintained by **[EsKaye](https://github.com/EsKaye)** for [MKWorldWide](https://github.com/MKWorldWide).
+
 ## Download
 
 **[Download AIR PS3 v1.0.0 from GitHub Releases](https://github.com/MKWorldWide/ps3-airplay/releases/latest)**

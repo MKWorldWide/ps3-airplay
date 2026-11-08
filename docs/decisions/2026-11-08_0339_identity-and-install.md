@@ -8,7 +8,7 @@ Corrected global and repository-local Git author email to the authenticated EsKa
 
 ## Why this pass was needed
 
-GitHub attributed recent commits to `sunnykaye` because the previous no-reply address mapped to a different account. The user also requested deployment of the verified v1.0.0 package to the development unit.
+GitHub attributed recent commits to a different account because the previous no-reply email identified the wrong GitHub user. The user also requested deployment of the verified v1.0.0 package to the development unit.
 
 ## Files changed
 
@@ -33,7 +33,7 @@ The installed development-unit title is now AIRPLAY02 v1.0.0 / SFO `01.00`. The 
 ## Validation performed
 
 - GitHub profile tool confirmed the authenticated login as `EsKaye`.
-- GitHub REST API inspection of the prior latest commit showed it still mapped to `sunnykaye`, exposing the mismatched account ID in the old no-reply email.
+- GitHub REST API inspection of the previous latest commit exposed the mismatched account ID in the old no-reply email.
 - webMAN exit-to-XMB returned HTTP 200.
 - FTP upload followed by download-back: byte-for-byte comparison passed; PKG SHA-256 `ef8f0afdacef560e9f5825fa9539247f3eb17e7791282aa6790f086fa8b1288e`.
 - Installed SFO validation and exact hash comparison passed; installed EBOOT size/hash matched package evidence.
@@ -41,7 +41,7 @@ The installed development-unit title is now AIRPLAY02 v1.0.0 / SFO `01.00`. The 
 ## Immediate results
 
 - Development unit has v1.0.0 installed; it was not launched.
-- Corrected identity is configured for future commits. Historical public commit objects remain unchanged and may still appear under `sunnykaye`.
+- At this point in the timeline, only future commit identity was corrected. The subsequent historical migration is documented in [the attribution rewrite decision](2026-11-08_0345_git-attribution-rewrite.md).
 
 ## Known limitations / follow-ups
 
@@ -58,7 +58,7 @@ The install replaced the AIRPLAY02 application on the development unit. The v0.2
 - **Context:** Current commits were associated with a different GitHub account due to the configured no-reply account ID.
 - **Options considered:** Fix identity for new commits; rewrite all public branch/tag history immediately; or leave identity unchanged.
 - **Choice:** Correct global and repository settings, then verify the next GitHub attribution. Keep existing commit objects unchanged until a dedicated history migration is reviewed.
-- **Tradeoffs accepted:** Older commits continue to resolve to `sunnykaye`, while new commits should map to `EsKaye`; a comprehensive historical correction remains separate.
+- **Tradeoffs accepted at this stage:** Older commits still resolved to the former account. A separate, subsequently completed migration corrected the historical metadata while preserving project content.
 
 ### Decision: Install without launching
 

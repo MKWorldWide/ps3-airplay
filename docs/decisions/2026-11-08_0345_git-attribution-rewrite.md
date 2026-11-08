@@ -8,7 +8,7 @@ Corrected Git author/committer configuration and rewrote every remote branch and
 
 ## Why this pass was needed
 
-Recent commits were still displayed under `sunnykaye` because their no-reply email mapped to a different GitHub account. The user explicitly requested that all commits appear under EsKaye.
+Recent commits were still displayed under the incorrectly linked GitHub account because their no-reply email mapped to the wrong account. The user explicitly requested that all commits appear under EsKaye.
 
 ## Files changed
 
