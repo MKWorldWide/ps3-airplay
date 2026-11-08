@@ -171,6 +171,22 @@ static int log_event(const char *event, int value, size_t bytes)
 	return logged;
 }
 
+static void runtime_trace(const char *event, int value)
+{
+	int attempt;
+	if (active_diagnostics == NULL)
+		return;
+	for (attempt = 0; attempt < 1000; ++attempt) {
+		if (__atomic_exchange_n(&receiver_log_lock, 1, __ATOMIC_ACQUIRE) == 0) {
+			(void)printf("AIRPS3_TRACE %s value=%d\n", event, value);
+			(void)fflush(stdout);
+			__atomic_store_n(&receiver_log_lock, 0, __ATOMIC_RELEASE);
+			return;
+		}
+		(void)sysThreadYield();
+	}
+}
+
 static void audio_worker(void *argument)
 {
 	raop_pcm_ring pcm_ring;
@@ -237,7 +253,9 @@ static void audio_worker(void *argument)
 		(void)sys_timer_usleep(5333U);
 	}
 	__atomic_store_n(&audio_worker_exited, 1, __ATOMIC_RELEASE);
+	runtime_trace("AUDIO_THREAD_EXITING", 0);
 	sysThreadExit(0);
+	runtime_trace("AUDIO_THREAD_EXIT_RETURNED", 0);
 }
 
 static int release_audio(void)
@@ -697,6 +715,7 @@ int module_stop(size_t args, void *argp)
 	(void)args;
 	(void)argp;
 
+	runtime_trace("STOP_BEGIN", 0);
 	__atomic_store_n(&stop_requested, 1, __ATOMIC_RELEASE);
 	__atomic_store_n(&audio_stop_requested, 1, __ATOMIC_RELEASE);
 	if (worker_started) {
@@ -721,6 +740,7 @@ int module_stop(size_t args, void *argp)
 		}
 		worker_started = 0;
 	}
+	runtime_trace("STOP_RECEIVER_JOINED", 0);
 	if (audio_thread_started) {
 		wait_started_us = sys_time_get_system_time();
 		wait_polls = 0;
@@ -734,13 +754,17 @@ int module_stop(size_t args, void *argp)
 		}
 		if (!__atomic_load_n(&audio_worker_exited, __ATOMIC_ACQUIRE))
 			return SYS_PRX_STOP_FAILED;
+		runtime_trace("STOP_AUDIO_EXIT_FLAG", 1);
 		join_result = sysThreadJoin(audio_thread, &thread_result);
+		runtime_trace("STOP_AUDIO_JOIN_RESULT", join_result);
 		if (join_result != 0)
 			return SYS_PRX_STOP_FAILED;
 		audio_thread_started = 0;
 	}
+	runtime_trace("STOP_AUDIO_RELEASE_BEGIN", 0);
 	if (!release_audio())
 		return SYS_PRX_STOP_FAILED;
+	runtime_trace("STOP_AUDIO_RELEASE_DONE", 0);
 	release_crypto();
 	if (!release_network())
 		return SYS_PRX_STOP_FAILED;

@@ -1,6 +1,6 @@
 # AIR PS3 Resident Development Report
 
-**Updated:** 2026-11-08 17:56 EDT
+**Updated:** 2026-11-08 19:07 EDT
 **Branch:** `experimental/resident-airplay`
 **Source baseline:** `53e24116e8d9a26db80deeafd568be72bf8cf6d6`
 **Scope:** RPCS3 lifecycle and diagnostic harness; no physical PS3 was contacted.
@@ -34,11 +34,30 @@ and `sys_net` reported `EADDRNOTAVAIL` when the resident attempted local
 network discovery. Neither error explains the audio-thread fault. Acoustic
 output was not independently heard or captured. No hardware test was made.
 
-Current candidate hashes: PRX `9a558a5b994f68e109e0bed8c4564e7d54b4c5463e1190d449df9571d7c1e5b2`,
+Two-port run hashes: PRX `9a558a5b994f68e109e0bed8c4564e7d54b4c5463e1190d449df9571d7c1e5b2`,
 fake SPRX `7bfea5421d546fec46a9020ecedd4fafae61cf03594b85480087d1dd20aa6120`,
 and harness PKG `86db3830dfbd08c73337ea5a4a8ec19d416cee919783f17360b788602bd49934`.
 The installed package's embedded fake SPRX matches the reported fake-SPRX
 hash. Artifacts remain in ignored local build folders.
+
+## Trace-instrumentation build (2026-11-08 19:07 EDT)
+
+Added harness-only stdout phase markers around audio-worker exit, receiver
+worker join, audio exit observation, thread join, and audio resource release.
+The Lima host lifecycle/audio tests pass again. The PPU build and `prx-gen
+check` pass with five import libraries, one load segment, and 6,298
+relocations. After explicitly removing the old ignored PKG output, the
+`RPRX90001` package rebuilt successfully; its embedded fake SPRX matches the
+new build exactly.
+
+Trace candidate hashes: PRX
+`629f430bf33b5f8020e525cbfac27d25694829133fa835e8b7eb9db3fad976df`, fake
+SPRX `7e7b0e42d7ac7857bac20691bd979395e525e706b42ab97553ce9c41d70c0d39`, and
+PKG `c91a85999d21c18f2bce244e7c41b2c5e4aa7c5c605bbe202e6aeafb3d1a24ff`.
+The package is in ignored local output and has not yet been installed or run.
+The RPCS3 desktop reported the Mac locked, so no new emulator result exists
+for these markers. The previous two-cycle pass / third-cycle crash remains the
+latest runtime evidence. The exact crash call site remains unknown.
 
 **Hardware readiness: NOT READY.** First isolate the RPCS3 thread-exit fault,
 restore three clean audio-enabled cycles with module count at baseline after
@@ -55,6 +74,7 @@ Only a later reviewed gate may propose a nonpersistent hardware test.
 | Two-port coexistence | PASS (submission only) | Both ports accepted audio submissions during the test interval; this does not establish real mixing quality or game coexistence. |
 | Three-cycle audio teardown | FAIL | Cycles 1 and 2 passed; cycle 3 crashed in the resident audio thread at a null execution target. The reported module offset is not reliably mapped to a named PRX function. |
 | Cycle-3 module baseline | UNTESTED | Crash occurred before stop/unload completion and baseline query. |
+| Instrumented RPCS3 rerun | BLOCKED | New marker build is ready, but RPCS3 UI reported the Mac locked before package installation. |
 | Synthetic RAOP decode-to-output | UNTESTED | No RAOP packets were sent; only a diagnostics-only PCM seed exercised output. |
 | Physical console / Cobra / in-game audio | UNTESTED | No physical PS3 was contacted. |
 
