@@ -1,22 +1,35 @@
-# Documentation
+# AIR PS3 documentation
 
-This folder contains installation guidance, project boundaries, engineering notes, and test evidence. For end users, start with the [v1.0.0 release](https://github.com/MKWorldWide/ps3-airplay/releases/latest) and the [installation and recovery guide](INSTALLATION.md).
+Welcome! Start with what you want to do; the detailed development history is preserved separately.
 
-- [Architecture](ARCHITECTURE.md): components, data flow, and evidence boundaries.
-- [Development setup](DEV_SETUP.md): toolchain setup and build entry points.
-- [Roadmap](ROADMAP.md): current milestones and remaining gates.
-- [Public stable release and feature plan](PUBLIC_RELEASE_PLAN.md): candidate evidence, stable-release gates, later feature phases, and publication checklist.
-- [Installation, removal, and rollback](INSTALLATION.md).
-- [v1.0.0 release notes](RELEASE_NOTES-v1.0.0.md).
-- [Gate 1 release status](RELEASE_GATE_1.md).
-- [Version source and policy](VERSIONING.md).
-- [Test matrix](TEST_MATRIX.md): host and hardware validation status.
-- [Risks](RISKS.md): safety, compatibility, and release risks.
-- [Research](research/README.md): source-based technical notes.
-- [Decision log](decisions/README.md): concise, public project decisions.
-- [First hardware test report](reports/2026-11-07_first_hardware_test.md): package staging evidence and pending XMB/audio checks.
-- [v1.0.0 hardware observation](reports/air_ps3_v1_0_0_user_report.md): latest qualitative maintainer report, with no inferred duration or metrics.
-- [v1.0.0 exact-main build report](reports/air_ps3_v1_0_0_main_build_checkpoint.md): pinned-Lima host/cross-build results and package identity.
-- [Return to AIRPLAY02 report](reports/2026-11-07_return_to_receiver.md): launch-control detour, bounded network startup, local v0.1.4 build, and test results.
+## Install and listen
 
-Do not add personal machine paths, hostnames, private network details, console/account identifiers, credentials, or raw device responses to tracked documentation. Keep local agent instructions out of version control.
+- **[Download the latest release](https://github.com/MKWorldWide/ps3-airplay/releases/latest)** — the PKG and SHA-256 checksums.
+- **[Installation and recovery](INSTALLATION.md)** — install, connect from an iPhone, **START to exit**, verify files, uninstall or roll back.
+- **[v1.0.0 release notes](RELEASE_NOTES-v1.0.0.md)** — what ships, what doesn't, and what was tested on **Evilnat 4.93 CFW**.
+
+## Build, verify, and contribute
+
+- **[Build from Source](BUILD_FROM_SOURCE.md)** — Linux x86_64 / Lima, pinned SDKs, build commands and independent verification.
+- [Development setup](DEV_SETUP.md) — SDK layout and experimental development paths.
+- [Detailed build pipeline](BUILD_PIPELINE.md) — exact release gate and historical PS3 toolchain findings.
+- [Contributing](../CONTRIBUTING.md) — help improve the receiver or report tests.
+- [Test matrix](TEST_MATRIX.md) — measured behavior and hardware evidence boundaries.
+- [Architecture](ARCHITECTURE.md) — protocol, codec, PCM, and PS3 components.
+
+## Follow the project
+
+- [Roadmap](ROADMAP.md) — metadata, album artwork, controller controls, display settings, and future development.
+- [Versioning](VERSIONING.md) — why 1.0.0 maps to SFO 01.00.
+- [Risks and safety](RISKS.md) — compatibility limits and testing cautions.
+- [Public release process](PUBLIC_RELEASE_PLAN.md) and [release gate](RELEASE_GATE_1.md) — how a validated PKG reaches GitHub.
+
+## Engineering archive
+
+Want to trace an old bug, review a failed build, or inspect the reasoning behind a fix?
+
+- **[Hardware and technical reports](reports/README.md)** — selected release reports, then the full historical report collection.
+- **[Decision records](decisions/README.md)** — project decisions and dated engineering history.
+- [Research notes](research/README.md) — protocol and SDK reference work.
+
+These archives include earlier experiments, unsuccessful candidates, and historical measurements. **They are not the current installation or build instructions.** The public v1.0.0 release and the linked guides above are the starting points.

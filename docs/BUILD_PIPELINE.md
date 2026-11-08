@@ -1,5 +1,7 @@
 # Standalone PS3 build and package pipeline
 
+For a practical start-to-finish Linux x86_64 build, follow [Build from Source](BUILD_FROM_SOURCE.md). This longer page preserves exact package-gate details and historical investigations; older candidate findings are not instructions for building the current release.
+
 ## Canonical path
 
 Use the existing x86_64 Lima guest with the pinned PS3DK v0.27.0 PPU toolchain, the recorded PSL1GHT checkout, and the matching Mbed TLS PPU library. The legacy GCC 7.2/binutils 2.22 script is an ABI comparison experiment only; it is not the release build path.

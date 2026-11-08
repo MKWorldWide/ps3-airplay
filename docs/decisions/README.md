@@ -1,20 +1,16 @@
-# Decision log
+# Engineering decision archive
 
-This directory contains project decisions and release evidence suitable for the repository. Private machine notes, raw outputs, and unique device identifiers are excluded.
+This folder contains dated records explaining why technical and release decisions were made. Some records document unsuccessful experiments or issues fixed in later versions.
 
-- [AIR PS3 v1.0.0 release candidate pipeline](2026-11-08_0317_v1-release-candidate-pipeline.md)
+## Major milestones
 
-- [Public stable release roadmap](2026-11-08_0240_public_stable_roadmap.md)
-- [Validate v0.1.37 and bound hardware claims](2026-11-07_1642_v0137_validation.md)
-- [Prepare v0.1.37 audio and display stability candidate](2026-11-07_1622_v0137_audio_display.md)
+- [Standalone receiver and public-release direction](2026-11-07_0040_public_release.md)
+- [Project relocation and consolidation](../reports/project_consolidation_and_relocation.md)
+- [Public stable-release roadmap](2026-11-08_0240_public_stable_roadmap.md)
+- [v1.0.0 release pipeline](2026-11-08_0317_v1-release-candidate-pipeline.md)
+- [GitHub Sponsors support](2026-11-08_0457_github_sponsors.md)
+- [Repository Sponsor button](2026-11-08_0459_enable_sponsor_button.md)
 
-- [Public release](2026-11-07_0040_public_release.md)
-- [Startup audio diagnostic](2026-11-06_2353_startup_audio_diagnostic.md)
-- [First PKG transfer](2026-11-07_0008_first_pkg_transfer.md)
-- [Correct standalone NPDRM package](2026-11-07_0012_fix_npdrm_package.md)
-- [Replace staged PKG](2026-11-07_0017_replace_staged_pkg.md)
-- [Visible diagnostic screen and clean app exit](2026-11-07_0035_visible_diagnostic_screen.md)
-- [Stage the screen-enabled PS3 package](2026-11-07_0040_stage_screen_package.md)
-- [Inspect the receiver startup log](2026-11-07_0042_inspect_startup_log.md)
-- [Improve RSX scanout diagnostics](2026-11-07_0049_display_scanout_diagnostic.md)
-- [Correct discovery address and add receiver diagnostics](2026-11-07_0108_raop_diagnostics_012.md)
+The many other dated Markdown files in this folder form the complete chronological engineering trail. They are retained in place so commit history and old references remain valid.
+
+**Need current instructions?** [Documentation home](../README.md) · [Build from Source](../BUILD_FROM_SOURCE.md) · [Installation](../INSTALLATION.md).

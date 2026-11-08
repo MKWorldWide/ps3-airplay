@@ -1,5 +1,7 @@
 # Development setup
 
+**New here?** Follow [Build from Source](BUILD_FROM_SOURCE.md) for a complete Linux x86_64 walkthrough with the tested PS3DK/PSL1GHT versions, environment variables, tests, and release-PKG verification. This page is a companion reference for alternative and historical development paths.
+
 ## Standalone release builds
 
 Use the pinned PS3DK/Lima path documented in [BUILD_PIPELINE.md](BUILD_PIPELINE.md). The legacy runtime build is comparison-only and must not produce release packages. Build tooling validates the inner ELF against the preserved v01.01 executable layout before packaging.

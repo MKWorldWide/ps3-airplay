@@ -1,23 +1,31 @@
 # AIR PS3 v1.0.0
 
-AIR PS3 is a standalone AirPlay 1 (RAOP) audio receiver for compatible PS3 homebrew/CFW environments. An iPhone remains the audio source; this is not Spotify Connect and does not run Spotify on the PS3.
+**AirPlay audio for your PlayStation 3.**
 
-This release carries forward the v0.2.8 receiver with app version `1.0.0` and SFO `APP_VER`/`VERSION` `01.00`. It preserves title ID `AIRPLAY02`, XMB title **AIR PS3**, service name **AirPS3**, and the maintainer-approved artwork. The release package is a type-1 debug PKG; installation on retail firmware is not promised.
+AIR PS3 is a standalone AirPlay 1 receiver: select **AirPS3** on your iPhone and play music through your PS3. Your music app stays on the phone. Press **START** on the controller to exit to the XMB.
 
-The user accepted the v0.2.8 run after about 45 minutes and four XMB open/close cycles. The user-supplied summary reported no PCM underflows, ALAC failures, RTP queue drops, concealed/skipped frames, or screen presentation failures. A maximum audio-service interval near 45 ms occurred on XMB resume and remains a known brief hitch. This is summarized user evidence, not a fresh independent raw-log audit.
+This is our first public release. It's been tested on a PlayStation 3 running **Evilnat 4.93 CFW**, with Cobra 8.5 observed. The package is intended for compatible homebrew/CFW setups, not retail firmware.
 
-The maintainer subsequently reported that v1.0.0 is running beautifully on the development PS3. No duration, measurements, or specific playback/control checks were supplied with that report. See the [hardware observation](reports/air_ps3_v1_0_0_user_report.md); it records the report without extending it into unreported test claims.
+## In this release
 
-## Included behavior
+- AirPlay 1 discovery, RAOP connection handling, and encrypted ALAC audio playback.
+- Bounded buffering, recovery from missing RTP packets, and asynchronous diagnostics.
+- AIR PS3 XMB title and artwork; the receiver appears as **AirPS3**.
+- A foreground app with START-button exit.
+- A type-1 debug/homebrew PKG, independently checked against its build evidence.
 
-- AirPlay 1 discovery and RAOP session handling.
-- RTP audio receive, decrypt/ALAC decode, bounded PCM buffering, and GameOS audio output.
-- Bounded diagnostic logging at `/dev_hdd0/tmp/ps3-airplay.log`.
-- Foreground PS3 application; START exits to XMB.
+**Download:** [AIR PS3 v1.0.0 on GitHub](https://github.com/MKWorldWide/ps3-airplay/releases/tag/v1.0.0) · [Installation guide](INSTALLATION.md)
 
-## Known limitation
+## Known limitations
 
-- Returning to the app after the XMB can produce a brief resume hitch. The accepted v0.2.8 run recorded a maximum service interval near 45 ms during resume.
-- Game audio mixing, resident background playback, AirPlay video/mirroring, Spotify Connect, and retail-firmware installation are out of scope.
+Returning from the PS-button menu may introduce a short audio-service hitch; previous development testing measured approximately 45 ms at its worst. This release does not support AirPlay video, Spotify Connect, background game-audio mixing, or resident plugin playback.
 
-See [installation and recovery](INSTALLATION.md) and [third-party notices](../THIRD_PARTY_NOTICES.md).
+The maintainer reports that v1.0.0 is working well on the development console. Detailed previous hardware observations and their limits are retained in the [test matrix](TEST_MATRIX.md); a subjective report is not a substitute for broad compatibility testing.
+
+## For builders
+
+The published package is app **1.0.0**, SFO **01.00**, Title ID **AIRPLAY02**. Its source, SHA-256 checksum, package inspection results, and third-party notices are available in the release.
+
+Want to verify or modify the source? Follow [Build from Source](BUILD_FROM_SOURCE.md) for the Linux x86_64 / Lima + PS3DK v0.27.0 / PSL1GHT toolchain, tests, and PKG checks.
+
+Thanks for giving this old console another trick.

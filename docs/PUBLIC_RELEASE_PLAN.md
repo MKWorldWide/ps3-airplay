@@ -1,8 +1,8 @@
 # Public stable release and feature plan
 
 **Status checked:** 2026-11-08
-**Release target:** AIRPLAY02 app `1.0.0` / SFO `01.00`, XMB title `AIR PS3`, RAOP name `AirPS3`
-**Repository:** `MKWorldWide/ps3-airplay` is public and `main` is the default branch. This plan records the stable-release gates and does not make a claim about current tag or release publication state.
+**Published release:** AIRPLAY02 app `1.0.0` / SFO `01.00`, XMB title `AIR PS3`, RAOP name `AirPS3`
+**Repository:** `MKWorldWide/ps3-airplay` is public, `main` is the default branch, and [v1.0.0 is published](https://github.com/MKWorldWide/ps3-airplay/releases/tag/v1.0.0). This document retains the publication gates for reproducibility and future versions.
 
 This release stays focused on the standalone AirPlay 1 receiver. Now Playing, extra controller transport controls, and visual settings remain later work.
 
@@ -12,7 +12,7 @@ The user reports the installed AIRPLAY02 v0.2.8 / SFO `00.48` development unit r
 
 Earlier v0.2.8 evidence remains in its engineering report and version history, but the newer 45-minute user summary supersedes the old 10m41s note for Gate 0 duration. Never combine separate test units or runs. The known earlier multi-second stall/full-RTP-queue event remains a risk requiring bounded host fault-injection evidence; do not infer it away from a clean soak summary.
 
-## Gate 1 — v1.0.0 public release preparation
+## Gate 1 — v1.0.0 publication (completed)
 
 ### Identity and build
 

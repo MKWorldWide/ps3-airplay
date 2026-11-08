@@ -5,7 +5,6 @@
 | Queue resynchronization discards recoverable audio | A transient burst may cause a short audible gap | Trigger only at full queue and more than 128 packets of live sequence lag; preserve drop/resync counters; exercise jitter, burst, sequence wrap, FLUSH, and reconnect on host before hardware. |
 | XMB artwork or callback rendering conflicts with VSH composition | The PS menu could obscure the app or resume to stale/dim frames | Keep title framebuffer presentation bounded and never draw over VSH; confirm repeated PS-menu cycles on hardware before changing compositing behavior. |
 | Supplied artwork carries source metadata | Personal metadata could enter the public repository | Store a lossless PNG of the decoded RGB pixels with source metadata removed; verify exact pixel equality and derivative checksums. |
-|---|---|---|
 | Game audio cannot mix with external PCM | In-game background audio goal may not be achievable | Treat as a separate feasibility gate; test per title and make no universal claim |
 | Resident module lifecycle is incompatible or unstable | Freeze, crash, or loss of console access | Do not load until exact compatibility and a tested recovery path are established; never use boot loading for initial tests |
 | Standalone and resident SDK assumptions differ | Link/load failure or instability | Validate application and PRX paths independently |
