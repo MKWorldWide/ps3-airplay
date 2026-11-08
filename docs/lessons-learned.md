@@ -577,3 +577,10 @@ The v0.1.31 fresh RPCS3 replay verifies the portable-arithmetic correction: the 
 - **Root Cause:** Existing tests checked structural ring behavior, not output error against a reference waveform.
 - **Fix:** Add a production-ring measurement over six frequencies and report SNR, amplitude ratio, and errors. The linear interpolation baseline degrades substantially at high frequencies (8.47 dB SNR at 15 kHz and 4.17 dB at 20 kHz in the current test); investigate a bounded higher-quality resampler as a separate measured change.
 - **Prevention Rule:** Compare resampler candidates with aligned reference signals and report CPU cost and frame continuity before changing the production algorithm.
+
+## Pad presence is not proof of controller input
+
+- **Problem:** During v0.2.0 streaming, the user reported that START and PS did not work, while the log reported `PAD_HEALTH` success and port 0 present.
+- **Root Cause:** The diagnostic only recorded `ioPadGetInfo` result and a connection bit. It did not record button states or named system-menu callbacks, so it could not show whether START reached the app or the PS event reached sysutil.
+- **Fix:** Add privacy-safe button-mask transitions, pad connect/disconnect and data errors, and named menu-open/menu-close/exit events. Keep the existing webMAN exit as the tested recovery path.
+- **Prevention Rule:** Report controller API health, pad presence, button transitions, system callback delivery, and app exit as separate signals. Never infer working controls from a present pad.

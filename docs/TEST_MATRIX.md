@@ -8,7 +8,25 @@
 | Production PCM ring 44.1 kHz to 48 kHz quality baseline | PASS structurally: six frequencies, 48,000 output frames each, zero underflows, zero dropped frames. Measured SNR: 92.30 dB (100 Hz), 54.64 dB (1 kHz), 26.78 dB (5 kHz), 15.03 dB (10 kHz), 8.47 dB (15 kHz), 4.17 dB (20 kHz). | Host synthetic tones only; indicates linear interpolation attenuation at high frequencies and does not isolate physical dropout causes. |
 | App/package version and SFO version | PASS: AIRPLAY02, app marker `0.2.0`, SFO APP_VER `00.40`; finalized PKG validated. | Candidate only, not a stable 0.2.0 milestone claim. |
 | Finalized package and extraction | PASS: 3,231,472 bytes; SHA-256 `924a01ef0ef812e1badb8e94011930f5187c4dba91b253e578e16ab72de4f29b`; five package entries, extracted EBOOT/SFO/icon/background checks passed. | Build and container validation only. |
-| PS3/RPCS3 runtime | NOT RUN. | Physical console remains at XMB; no transfer, installation, or launch in this pass. |
+| PS3 runtime | v0.2.0 installed and launched; user streamed a song and logs reached PCM submission. | User reports controller input failed; details below. No display or audible-quality confirmation. |
+
+## v0.2.0 PS3 run (2026-11-07 local time)
+
+| Test | Result | Boundary |
+|---|---|---|
+| Stage/install/launch exact package | PASS: FTP upload/download-back hash matched; webMAN installed AIRPLAY02 SFO 00.40, and installed EBOOT's first 450,944 bytes match the validated package EBOOT. | Installed file had 48 additional zero bytes; package staged copy and v0.1.39 rollback package remain. |
+| Startup identity and tone removal | PASS: fresh log records APP_START and PKG_VERSION_0.2.0; tone start/completion events absent. | Log is capped and wrapped; original snapshots kept local and ignored. |
+| Display and controller | Controller FAIL by user report: neither START nor PS button worked. | `PAD_HEALTH` only showed successful polling and pad 0 presence; no button mask existed. Display visibility was not confirmed. |
+| AirPlay/decode/PCM | PASS to code-path boundary: RTSP RECORD, 23,040 successful decrypt count, ALAC frame decode, zero sampled decode failures, PCM submission. | User streamed a song; no explicit subjective quality confirmation. RTP gaps/concealments were logged; no PCM underflow/drop events in saved interval. |
+| Clean recovery | PASS: webMAN exit logged SYSUTIL_EXIT_GAME, cleanup completion, and APP_STOP; status returned to XMB. | The webMAN command, not controller input, exited the app. |
+
+## v0.2.1 controller-diagnostics source validation
+
+| Test | Result | Boundary |
+|---|---|---|
+| Standalone PPU compile/link with changed poller | PASS with `-Wall -Wextra -Werror`. | Package not yet generated. |
+| Full Lima host/sanitizer and PPU component suite | PASS, including RTSP/RTP integration, encrypted RTP-to-ALAC/PCM, ALAC mutation checks, PCM quality/gain, and PPU object checks. | Does not exercise physical controller input. |
+| Package and controller hardware retest | PENDING. | Planned as v0.2.1 / SFO 00.41. |
 
 This matrix distinguishes portable host evidence and cross-build evidence from real hardware validation. Update rows only when the listed scenario is actually exercised.
 

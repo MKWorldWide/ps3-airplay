@@ -2,7 +2,7 @@
 
 AIRPLAY02 follows conservative pre-1.0 versioning. Increment the patch number for each distinct fix or small improvement that produces a new package: `0.1.4`, `0.1.5`, `0.1.6`, and so on. Never reuse a published or tested version number for different package contents. Record the exact package hash beside every result.
 
-**Current candidate:** per the maintainer's explicit version choice, the next app/package label is `0.2.0` and SFO `APP_VER` continues at `00.40`. This is a candidate label, not a claim that the 0.2.0 stable diagnostic milestone has passed; hardware exit, controls, settings/toggles, and fresh-console validation remain outstanding.
+**Latest hardware package:** AIRPLAY02 `0.2.0`, SFO `00.40`, installed and launched. The stream reached RTP decrypt, ALAC decode, and PCM submission, but the user reported that START and PS input did not work. The next targeted controller-diagnostics package is `0.2.1` / SFO `00.41`. Neither label claims that stable 0.2.0 acceptance has passed; controller support, settings/toggles, reliable exit, and sustained audio remain open.
 
 ## v0.2.0 candidate package record
 
@@ -12,8 +12,15 @@ AIRPLAY02 follows conservative pre-1.0 versioning. Increment the patch number fo
 - ELF: 2,754,472 bytes, CellOS PPC64 executable, five PT_LOAD segments; SHA-256 `bc2c1f951624d0124f7771a50c0c3febe3d48c85cfd341691bc34cf4c5136875`.
 - Build: existing Lima VM, PS3DK v0.27.0 PPU compiler 16.1.0, GNU ld 2.42, PSL1GHT revision `dd4e8c9be744e3273d665c393fa6d97a87402e2e`.
 - Checks: full Lima host/sanitizer and PPU component suite; standalone PPU ELF validation; AIRPLAY02/SFO identity, content ID, package extraction, relative paths, icon/background equality, EBOOT comparison, and finalized NPDRM envelope PASS.
-- Runtime: not installed or launched in RPCS3 or on PS3. This candidate does not yet meet stable 0.2.0 acceptance: settings/toggles, reliable controller exit, fresh hardware validation, and stable audio remain open.
+- Runtime: installed and launched on the demo PS3. User streamed a song; the log reached RTSP RECORD, RTP decrypt, ALAC decode, and PCM submission. User reports START and PS controls failed. webMAN exit completed cleanup and XMB was confirmed. Screen visibility and audible audio quality were not confirmed. Stable 0.2.0 acceptance remains open.
 - The finalized PKG is preserved locally under ignored `work/builds/0.2.0/`.
+
+## v0.2.1 controller-diagnostics candidate
+
+- Source change: add rate-limited controller connect/disconnect, button-mask transitions, input errors, and named PS-menu callbacks. Restrict presence-mask iteration to the seven PSL1GHT controller ports to avoid undefined wide shifts.
+- Artifact/build/hardware result: pending.
+- Requested app label: `0.2.1`; next SFO APP_VER: `00.41`.
+- This pass is diagnostic because v0.2.0 logs show pad presence but omit button state. No controller fix is claimed until fresh logs show button transitions and normal START/PS behavior.
 
 ## Milestones
 

@@ -1,10 +1,8 @@
 # Active work
 
-- Current pass: remove the automatic five-second diagnostic tone; set app/package label to 0.2.0 and SFO APP_VER to 00.40, continuing the SFO sequence.
-- Preserve the previous hardware evidence: v0.1.39 reached encrypted RTP, ALAC decode, and GameOS PCM submission but had reported crackle/dropouts and controller input issues. The app was exited through webMAN and console was at XMB.
-- A new production PCM-ring quality test measures 44.1-to-48 kHz resampling. Initial output has exact 48,000-frame count and zero underflow, but high-frequency SNR falls sharply; this is a lead for the next resampler study, not proof of the audible defect.
-- Do not modify, transfer, install, or launch anything on the physical PS3 without an explicit user request. Build and host validation only for this candidate.
-- Built and validated finalized AIRPLAY02 0.2.0 / SFO 00.40 from commit `b8bab2015551a7044dba26717611e524ed43f4ec`; 3,231,472 bytes, SHA-256 `924a01ef0ef812e1badb8e94011930f5187c4dba91b253e578e16ab72de4f29b`. Local artifact: ignored `work/builds/0.2.0/`.
-- Full Lima host/sanitizer suite and PPU component compile passed; standalone CellOS PPC64 ELF and finalized package validators passed. No emulator/hardware installation or launch occurred; physical console remains untouched.
-- Package verification notes are pushed in commit `0a4c4ab`.
-- Next engineering pass: add bounded RTP arrival-jitter and PCM occupancy/starvation telemetry plus controller button-state transitions; evaluate alternative resampling against the recorded quality baseline. The measured interpolation response is a lead only, not an established cause of audible artifacts.
+- Current task: diagnose the v0.2.0 controller failure with a v0.2.1 / SFO 00.41 candidate.
+- v0.2.0 (PKG SHA-256 `924a01ef0ef812e1badb8e94011930f5187c4dba91b253e578e16ab72de4f29b`) was installed/launched and a user-streamed song reached RTSP RECORD, RTP decrypt, ALAC decode, and PCM submission. The user reports START and PS buttons did not work. Saved logs show pad poll success/pad 0 present but no button data.
+- webMAN normal exit recorded `SYSUTIL_EXIT_GAME`, full cleanup, and `APP_STOP`; status confirmed XMB. v0.2.0 and the prior v0.1.39 rollback package remain staged. Raw hardware logs are private and ignored under `work/hardware/2026-11-07-pre-v020-install/`.
+- v0.2.1 source now logs rate-limited pad connect/disconnect, button-mask transitions, pad API errors, and named PS-menu callbacks. Full Lima sanitizer/host suite, PPU component compile, and standalone PPU app compile/link passed. Package build is next.
+- Display visibility and the user's subjective audio quality are not confirmed. The capped log wrapped; current counters are interval evidence, not complete-session totals.
+- Next: commit/push the source and evidence after privacy review, then build finalized v0.2.1 / SFO 00.41 from that exact commit, install/launch using the already-authorized FTP/webMAN path, and collect button transitions during a short test.

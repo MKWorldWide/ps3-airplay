@@ -58,6 +58,10 @@ static int presentation_failed;
 static uint64_t screen_flips;
 static int last_pad_mask;
 static int last_pad_result;
+static int pad_info_error_logged;
+static int pad_data_errors[MAX_PORT_NUM];
+static int pad_button_state_seen[MAX_PORT_NUM];
+static unsigned int last_pad_buttons[MAX_PORT_NUM];
 static raop_receiver receiver;
 static raop_mdns_service mdns_service;
 static raop_crypto_context crypto_context;
@@ -89,15 +93,21 @@ static void on_system_event(u64 status, u64 param, void *userdata)
 	(void)param;
 	(void)userdata;
 	(void)log_event("SYSUTIL_EVENT", (int)status, 0);
-	if (status == SYSUTIL_MENU_OPEN) system_menu_open = 1;
+	if (status == SYSUTIL_MENU_OPEN) {
+		system_menu_open = 1;
+		(void)log_event("SYSUTIL_MENU_OPEN", 1, 0);
+	}
 	if (status == SYSUTIL_MENU_CLOSE) {
-  system_menu_open = 0;
-  presentation_failed = 0;
-  diagnostic_screen_invalidate(&screen);
-  (void)log_event("SCREEN_RESUME_REQUEST", 0, 0);
- }
-	if (status == SYSUTIL_EXIT_GAME)
+		system_menu_open = 0;
+		presentation_failed = 0;
+		diagnostic_screen_invalidate(&screen);
+		(void)log_event("SYSUTIL_MENU_CLOSE", 0, 0);
+		(void)log_event("SCREEN_RESUME_REQUEST", 0, 0);
+	}
+	if (status == SYSUTIL_EXIT_GAME) {
+		(void)log_event("SYSUTIL_EXIT_GAME", (int)status, 0);
 		exit_requested = 1;
+	}
 }
 
 static int log_event(const char *event, int value, size_t bytes)
@@ -113,25 +123,81 @@ static int log_event(const char *event, int value, size_t bytes)
 
 static void poll_controls(int enabled)
 {
- padInfo info;
- int pad;
- sysUtilCheckCallback();
- if (!enabled) return;
- last_pad_result = ioPadGetInfo(&info);
- if (last_pad_result != 0) return;
- last_pad_mask = 0;
- for (pad = 0; pad < MAX_PADS; ++pad) {
-  padData data;
-  if (!info.status[pad]) continue;
-  last_pad_mask |= 1 << pad;
-  memset(&data, 0, sizeof(data));
-  last_pad_result = ioPadGetData((u32)pad, &data);
-  if (last_pad_result == 0 && data.len > 0 && data.BTN_START) {
-   (void)log_event("USER_EXIT_START", pad, 0);
-   exit_requested = 1;
-   break;
-  }
- }
+    padInfo info;
+    int pad;
+    unsigned int connected_mask = 0;
+
+    sysUtilCheckCallback();
+    if (!enabled)
+        return;
+
+    last_pad_result = ioPadGetInfo(&info);
+    if (last_pad_result != 0) {
+        if (!pad_info_error_logged) {
+            (void)log_event("PAD_INFO_FAILED", last_pad_result, 0);
+            pad_info_error_logged = 1;
+        }
+        return;
+    }
+    if (pad_info_error_logged) {
+        (void)log_event("PAD_INFO_RECOVERED", 0, 0);
+        pad_info_error_logged = 0;
+    }
+
+    for (pad = 0; pad < MAX_PORT_NUM; ++pad) {
+        padData data;
+        unsigned int buttons = 0;
+        int data_result;
+
+        if (!info.status[pad]) {
+            if (last_pad_mask & (1U << pad)) {
+                (void)log_event("PAD_DISCONNECTED", pad, 0);
+                pad_button_state_seen[pad] = 0;
+                last_pad_buttons[pad] = 0;
+            }
+            continue;
+        }
+
+        connected_mask |= 1U << pad;
+        if (!(last_pad_mask & (1U << pad)))
+            (void)log_event("PAD_CONNECTED", pad, 0);
+
+        memset(&data, 0, sizeof(data));
+        data_result = ioPadGetData((u32)pad, &data);
+        if (data_result != 0 || data.len <= 0) {
+            if (data_result != 0 && pad_data_errors[pad] != data_result) {
+                (void)log_event("PAD_DATA_FAILED", data_result,
+                    (size_t)pad);
+                pad_data_errors[pad] = data_result;
+            }
+            continue;
+        }
+        if (pad_data_errors[pad] != 0) {
+            (void)log_event("PAD_DATA_RECOVERED", pad, 0);
+            pad_data_errors[pad] = 0;
+        }
+
+        buttons |= data.BTN_START ? 1U << 0 : 0;
+        buttons |= data.BTN_SELECT ? 1U << 1 : 0;
+        buttons |= data.BTN_CROSS ? 1U << 2 : 0;
+        buttons |= data.BTN_CIRCLE ? 1U << 3 : 0;
+        buttons |= data.BTN_UP ? 1U << 4 : 0;
+        buttons |= data.BTN_DOWN ? 1U << 5 : 0;
+        buttons |= data.BTN_LEFT ? 1U << 6 : 0;
+        buttons |= data.BTN_RIGHT ? 1U << 7 : 0;
+        if (!pad_button_state_seen[pad] || buttons != last_pad_buttons[pad]) {
+            (void)log_event("PAD_BUTTONS", (int)buttons, (size_t)pad);
+            pad_button_state_seen[pad] = 1;
+            last_pad_buttons[pad] = buttons;
+        }
+
+        if (data.BTN_START) {
+            (void)log_event("USER_EXIT_START", pad, 0);
+            exit_requested = 1;
+            break;
+        }
+    }
+    last_pad_mask = (int)connected_mask;
 }
 
 static int local_ipv4(uint8_t address[4])
