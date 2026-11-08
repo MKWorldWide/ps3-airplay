@@ -2,7 +2,7 @@
 
 AIRPLAY02 follows conservative pre-1.0 versioning. Increment the patch number for each distinct fix or small improvement that produces a new package: `0.1.4`, `0.1.5`, `0.1.6`, and so on. Never reuse a published or tested version number for different package contents. Record the exact package hash beside every result.
 
-**Latest hardware-tested package:** AIRPLAY02 `0.2.2`, SFO `00.42`. Manual reboot/direct XMB launch reproduced the no-buttons report. User confirms PS was pressed first and the system menu never appeared visibly. Source review found a concrete START fallback gap: raw START is normalized into `buttons`, but exit checked only `data.BTN_START`. Candidate v0.2.3 / SFO `00.43` fixes that path; build and hardware validation pending. PS-menu visibility remains unresolved.
+**Latest installed package:** AIRPLAY02 `0.2.3`, SFO `00.43`. Installed SFO and EBOOT match the validated PKG. The v0.2.3 controller behavior is not yet tested: a webMAN launch request returned HTTP 200 but the console remained at XMB with no new `APP_START`. On v0.2.2, the user pressed PS first and the menu never appeared visibly. v0.2.3 connects the normalized START state to the clean-exit action; test START first from XMB. PS-menu visibility remains unresolved.
 
 ## v0.2.0 candidate package record
 
@@ -38,6 +38,16 @@ AIRPLAY02 follows conservative pre-1.0 versioning. Increment the patch number fo
 - Hardware: uploaded to a new versioned package path, downloaded back byte-identically, installed via webMAN, and launched. Installed SFO matches exactly; installed EBOOT matches the package payload plus 32 zero bytes.
 - Controller result: user reports START and PS still do nothing. Latest 2,340-byte log (SHA-256 `010188b420884a0233e7cc04abfc17d8f0dcbf2c88aeee78a2107f38c6229f8f`) records `PAD_REPORTS=0` in the first two heartbeat windows. The PS menu-open callback fires, followed by two pad reports but no raw digital-mask change, no START event, and no menu-close event. Manual reboot/direct launch comparison completed with the same reported failure; do not issue remote launch/exit commands during user-controlled testing.
 - Artifact is preserved under ignored `work/builds/0.2.2/`. The raw log remains private under ignored `work/hardware/`.
+
+## v0.2.3 START fallback candidate
+
+- Source: `5a04d93459611df730cc0b0f2d6f2afe84903b86` on `main`.
+- Change: START exit now tests the normalized mask that combines PSL1GHT's `BTN_START` and raw `PAD_CTRL_START` representations.
+- Package: `ps3-airplay-receiver-0.2.3.pkg`, AIRPLAY02, app marker `0.2.3`, SFO `00.43`, type-1 debug package.
+- Size / SHA-256: 3,232,112 bytes / `756ac28147e98a37222279c607208639f157ddd4395bd2f4dfad8816ff4581b4`.
+- ELF: 2,754,776 bytes, CellOS PPC64; SHA-256 `59f42ec05dc233c7450abfd2303f4fb929caf835dbc0d582e8164448b53b20fd`.
+- Validation: full Lima host/ASan/UBSan suite, PPU component checks, standalone PPU build, ELF/SFO/content ID/assets/extraction/package checks passed.
+- Deployment: FTP staged under a new filename and downloaded back with identical hash. webMAN installed while preserving the staged PKG. Installed SFO validates as 00.43; installed EBOOT is byte-identical to the 451,632-byte package SELF. A subsequent webMAN launch request returned HTTP 200 but left the console at XMB; log contained no new APP_START. Controller test pending; no runtime fix is claimed.
 
 ## Milestones
 

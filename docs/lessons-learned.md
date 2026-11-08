@@ -620,3 +620,10 @@ The v0.1.31 fresh RPCS3 replay verifies the portable-arithmetic correction: the 
 - **Root Cause:** The fallback was wired into diagnostic/normalized button state but not into the action condition.
 - **Fix:** Use the normalized START bit for the exit action so either supported representation triggers the same behavior.
 - **Prevention Rule:** Keep input decoding and action dispatch on the same normalized state; add a focused regression check for fallback-driven START dispatch.
+
+## A webMAN HTTP success is not proof an app launched
+
+- **Problem:** The v0.2.3 webMAN play request returned HTTP 200, but the app log contained no new `APP_START` and webMAN still reported XMB.
+- **Root Cause:** The HTTP response confirms command handling, not successful title start.
+- **Fix:** Require a fresh app-version/startup log and matching runtime state before recording launch as PASS; hand off to a direct XMB launch if the remote command does not start it.
+- **Prevention Rule:** Track upload, install, launch, runtime input, and user-visible behavior as separate gates.

@@ -27,4 +27,4 @@ The manual launch did not change the reported behavior, so webMAN launch is not 
 
 ## Next controlled observation
 
-The user confirms PS was pressed first and the system menu never appeared visibly. Source inspection then found the START fallback was incomplete: normalized `buttons` included raw `PAD_CTRL_START`, but the exit action still checked only `data.BTN_START`. v0.2.3 changes the exit action to use the normalized state. After that candidate is built and installed, test START first; this will not establish that the PS menu is fixed.
+The user confirms PS was pressed first and the system menu never appeared visibly. Source inspection then found the START fallback was incomplete: normalized `buttons` included raw `PAD_CTRL_START`, but the exit action still checked only `data.BTN_START`. v0.2.3 changes the exit action to use the normalized state. It built and installed successfully (see the v0.2.3 package record in `docs/VERSIONING.md`). A webMAN launch request returned HTTP 200 but left the console at XMB without a new `APP_START`; the user still needs to launch v0.2.3 from XMB and test START first. This does not establish that the PS menu is fixed.

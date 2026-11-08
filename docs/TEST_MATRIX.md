@@ -38,7 +38,8 @@
 
 | Test | Result | Boundary |
 |---|---|---|
-| START action uses normalized digital state | PASS by source inspection: action condition now consumes the same normalized bit that includes the raw `PAD_CTRL_START` fallback. | PPU build, package validation, and PS3 START-first hardware retest pending. |
+| START action uses normalized digital state | PASS: action condition consumes the same normalized bit that includes the raw `PAD_CTRL_START` fallback. Full Lima host/sanitizer and PPU builds passed. | Package v0.2.3 is installed; hardware test pending because remote launch returned to XMB without APP_START. |
+| v0.2.3 package/deployment identity | PASS: 3,232,112-byte type-1 debug package, SHA-256 `756ac28147e98a37222279c607208639f157ddd4395bd2f4dfad8816ff4581b4`; FTP download-back matched. Installed SFO 00.43 and 451,632-byte EBOOT match. | Installation confirmed; launch and controller runtime not confirmed. |
 | PS-button visible system menu | FAIL by user report on v0.2.2: PS pressed first, no menu appeared visibly. | v0.2.3 changes only the START action path and does not claim to fix PS-menu presentation. |
 
 This matrix distinguishes portable host evidence and cross-build evidence from real hardware validation. Update rows only when the listed scenario is actually exercised.
