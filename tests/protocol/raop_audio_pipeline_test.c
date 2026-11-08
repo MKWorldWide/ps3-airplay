@@ -4,6 +4,7 @@
 #include "../../src/crypto/raop_crypto.h"
 #include "../../src/protocol/raop_receiver.h"
 #include "../../src/audio/pcm_ring.h"
+#include "../../src/audio/pcm_spsc.h"
 
 #include <arpa/inet.h>
 #include <assert.h>
@@ -132,12 +133,17 @@ static void verify_socket_audio_pipeline(raop_crypto_context *crypto,
 	raop_rtp_frame frame;
 	raop_alac_decoder *decoder;
 	raop_pcm_ring ring;
+	raop_pcm_spsc decoded_queue;
 	struct sockaddr_in address;
 	uint8_t pcm[RAOP_ALAC_PCM_MAX];
+	int16_t queued_pcm[RAOP_ALAC_PCM_MAX / sizeof(int16_t)];
+	float output[256U * 2U];
 	uint8_t rtp_packet[12 + RAOP_RTP_PAYLOAD_MAX] = {0x80, 96};
 	char sdp[1024], request[2048], response[RAOP_SESSION_RESPONSE_MAX];
 	int client_fd, sender_fd, request_length;
 	size_t pcm_length = 0;
+	size_t queued_frames;
+	size_t rendered_frames;
 	uint32_t samples = 0;
 	unsigned int attempt;
 	static const char setup_transport[] =
@@ -236,14 +242,31 @@ static void verify_socket_audio_pipeline(raop_crypto_context *crypto,
 		pcm, sizeof(pcm), &pcm_length, &samples));
 	assert(samples == 353 && pcm_length == expected_length);
 	assert(memcmp(pcm, expected, expected_length) == 0);
+	raop_pcm_spsc_init(&decoded_queue);
+	assert(raop_pcm_spsc_push_le16(&decoded_queue, pcm, pcm_length, 2, 1) ==
+		samples);
+	queued_frames = raop_pcm_spsc_pop(&decoded_queue, queued_pcm, samples, 1);
+	assert(queued_frames == samples);
 	raop_pcm_ring_init(&ring, 2);
-	assert(raop_pcm_ring_push_le16(&ring, pcm, pcm_length) == samples);
+	assert(raop_pcm_ring_push_native(&ring, queued_pcm, queued_frames) == samples);
 	assert(ring.frames_written == samples && ring.count == samples);
+	rendered_frames = raop_pcm_ring_render_float(&ring, 44100, 48000,
+		output, 256);
+	assert(rendered_frames == 256 && ring.output_underflows == 0);
+	{
+		float peak = 0.0f;
+		for (size_t i = 0; i < rendered_frames * 2U; ++i) {
+			float magnitude = output[i] < 0.0f ? -output[i] : output[i];
+			if (magnitude > peak)
+				peak = magnitude;
+		}
+		assert(peak > 0.01f);
+	}
 	raop_alac_destroy(decoder);
 	close(sender_fd);
 	close(client_fd);
 	raop_receiver_close(&receiver);
-	puts("RAOP TCP RTSP + UDP RTP + decrypt + ALAC + PCM ring loopback: PASS");
+	puts("RAOP RTSP + encrypted RTP + ALAC + SPSC + 44.1-to-48 kHz output: PASS");
 }
 
 static void receive_rtsp_response(int fd, char *response, size_t capacity)

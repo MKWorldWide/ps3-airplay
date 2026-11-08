@@ -132,6 +132,7 @@ cc -std=c11 -Wall -Wextra -Werror -g -fsanitize=address,undefined \
 	"$PROJECT_ROOT/src/codec/alac.c" \
 	"$PROJECT_ROOT/src/codec/raop_alac.c" \
 	"$PROJECT_ROOT/src/audio/pcm_ring.c" \
+	"$PROJECT_ROOT/src/audio/pcm_spsc.c" \
 	"$PROJECT_ROOT/src/observability/receiver_log.c" \
 	"$PROJECT_ROOT/tests/protocol/raop_audio_pipeline_test.c" \
 	"$HOST_LIBRARY" -lm -pthread -o "$RAOP_PIPELINE_TEST"

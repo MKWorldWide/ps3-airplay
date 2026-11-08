@@ -1,6 +1,6 @@
 # AIR PS3 Resident Development Report
 
-**Updated:** 2026-11-08 19:11 EDT
+**Updated:** 2026-11-08 19:22 EDT
 **Branch:** `experimental/resident-airplay`
 **Source baseline:** `53e24116e8d9a26db80deeafd568be72bf8cf6d6`
 **Scope:** RPCS3 lifecycle and diagnostic harness; no physical PS3 was contacted.
@@ -79,6 +79,30 @@ PKG `d803bfd2daf94e6dbf7a61434330077f5e5b55418831d389a12ffbf0fb888a3c`.
 The earlier trace-only package is preserved in ignored output. RPCS3 remains
 unrun for both candidates because the desktop is still locked.
 
+## Host receive-to-output integration (2026-11-08 19:17 EDT)
+
+Extended the Lima RAOP socket integration test so a successfully decrypted and
+ALAC-decoded frame passes through the bounded SPSC queue, into the production
+PCM ring, and through its 44.1-to-48 kHz float renderer. The build script now
+links the queue implementation into this test. The targeted binary passed
+under ASan/UBSan: exact PCM comparison passed, 353 decoded frames were queued
+and consumed, 256 output frames rendered with no underflow, and output peak
+exceeded the non-silence threshold. This is host receive-to-PCM-render evidence;
+it does not exercise PS3 `cellAudio`, the resident PRX, audible output, or
+RPCS3.
+
+The complete `scripts/build-lima-crypto.sh` gate was rerun after synchronizing
+the edited files into Lima and verifying matching SHA-256 values. All RAOP
+crypto, RTSP/SDP, mDNS, socket loopback, encrypted ALAC, logging, PCM ring,
+resampling/gain, diagnostic tone, ASan/UBSan, and PPU component-object checks
+passed. The initial attempt had run against stale Lima copies and is excluded
+from the passing result.
+
+The RPCS3 UI remains inaccessible while the Mac reports locked. The latest
+atomic-publication candidate has not been run there, so the cycle-three fault
+and missing post-cycle module count remain unresolved. Hardware readiness stays
+NOT READY.
+
 **Hardware readiness: NOT READY.** First isolate the RPCS3 thread-exit fault,
 restore three clean audio-enabled cycles with module count at baseline after
 each, then validate a synthetic RAOP stream through decode and PCM output.
@@ -88,14 +112,14 @@ Only a later reviewed gate may propose a nonpersistent hardware test.
 
 | Area | Status | Current observation |
 |---|---|---|
-| Resident bounded PCM path | PASS (structural/host) | Decoded PCM queue, existing resampler, prebuffer, and cellAudio output worker are implemented; host API mocks pass. |
+| Resident bounded PCM path | PASS (structural/host) | Decoded PCM queue, existing resampler, prebuffer, and cellAudio output worker are implemented; host API mocks and a receive-to-render pipeline test pass. |
 | RPCS3 fake-SPRX load/start | PASS | The harness package loads and the PRX reaches ready state. The raw PRX is not accepted by this RPCS3 configuration. |
 | Audio submission in RPCS3 | PASS (API submission only) | Resident diagnostic PCM and foreground tone submissions succeeded through separate ports. Sound was not independently confirmed. |
 | Two-port coexistence | PASS (submission only) | Both ports accepted audio submissions during the test interval; this does not establish real mixing quality or game coexistence. |
 | Three-cycle audio teardown | FAIL | Cycles 1 and 2 passed; cycle 3 crashed in the resident audio thread at a null execution target. The reported module offset is not reliably mapped to a named PRX function. |
 | Cycle-3 module baseline | UNTESTED | Crash occurred before stop/unload completion and baseline query. |
 | Instrumented RPCS3 rerun | BLOCKED | Latest trace plus atomic-publication build is ready, but RPCS3 UI reported the Mac locked before package installation. |
-| Synthetic RAOP decode-to-output | UNTESTED | No RAOP packets were sent; only a diagnostics-only PCM seed exercised output. |
+| Synthetic RAOP decode-to-output | PASS (host PCM render) / UNTESTED (RPCS3) | Lima socket test sends encrypted RTP through decrypt, ALAC, SPSC, PCM ring, and 44.1-to-48 kHz rendering without underflow. No PRX/RPCS3 receive-to-audio run or audible output is established. |
 | Physical console / Cobra / in-game audio | UNTESTED | No physical PS3 was contacted. |
 
 ## Earlier lifecycle-only checkpoint (superseded)
@@ -168,11 +192,12 @@ successful run is the passing lifecycle result.
    heap usage, and every external resource were not independently measured.
 3. `sysThreadJoin` is called only after the worker signals cleanup completion,
    but the join itself has no timeout and was exercised only in RPCS3.
-4. The resident has no latency-sized PCM playback queue, playback clock,
-   resampling-to-audio-port loop, or `cellAudio` output backend; decoded PCM is
-   discarded.
-5. No synthetic RAOP packet flow, audio output, foreground source, or physical
-   console was tested in this pass.
+4. The resident now has a bounded PCM queue and `cellAudio` output worker, but
+   RPCS3 audio-thread shutdown failed on cycle three. The exact fault remains
+   unknown; output submission is not proof of audible output.
+5. Host synthetic RAOP receive-to-PCM render is tested, but no synthetic RAOP
+   packet flow has yet run through the resident PRX in RPCS3. No physical
+   console was tested.
 
 ## Candidate artifacts and SHA-256
 

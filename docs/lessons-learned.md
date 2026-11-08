@@ -877,3 +877,10 @@ The v0.1.31 fresh RPCS3 replay verifies the portable-arithmetic correction: the 
 - **Root Cause:** The readiness flag crossed a PPU-thread boundary without atomic synchronization, leaving a C data race and no explicit publication order for the queue/thread state.
 - **Fix:** Initialize the queue first, publish the ready flag with a release store before creating the audio worker, read it with acquire semantics in the receiver, and clear it atomically on creation failure and after join.
 - **Prevention Rule:** Any lifecycle flag observed by a different worker thread must use an explicit atomic publication/read pattern; do not infer safety from likely hardware cache coherence.
+
+## Validate receive-to-render integration separately from audio-device output
+
+- **Problem:** Existing encrypted RTP/ALAC tests stopped at a PCM ring push, so they could pass while queue handoff, resampling, or output-frame rendering was broken.
+- **Root Cause:** Protocol/decode correctness and output-buffer production were tested in separate units without an integration assertion joining them.
+- **Fix:** The host RAOP socket test now transfers exact decoded PCM through the bounded SPSC queue into the production PCM ring, renders 256 frames at 48 kHz, checks underflow and non-silence, and runs under ASan/UBSan.
+- **Prevention Rule:** Keep host receive/decode/render validation distinct from console audio submission and audible-output claims; each proves a separate stage.
