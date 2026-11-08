@@ -8,7 +8,7 @@ Changed the manual release workflow to locate the exact draft release by tag, ve
 
 ## Why this pass was needed
 
-The first workflow run validated the tag/source relationship but failed at `gh release download` with “release not found”. The draft's browser URL remained a synthetic `untagged-*` URL. The owner CLI and direct authenticated asset-ID API download both worked, showing a mismatch in tag-based draft asset resolution under the workflow token context.
+Both observed workflow runs failed at the initial `gh release view "$RELEASE_TAG" --json isDraft` check with “release not found”. Neither run reached `gh release download` or the API asset-ID retrieval. The owner CLI and direct authenticated asset-ID API download work locally, but the exact Actions token behavior remains unproven.
 
 ## Files changed
 
@@ -20,7 +20,7 @@ The first workflow run validated the tag/source relationship but failed at `gh r
 
 ## Architecture / logic changes
 
-The validation job now lists authenticated draft releases for the supplied tag, requires exactly one, checks its exact 10-file asset set, checks every asset state and basename, downloads by release asset ID using `Accept: application/octet-stream`, and verifies downloaded sizes before continuing. The publish job also locates the draft by tag through the release list API instead of the tag-specific lookup endpoint. Tag/source SHA checks remain strict. The release source SHA must be an ancestor of main so a follow-up workflow-only fix can be tested without moving the already verified release tag.
+The validation job lists draft releases for the supplied tag through the Releases API, requires exactly one, checks its exact 10-file asset set, checks every asset state and basename, downloads by release asset ID using `Accept: application/octet-stream`, and verifies downloaded sizes before continuing. The publish job also locates the draft by tag through the release list API instead of the tag-specific lookup endpoint. Tag/source SHA checks remain strict. The release source SHA must be an ancestor of main so a follow-up workflow-only fix can be tested without moving the already verified release tag.
 
 ## Runtime behavior changes
 
@@ -28,10 +28,10 @@ No application change. The publishing workflow performs an authenticated API-bas
 
 ## Validation performed
 
-- First Actions run 42468111811: tag/source validation passed; asset download failed with “release not found”; publish job did not run.
+- First Actions run 42468111811 and second run 42468417377: tag/source validation passed; the initial `gh release view` command failed with “release not found”; neither run reached asset retrieval and neither publish job ran.
 - Owner CLI `gh release download` retrieved the draft package.
 - Authenticated REST download by asset ID retrieved a 3,906,640-byte package matching SHA-256 `b815536168c5c1994ff6a5bb79f4aa16ffed6720691239bd9066e0a9e2075c43`.
-- The corrected workflow code will be re-run against the same unchanged v1.0.0 tag and package evidence.
+- The current uncommitted workflow removes the failing CLI lookup and will be re-run against the same unchanged v1.0.0 tag and package evidence.
 
 ## Immediate results
 
@@ -39,7 +39,7 @@ Draft is retained and remains unpublished. Tag v1.0.0 still points to the exact 
 
 ## Known limitations / follow-ups
 
-The corrected workflow has not yet run on GitHub. It must pass asset enumeration/download, exact set/size checks, SHA256SUMS, release-evidence verification, then publish. If GitHub Actions token cannot read draft assets by API ID, report the failure and keep the release as a draft.
+The current workflow has not yet run on GitHub. It must pass API draft enumeration/download, exact set/size checks, SHA256SUMS, release-evidence verification, then publish. If the Actions token cannot read draft assets by API ID, report the observed stage and keep the release as a draft.
 
 ## Risks introduced
 
@@ -49,10 +49,10 @@ The workflow now allows the exact tagged release source to be an ancestor of the
 
 ### Decision: Use authenticated release asset IDs for draft downloads
 
-- **Context:** Tag-based CLI download failed in Actions although the same draft and assets were accessible through the API by ID.
+- **Context:** Both failed runs show `gh release view` returned “release not found”; API download by asset ID was verified locally, not in Actions.
 - **Options considered:** Publish directly, weaken package checks, or adapt only the download mechanism while preserving the original validation steps.
 - **Choice:** Adapt retrieval to authenticated release/asset IDs and keep all checksums, expected files, source identity, and package evidence validation.
-- **Tradeoffs accepted:** The workflow has a small Python retrieval block and must permit an unchanged tagged source to remain an ancestor of main after workflow-only fixes.
+- **Tradeoffs accepted:** The workflow has a small Python retrieval block and must permit an unchanged tagged source to remain an ancestor of main after workflow-only fixes. The Actions token's draft visibility remains to be established by the next run.
 
 ## Next recommended step
 

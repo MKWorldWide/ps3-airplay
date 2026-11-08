@@ -780,9 +780,9 @@ The v0.1.31 fresh RPCS3 replay verifies the portable-arithmetic correction: the 
 - **Fix:** Restore the documented status marker and keep explanatory context in surrounding text; retain the evidence verifier as the independent source/hash check.
 - **Prevention Rule:** Treat release-gate headings and row states as a script interface; add a regression check if the schema is changed.
 
-## Download draft release assets by release and asset ID
+## Locate the precise failing step for draft release access
 
-- **Problem:** The GitHub Actions job passed draft lookup but `gh release download TAG` returned not found for a draft release.
-- **Root Cause:** The draft had a synthetic `untagged-*` browser URL; tag-based download failed in the workflow context although authenticated release/asset-ID API calls worked. The precise GitHub CLI/token interaction is not established.
-- **Fix:** Enumerate the authenticated draft release and its exact asset set, then download uploaded assets by API asset ID with the octet-stream accept header. Keep size, SHA256SUMS, release-evidence, and exact-source checks.
-- **Prevention Rule:** Test the workflow using a real draft release and the same token permissions; distinguish draft release identity from its temporary browser URL.
+- **Problem:** The second GitHub Actions release validation run failed with `release not found` before draft asset enumeration began.
+- **Root Cause:** The failed command was `gh release view TAG --json isDraft`; the Actions token could not resolve that draft through this CLI command. The log does not establish why, and the API asset-ID path was never reached in that run.
+- **Fix:** Remove the redundant tag-based CLI lookup. Resolve the draft using the Releases API, require exactly one matching draft, then validate and download its exact asset set by ID. Preserve all size, checksum, release-evidence, and source checks.
+- **Prevention Rule:** Inspect the command-grouped Actions log to identify the earliest failed command. Do not attribute an API path or draft URL behavior until the log proves that path ran.

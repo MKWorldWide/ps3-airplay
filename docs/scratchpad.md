@@ -1,8 +1,8 @@
 # Current scratchpad
 
-- Task: publish existing AIR PS3 v1.0.0; no next-version work and no PS3/RPCS3 operations.
-- Release source/tag `e1fdb44b03e2beb048954aded0eda5ae11248215`; exact Lima build passed. PKG is 3,906,640 bytes, SHA-256 `b815536168c5c1994ff6a5bb79f4aa16ffed6720691239bd9066e0a9e2075c43`, app `1.0.0`, SFO `01.00`.
-- All 10 release assets are in a draft, hash-checked locally. Draft tag is v1.0.0; its browser URL is still synthetic until publication. No release is published.
-- First Actions run verified tag/source, then failed because tag-based `gh release download` could not resolve draft assets with the workflow token. Authenticated asset-ID download succeeded locally. Workflow is patched to fetch draft assets through the Releases API, check exact set/state/sizes, then run original hashes/evidence checks.
-- Next: privacy-review and commit/push workflow/docs fix to main, dispatch workflow again with tag SHA and package hash, wait for validation/publish, verify release URL and exact asset hashes. Tag stays pinned to its verified release-source commit; the workflow-only follow-up commit does not change the package source.
-- Issues #1/#2 closed on historical evidence; #3–#6 open. No console changed.
+- Task: complete publication of the existing AIR PS3 v1.0.0 release; do not start next-version features or touch a PS3/RPCS3.
+- Release remains draft. Tag `v1.0.0` is pinned to source `e1fdb44b03e2beb048954aded0eda5ae11248215`. PKG: 3,906,640 bytes; SHA-256 `b815536168c5c1994ff6a5bb79f4aa16ffed6720691239bd9066e0a9e2075c43`; app `1.0.0`, SFO `01.00`.
+- Evidence correction: Actions runs 42468111811 and 42468417377 both failed at `gh release view TAG --json isDraft` with `release not found`. Neither reached `gh release download` nor API asset retrieval. Do not infer why the Actions token cannot resolve the draft.
+- Current workflow removes that CLI check and uses Releases API lookup plus asset IDs, exact inventory/state/size validation, existing checksum/evidence verification, and only then publish. Local API success does not prove Actions-token access.
+- Next: validate YAML and diff, run privacy gate, commit/push as EsKaye, dispatch against the immutable tag/source/hash, inspect exact failing stage. Publish only after all validation steps pass; then verify public URL, asset list and PKG hash.
+- No console was changed. Keep draft unpublished if runner access or validation fails.

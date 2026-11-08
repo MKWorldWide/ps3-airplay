@@ -46,7 +46,6 @@ jobs:
           GH_REPO: ${{ github.repository }}
           RELEASE_TAG: ${{ inputs.tag }}
         run: |
-          test "$(gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft)" = "true"
           mkdir -p build/release-assets
           python3 - <<'PY'
           import os
@@ -61,19 +60,26 @@ jobs:
               "MBED-TLS-3.6.7-LICENSE.txt", "PS3DK-LICENSE.txt", "PSL1GHT-LICENSE.txt",
               "PSL1GHT-RSX-LICENSE.txt",
           }
-          release_ids = subprocess.check_output(
-              ["gh", "api", f"repos/{repo}/releases", "--paginate", "--jq",
-               '.[] | select(.tag_name == env.RELEASE_TAG and .draft == true) | .id'],
-              text=True,
-          ).split()
+          try:
+              release_ids = subprocess.check_output(
+                  ["gh", "api", f"repos/{repo}/releases", "--paginate", "--jq",
+                   '.[] | select(.tag_name == env.RELEASE_TAG and .draft == true) | .id'],
+                  text=True,
+              ).split()
+          except subprocess.CalledProcessError as error:
+              raise SystemExit(f"could not list draft releases (gh exit {error.returncode})")
           if len(release_ids) != 1:
               raise SystemExit("expected exactly one draft release for the selected tag")
           release_id = release_ids[0]
-          rows = subprocess.check_output(
-              ["gh", "api", f"repos/{repo}/releases/{release_id}/assets", "--paginate", "--jq",
-               '.[] | [.id, .name, .size, .state] | @tsv'],
-              text=True,
-          ).splitlines()
+          print("located one matching draft release")
+          try:
+              rows = subprocess.check_output(
+                  ["gh", "api", f"repos/{repo}/releases/{release_id}/assets", "--paginate", "--jq",
+                   '.[] | [.id, .name, .size, .state] | @tsv'],
+                  text=True,
+              ).splitlines()
+          except subprocess.CalledProcessError as error:
+              raise SystemExit(f"could not list draft assets (gh exit {error.returncode})")
           assets = [line.split("\t") for line in rows]
           names = [row[1] for row in assets if len(row) == 4]
           if len(names) != len(expected) or set(names) != expected:
@@ -82,12 +88,16 @@ jobs:
           for asset_id, name, size, state in assets:
               if state != "uploaded" or pathlib.Path(name).name != name:
                   raise SystemExit("draft contains an invalid asset record")
+              print(f"downloading draft asset {name}")
               with (out / name).open("wb") as target:
-                  subprocess.run(
-                      ["gh", "api", f"repos/{repo}/releases/assets/{asset_id}",
-                       "-H", "Accept: application/octet-stream"],
-                      check=True, stdout=target,
-                  )
+                  try:
+                      subprocess.run(
+                          ["gh", "api", f"repos/{repo}/releases/assets/{asset_id}",
+                           "-H", "Accept: application/octet-stream"],
+                          check=True, stdout=target,
+                      )
+                  except subprocess.CalledProcessError as error:
+                      raise SystemExit(f"draft asset download failed for {name} (gh exit {error.returncode})")
               if (out / name).stat().st_size != int(size):
                   raise SystemExit(f"downloaded asset size mismatch: {name}")
           print(f"downloaded {len(names)} authenticated draft assets for {tag}")
