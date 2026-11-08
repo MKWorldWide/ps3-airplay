@@ -584,3 +584,17 @@ The v0.1.31 fresh RPCS3 replay verifies the portable-arithmetic correction: the 
 - **Root Cause:** The diagnostic only recorded `ioPadGetInfo` result and a connection bit. It did not record button states or named system-menu callbacks, so it could not show whether START reached the app or the PS event reached sysutil.
 - **Fix:** Add privacy-safe button-mask transitions, pad connect/disconnect and data errors, and named menu-open/menu-close/exit events. Keep the existing webMAN exit as the tested recovery path.
 - **Prevention Rule:** Report controller API health, pad presence, button transitions, system callback delivery, and app exit as separate signals. Never infer working controls from a present pad.
+
+## Installed SELF may have a zero-padded tail
+
+- **Problem:** The installed EBOOT hash differed from the package extraction during v0.2.0 and v0.2.1 checks.
+- **Root Cause:** The installed EBOOT was 48 bytes longer; the extracted package SELF matched the installed file byte-for-byte as a prefix and the added tail was zero-filled.
+- **Fix:** Verify SFO identity, compare the exact package SELF-length prefix, and inspect the extra tail before concluding the installed payload changed.
+- **Prevention Rule:** Record exact lengths and compare the package payload prefix before treating a whole-file hash mismatch as a build/install failure.
+
+## PS menu event delivery does not prove visible controller support
+
+- **Problem:** The v0.2.1 retest was inconsistent: the user reports START exited once, then START and PS stopped responding after relaunch.
+- **Root Cause:** The latest log records a PS menu-open callback, but no close callback, START transition, or button transition after the initial zero sample. `PAD_HEALTH` only proves the pad info call succeeded and a port is present; it does not prove fresh button reports arrived. The log cannot prove the menu was visible.
+- **Fix:** Preserve the separate signals. The next diagnostic pass should log raw digital pad masks and positive report counts, and recognize START from both the PSL1GHT field and its documented raw mask.
+- **Prevention Rule:** Do not infer working controls from pad presence or callback delivery. Correlate raw pad reports, normalized state transitions, sysutil open/close, user-visible menu state, and cleanup.

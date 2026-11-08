@@ -26,7 +26,9 @@
 |---|---|---|
 | Standalone PPU compile/link with changed poller | PASS with `-Wall -Wextra -Werror`. | Package not yet generated. |
 | Full Lima host/sanitizer and PPU component suite | PASS, including RTSP/RTP integration, encrypted RTP-to-ALAC/PCM, ALAC mutation checks, PCM quality/gain, and PPU object checks. | Does not exercise physical controller input. |
-| Package and controller hardware retest | PENDING. | Planned as v0.2.1 / SFO 00.41. |
+| v0.2.1 finalized package | PASS: 3,231,920 bytes, SHA-256 `f45b2935213dc1cfa62cfc70f958fc7a240925979fbe7aa779822a1a4a8a2c50`; SFO 00.41; extracted payload and envelope validated. | Host/package boundary only. |
+| v0.2.1 install and launch | PASS: installed SFO 00.41; EBOOT package payload prefix matched exactly with 48 zero padding bytes; webMAN launch produced fresh app-version log. | Current app is open; no streamed audio yet in this run. |
+| v0.2.1 input retest | INCONSISTENT: user reports START exited once, then START/PS stopped responding after relaunch. Latest log has no button transition or START exit; a PS menu-open callback occurs without a close callback. | Callback proves event delivery only; no visible menu confirmation. Next build should include raw pad masks and report counters to separate pad data from button mapping. |
 
 This matrix distinguishes portable host evidence and cross-build evidence from real hardware validation. Update rows only when the listed scenario is actually exercised.
 

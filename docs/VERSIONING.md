@@ -2,7 +2,7 @@
 
 AIRPLAY02 follows conservative pre-1.0 versioning. Increment the patch number for each distinct fix or small improvement that produces a new package: `0.1.4`, `0.1.5`, `0.1.6`, and so on. Never reuse a published or tested version number for different package contents. Record the exact package hash beside every result.
 
-**Latest hardware package:** AIRPLAY02 `0.2.0`, SFO `00.40`, installed and launched. The stream reached RTP decrypt, ALAC decode, and PCM submission, but the user reported that START and PS input did not work. The next targeted controller-diagnostics package is `0.2.1` / SFO `00.41`. Neither label claims that stable 0.2.0 acceptance has passed; controller support, settings/toggles, reliable exit, and sustained audio remain open.
+**Latest hardware package:** AIRPLAY02 `0.2.1`, SFO `00.41`, installed and launched. Hardware report is inconsistent: one START press exited to XMB, but after relaunch both controls reportedly stopped responding. The current log records a PS system-menu-open callback, no later close callback, and no START/button transition. This remains diagnostic, not a controller fix.
 
 ## v0.2.0 candidate package record
 
@@ -18,9 +18,14 @@ AIRPLAY02 follows conservative pre-1.0 versioning. Increment the patch number fo
 ## v0.2.1 controller-diagnostics candidate
 
 - Source change: add rate-limited controller connect/disconnect, button-mask transitions, input errors, and named PS-menu callbacks. Restrict presence-mask iteration to the seven PSL1GHT controller ports to avoid undefined wide shifts.
-- Artifact/build/hardware result: pending.
-- Requested app label: `0.2.1`; next SFO APP_VER: `00.41`.
-- This pass is diagnostic because v0.2.0 logs show pad presence but omit button state. No controller fix is claimed until fresh logs show button transitions and normal START/PS behavior.
+- Source: `27da6c5cef4b41b58b672dc7e275b16667790b6c` on `main`.
+- Artifact: `ps3-airplay-receiver-0.2.1.pkg`, AIRPLAY02, SFO APP_VER `00.41`.
+- Size / SHA-256: 3,231,920 bytes / `f45b2935213dc1cfa62cfc70f958fc7a240925979fbe7aa779822a1a4a8a2c50`.
+- ELF: CellOS PPC64, five PT_LOAD segments; SHA-256 `e875966c332610bb61e56f297b36eaaa69f74c190147c920d8c52a45ebfdc6c3`.
+- Build: Lima, PS3DK v0.27.0 PPU compiler 16.1.0, GNU ld 2.42, PSL1GHT `dd4e8c9be744e3273d665c393fa6d97a87402e2e`.
+- Checks: full Lima host/sanitizer suite, PPU component compile, standalone ELF validation, finalized package/SFO/content ID/extraction/EBOOT/assets/NPDRM checks PASS.
+- Hardware: installed through webMAN and launched. The latest 10,658-byte log (SHA-256 `8fd3a3e922808cca9b5182149f0a1aed6c236770381dea2c7a2a59a64602e8e7`) records a single start, pad port presence, initial button mask 0, and a PS menu-open callback at 00:58:05Z. No later `PAD_BUTTONS`, `USER_EXIT_START`, or menu-close event appears. The user reports START exited the first launch, then neither START nor PS worked after reopening. Treat PS callback as delivery, not proof the menu appeared.
+- Artifact is preserved in ignored `work/builds/0.2.1/`. This is a diagnostic candidate, not a controller fix or a stable milestone.
 
 ## Milestones
 
