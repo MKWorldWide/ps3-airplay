@@ -780,9 +780,9 @@ The v0.1.31 fresh RPCS3 replay verifies the portable-arithmetic correction: the 
 - **Fix:** Restore the documented status marker and keep explanatory context in surrounding text; retain the evidence verifier as the independent source/hash check.
 - **Prevention Rule:** Treat release-gate headings and row states as a script interface; add a regression check if the schema is changed.
 
-## Locate the precise failing step for draft release access
+## Match Actions permissions to draft-release visibility
 
-- **Problem:** The second GitHub Actions release validation run failed with `release not found` before draft asset enumeration began.
-- **Root Cause:** The failed command was `gh release view TAG --json isDraft`; the Actions token could not resolve that draft through this CLI command. The log does not establish why, and the API asset-ID path was never reached in that run.
-- **Fix:** Remove the redundant tag-based CLI lookup. Resolve the draft using the Releases API, require exactly one matching draft, then validate and download its exact asset set by ID. Preserve all size, checksum, release-evidence, and source checks.
-- **Prevention Rule:** Inspect the command-grouped Actions log to identify the earliest failed command. Do not attribute an API path or draft URL behavior until the log proves that path ran.
+- **Problem:** After removing the failing `gh release view` precheck, the workflow's release-list API call returned no matching draft.
+- **Root Cause:** The validation job used `contents: read`. GitHub's Releases API documentation says draft listings are only returned to actors with push access; its read-only workflow token did not receive that draft listing. The API asset-ID path remains untested in Actions.
+- **Fix:** Grant `contents: write` to the validation job so it can inspect the draft. The code in that job uses the permission for GET-only release/asset retrieval; the separate publish job remains the only job that mutates release state. Keep exact asset, size, checksum, evidence, and source checks.
+- **Prevention Rule:** When a workflow must inspect unpublished releases, verify the endpoint's draft visibility requirements and match job permissions to the minimum required. Inspect run logs to distinguish API permission/visibility from an empty or malformed asset set.
