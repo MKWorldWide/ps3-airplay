@@ -793,3 +793,10 @@ The v0.1.31 fresh RPCS3 replay verifies the portable-arithmetic correction: the 
 - **Root Cause:** Personal and organization Sponsors listings are separate, and the repository Sponsor button reads funding providers from the default branch's `.github/FUNDING.yml`.
 - **Fix:** Verify the active listing through authenticated GitHub data, edit its profile in the Sponsors dashboard, feature the project there, and configure the same account in `FUNDING.yml`. Keep README support copy clearly optional and link directly to the active listing.
 - **Prevention Rule:** Confirm the sponsorable account before writing funding metadata; after the default-branch change, verify both the public listing and the repository's rendered Sponsor button.
+
+## Enable the repository Sponsor button separately
+
+- **Problem:** The funding file and README link were correct, but the repository header initially had no Sponsor button.
+- **Root Cause:** The repository's Settings → General → Features → Sponsorships toggle was disabled; a valid default-branch `FUNDING.yml` does not itself turn on this repository feature.
+- **Fix:** Enabled the repository's Sponsorships feature and confirmed the public page shows Sponsor and a sponsor card for EsKaye.
+- **Prevention Rule:** Verify both the default-branch funding file and repository-level Sponsorships toggle, then inspect the public repository page for the rendered button.

@@ -518,4 +518,4 @@ Display candidate restores the standard GPU-side wait-flip command ordering afte
 ## GitHub Sponsors support for AIR PS3 (2026-11-08)
 
 - Authenticated GitHub GraphQL identifies `EsKaye` as the active public Sponsors profile (`hasSponsorsListing=true`, URL `https://github.com/sponsors/EsKaye`). Organization `MKWorldWide` has no Sponsors listing. The Sponsors profile's Short bio and Introduction were updated through the GitHub dashboard with the maintainer-supplied copy; the profile already featured `MKWorldWide/ps3-airplay`.
-- The repository README now has a brief optional support section linking to the EsKaye profile. `.github/FUNDING.yml` declares only `github: EsKaye`; no external funding provider is configured. Commit/push and public Sponsor-button visibility remain to be verified in this pass.
+- The repository README now has a brief optional support section linking to the EsKaye profile. `.github/FUNDING.yml` declares only `github: EsKaye`; no external funding provider is configured. Change `76fdd381` is on `main`, and the repository-level Sponsorships feature is enabled; the public repository renders its Sponsor button to `github.com/sponsors/EsKaye`.
