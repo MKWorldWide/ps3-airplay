@@ -1,11 +1,63 @@
 # AIR PS3 Resident Development Report
 
-**Updated:** 2026-11-08 17:23 EST
+**Updated:** 2026-11-08 17:56 EDT
 **Branch:** `experimental/resident-airplay`
 **Source baseline:** `53e24116e8d9a26db80deeafd568be72bf8cf6d6`
 **Scope:** RPCS3 lifecycle and diagnostic harness; no physical PS3 was contacted.
 
-## Executive summary
+## Latest audio-backend checkpoint (2026-11-08 17:56 EDT)
+
+This checkpoint supersedes earlier statements below that the resident had no
+audio backend. The experimental PRX now contains a bounded 16,384-frame SPSC
+decoded-PCM queue, the existing PCM ring/resampler, a 2,048-frame prebuffer,
+and a `cellAudio` output worker. A diagnostics-only 440 Hz seed verifies the
+queue-to-output path; no RAOP packets were sent, so this does not prove received
+AirPlay PCM playback. Host lifecycle mocks and queue/concurrency tests pass.
+
+RPCS3 accepted the fake-SPRX package and both the harness and resident opened
+separate `cellAudio` ports. The resident signaled that it submitted its
+diagnostic PCM while the foreground harness submitted 940 blocks. Cycles 1 and
+2 stopped and unloaded cleanly. Cycle 3 **FAIL**: RPCS3 terminated the
+`ps3-airplay-audio` thread with a fatal null-address execution fault. The GUI
+log places the thread at PRX offset `0x001201c8`; matching the built PRX shows
+that offset is the instruction immediately after the `sc` instruction in the
+`sysThreadExit` import stub. This is a strong location match, not proof of the
+underlying cause. No cycle-3 stop/unload or module-baseline result was recorded.
+The three-cycle two-port run therefore fails and audio-thread teardown remains
+unresolved. A prior lifecycle-only harness run completed three clean cycles;
+that result does not qualify the new audio-thread path.
+
+The emulator also reported `CELL_AUDIO_ERROR_ALREADY_INIT` on the resident's
+borrowed mixer path, as expected after the harness owns audio initialization,
+and `sys_net` reported `EADDRNOTAVAIL` when the resident attempted local
+network discovery. Neither error explains the audio-thread fault. Acoustic
+output was not independently heard or captured. No hardware test was made.
+
+Current candidate hashes: PRX `9a558a5b994f68e109e0bed8c4564e7d54b4c5463e1190d449df9571d7c1e5b2`,
+fake SPRX `7bfea5421d546fec46a9020ecedd4fafae61cf03594b85480087d1dd20aa6120`,
+and harness PKG `86db3830dfbd08c73337ea5a4a8ec19d416cee919783f17360b788602bd49934`.
+The installed package's embedded fake SPRX matches the reported fake-SPRX
+hash. Artifacts remain in ignored local build folders.
+
+**Hardware readiness: NOT READY.** First isolate the RPCS3 thread-exit fault,
+restore three clean audio-enabled cycles with module count at baseline after
+each, then validate a synthetic RAOP stream through decode and PCM output.
+Only a later reviewed gate may propose a nonpersistent hardware test.
+
+## Current result table
+
+| Area | Status | Current observation |
+|---|---|---|
+| Resident bounded PCM path | PASS (structural/host) | Decoded PCM queue, existing resampler, prebuffer, and cellAudio output worker are implemented; host API mocks pass. |
+| RPCS3 fake-SPRX load/start | PASS | The harness package loads and the PRX reaches ready state. The raw PRX is not accepted by this RPCS3 configuration. |
+| Audio submission in RPCS3 | PASS (API submission only) | Resident diagnostic PCM and foreground tone submissions succeeded through separate ports. Sound was not independently confirmed. |
+| Two-port coexistence | PASS (submission only) | Both ports accepted audio submissions during the test interval; this does not establish real mixing quality or game coexistence. |
+| Three-cycle audio teardown | FAIL | Cycles 1 and 2 passed; cycle 3 crashed in the resident audio thread at a null target near the `sysThreadExit` stub. |
+| Cycle-3 module baseline | UNTESTED | Crash occurred before stop/unload completion and baseline query. |
+| Synthetic RAOP decode-to-output | UNTESTED | No RAOP packets were sent; only a diagnostics-only PCM seed exercised output. |
+| Physical console / Cobra / in-game audio | UNTESTED | No physical PS3 was contacted. |
+
+## Earlier lifecycle-only checkpoint (superseded)
 
 The dedicated `RPRX90001` harness now completes three consecutive RPCS3
 module load/start/stop/unload cycles. Every cycle reached receiver readiness,
@@ -41,8 +93,8 @@ candidate on a physical console based on emulator lifecycle alone.
 | RPCS3 cellAudio port probe | PASS (app-level API) | `cellAudioInit`, port open/start, 940 stereo blocks at 48 kHz, stop/close, and `cellAudioQuit` all returned zero. The 5-second 440 Hz tone was submitted through RPCS3's audio path; acoustic audibility was not independently recorded, and the PRX did not submit this tone. |
 | Synthetic RAOP session in RPCS3 | UNTESTED | The harness does not yet drive a synthetic sender through the resident's RTSP/RTP path. |
 | Valid PCM from resident PRX | UNTESTED | Host decoder tests produce valid PCM, but the RPCS3 lifecycle run did not send audio packets. |
-| Resident audio output | UNTESTED | The PRX currently clears decoded PCM and has no cellAudio submission path. |
-| Foreground/resident audio coexistence | UNTESTED | No two-source audio experiment was performed. |
+| Resident audio output | UNTESTED at this earlier checkpoint | Later audio-backend work and the current RPCS3 failure are recorded above. |
+| Foreground/resident audio coexistence | UNTESTED at this earlier checkpoint | Later two-port submission work and the current RPCS3 failure are recorded above. |
 | Physical PS3 / Cobra compatibility | UNTESTED | No console or boot-plugin setting was accessed. |
 
 ## Verified RPCS3 evidence

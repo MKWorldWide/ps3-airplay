@@ -77,6 +77,28 @@ size_t raop_pcm_ring_push_le16(raop_pcm_ring *ring, const uint8_t *pcm,
 	return accepted;
 }
 
+size_t raop_pcm_ring_push_native(raop_pcm_ring *ring, const int16_t *pcm,
+	size_t frame_count)
+{
+	size_t accepted = 0;
+	if (ring == NULL || pcm == NULL ||
+		(ring->input_channels != 1 && ring->input_channels != 2))
+		return 0;
+	while (accepted < frame_count && ring->count < RAOP_PCM_RING_CAPACITY) {
+		size_t offset = accepted * ring->input_channels;
+		int16_t left = pcm[offset];
+		int16_t right = ring->input_channels == 2 ? pcm[offset + 1U] : left;
+		ring->samples[ring->write_index][0] = left;
+		ring->samples[ring->write_index][1] = right;
+		ring->write_index = (ring->write_index + 1U) % RAOP_PCM_RING_CAPACITY;
+		++ring->count;
+		++ring->frames_written;
+		++accepted;
+	}
+	ring->frames_dropped += frame_count - accepted;
+	return accepted;
+}
+
 size_t raop_pcm_ring_render_float(raop_pcm_ring *ring, uint32_t input_rate,
 	uint32_t output_rate, float *output, size_t output_frames)
 {

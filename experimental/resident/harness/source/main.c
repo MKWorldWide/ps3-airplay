@@ -14,12 +14,16 @@
 #define TEST_CYCLES 3U
 #define EVENT_WAIT_POLLS 400U
 #define EVENT_POLL_US 25000U
-#define ACTIVE_HOLD_US 250000U
 #define MODULE_LIST_CAPACITY 256U
 #define AUDIO_PROBE_BLOCKS 940U
 #define AUDIO_PROBE_AMPLITUDE 0.12f
 
 static FILE *app_log;
+static uint32_t foreground_audio_port;
+static float foreground_audio_phase;
+static int foreground_audio_initialized;
+static int foreground_audio_opened;
+static int foreground_audio_started;
 
 static void event(const char *name, int value)
 {
@@ -43,6 +47,21 @@ static int wait_for_diagnostic_event(
 	return 0;
 }
 
+static int wait_for_audio_pcm(const airps3_resident_diagnostics *diagnostics)
+{
+	unsigned int poll;
+	for (poll = 0; poll < EVENT_WAIT_POLLS; ++poll) {
+		uint32_t events = __atomic_load_n(&diagnostics->events,
+			__ATOMIC_ACQUIRE);
+		if ((events & AIRPS3_DIAG_EVENT_AUDIO_PCM_SUBMITTED) != 0U)
+			return 1;
+		if ((events & AIRPS3_DIAG_EVENT_AUDIO_FAILED) != 0U)
+			return 0;
+		(void)usleep(EVENT_POLL_US);
+	}
+	return 0;
+}
+
 static int get_module_count(unsigned int *count)
 {
 	sys_prx_id_t ids[MODULE_LIST_CAPACITY];
@@ -61,64 +80,68 @@ static int get_module_count(unsigned int *count)
 	return 0;
 }
 
-static void run_audio_probe(void)
+static int start_audio_probe(void)
 {
 	CellAudioPortParam params = {
 		CELL_AUDIO_PORT_2CH, CELL_AUDIO_BLOCK_8, 0, 1.0f
 	};
-	uint32_t port = 0;
-	float samples[CELL_AUDIO_BLOCK_SAMPLES * 2U];
-	float phase = 0.0f;
-	const float phase_step = 6.2831853071795864769f * 440.0f / 48000.0f;
-	unsigned int block;
-	unsigned int frame;
-	int initialized = 0;
-	int opened = 0;
-	int started = 0;
 	int result = cellAudioInit();
 	event("AUDIO_INIT_RESULT", result);
 	if (result != 0)
-		return;
-	initialized = 1;
-	result = cellAudioPortOpen(&params, &port);
+		return 0;
+	foreground_audio_initialized = 1;
+	result = cellAudioPortOpen(&params, &foreground_audio_port);
 	event("AUDIO_PORT_OPEN_RESULT", result);
 	if (result != 0)
-		goto cleanup;
-	opened = 1;
-	result = cellAudioPortStart(port);
+		return 0;
+	foreground_audio_opened = 1;
+	result = cellAudioPortStart(foreground_audio_port);
 	event("AUDIO_PORT_START_RESULT", result);
 	if (result != 0)
-		goto cleanup;
-	started = 1;
-	for (block = 0; block < AUDIO_PROBE_BLOCKS; ++block) {
+		return 0;
+	foreground_audio_started = 1;
+	return 1;
+}
+
+static int submit_foreground_audio_probe(unsigned int blocks)
+{
+	float samples[CELL_AUDIO_BLOCK_SAMPLES * 2U];
+	const float phase_step = 6.2831853071795864769f * 440.0f / 48000.0f;
+	unsigned int block;
+	unsigned int frame;
+	for (block = 0; block < blocks; ++block) {
 		for (frame = 0; frame < CELL_AUDIO_BLOCK_SAMPLES; ++frame) {
-			float sample = sinf(phase) * AUDIO_PROBE_AMPLITUDE;
+			float sample = sinf(foreground_audio_phase) * AUDIO_PROBE_AMPLITUDE;
 			samples[frame * 2U] = sample;
 			samples[frame * 2U + 1U] = sample;
-			phase += phase_step;
-			if (phase >= 6.2831853071795864769f)
-				phase -= 6.2831853071795864769f;
+			foreground_audio_phase += phase_step;
+			if (foreground_audio_phase >= 6.2831853071795864769f)
+				foreground_audio_phase -= 6.2831853071795864769f;
 		}
-		result = cellAudioAdd2chData(port, samples,
+		int result = cellAudioAdd2chData(foreground_audio_port, samples,
 			CELL_AUDIO_BLOCK_SAMPLES, 1.0f);
 		if (result != 0) {
 			event("AUDIO_SUBMIT_FAILED", result);
-			goto cleanup;
+			return 0;
 		}
 		(void)usleep(5333U);
 	}
 	event("AUDIO_BLOCKS_SUBMITTED", (int)block);
+	return 1;
+}
 
-cleanup:
-	if (started) {
-		result = cellAudioPortStop(port);
+static void stop_audio_probe(void)
+{
+	int result;
+	if (foreground_audio_started) {
+		result = cellAudioPortStop(foreground_audio_port);
 		event("AUDIO_PORT_STOP_RESULT", result);
 	}
-	if (opened) {
-		result = cellAudioPortClose(port);
+	if (foreground_audio_opened) {
+		result = cellAudioPortClose(foreground_audio_port);
 		event("AUDIO_PORT_CLOSE_RESULT", result);
 	}
-	if (initialized) {
+	if (foreground_audio_initialized) {
 		result = cellAudioQuit();
 		event("AUDIO_QUIT_RESULT", result);
 	}
@@ -224,6 +247,14 @@ static int run_cycle(unsigned int cycle, unsigned int baseline_module_count)
 	event("MODULE_DIAGNOSTIC_EVENTS", (int)diagnostic_events);
 	if ((diagnostic_events & AIRPS3_DIAG_EVENT_LOG_UNAVAILABLE) != 0U)
 		event("MODULE_LOG_UNAVAILABLE", (int)cycle);
+	if ((diagnostic_events & AIRPS3_DIAG_EVENT_AUDIO_READY) != 0U)
+		event("RESIDENT_AUDIO_READY", (int)cycle);
+	else if ((diagnostic_events & AIRPS3_DIAG_EVENT_AUDIO_FAILED) != 0U)
+		event("RESIDENT_AUDIO_FAILED", (int)cycle);
+	else
+		event("RESIDENT_AUDIO_STATUS_PENDING", (int)cycle);
+	if ((diagnostic_events & AIRPS3_DIAG_EVENT_AUDIO_INIT_BORROWED) != 0U)
+		event("RESIDENT_AUDIO_REUSED_SYSTEM_INIT", (int)cycle);
 	if ((diagnostic_events & AIRPS3_DIAG_EVENT_STARTED) == 0U) {
 		event("MODULE_START_EVENT_MISSING", (int)cycle);
 		(void)stop_and_unload(module_id, &diagnostics,
@@ -238,7 +269,19 @@ static int run_cycle(unsigned int cycle, unsigned int baseline_module_count)
 		return 0;
 	}
 	event("RECEIVER_READY", (int)cycle);
-	(void)usleep(ACTIVE_HOLD_US);
+	if (!wait_for_audio_pcm(&diagnostics)) {
+		event("RESIDENT_PCM_SUBMISSION_MISSING", (int)cycle);
+		(void)stop_and_unload(module_id, &diagnostics,
+			baseline_module_count, cycle);
+		return 0;
+	}
+	event("RESIDENT_PCM_SUBMITTED_TO_MIXER", (int)cycle);
+	event("TWO_ACTIVE_AUDIO_PORTS", (int)cycle);
+	if (!submit_foreground_audio_probe(AUDIO_PROBE_BLOCKS)) {
+		(void)stop_and_unload(module_id, &diagnostics,
+			baseline_module_count, cycle);
+		return 0;
+	}
 
 	if (!stop_and_unload(module_id, &diagnostics,
 		baseline_module_count, cycle))
@@ -256,7 +299,7 @@ int main(int argc, const char **argv)
 	(void)argv;
 	app_log = fopen(APP_LOG_PATH, "wb");
 	event(app_log != NULL ? "HARNESS_START" : "HARNESS_LOG_OPEN_FAILED", 0);
-	(void)printf("AIR PS3 resident lifecycle test; no audio output is expected.\n");
+	(void)printf("AIR PS3 resident audio-backend and lifecycle test; no synthetic RAOP stream is sent.\n");
 	result = get_module_count(&baseline_module_count);
 	if (result != 0) {
 		event("MODULE_LIST_FAILED_AT_START", result);
@@ -265,16 +308,24 @@ int main(int argc, const char **argv)
 		return 1;
 	}
 	event("MODULE_COUNT_BASELINE", (int)baseline_module_count);
-	run_audio_probe();
+	if (!start_audio_probe()) {
+		event("FOREGROUND_AUDIO_START_FAILED", 1);
+		stop_audio_probe();
+		if (app_log != NULL)
+			(void)fclose(app_log);
+		return 1;
+	}
 	for (cycle = 1; cycle <= TEST_CYCLES; ++cycle) {
 		if (!run_cycle(cycle, baseline_module_count)) {
 			event("HARNESS_FAIL", (int)cycle);
+			stop_audio_probe();
 			if (app_log != NULL)
 				(void)fclose(app_log);
 			return 1;
 		}
 	}
 	event("HARNESS_PASS", (int)TEST_CYCLES);
+	stop_audio_probe();
 	if (app_log != NULL)
 		(void)fclose(app_log);
 	return 0;

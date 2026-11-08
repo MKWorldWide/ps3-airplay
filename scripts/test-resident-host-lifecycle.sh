@@ -34,7 +34,16 @@ COMMON_FLAGS=(
 
 "$CC" "${COMMON_FLAGS[@]}" \
 	"$PROJECT_ROOT/tests/resident/host_lifecycle_test.c" \
+	"$PROJECT_ROOT/src/audio/pcm_ring.c" \
+	"$PROJECT_ROOT/src/audio/pcm_spsc.c" \
 	"$BUILD_DIR/module.o" \
-	-o "$BUILD_DIR/host_lifecycle_test"
+	-lm -o "$BUILD_DIR/host_lifecycle_test"
 
 "$BUILD_DIR/host_lifecycle_test"
+
+"$CC" -O2 -std=c11 -Wall -Wextra -Werror -pthread \
+	-fsanitize=address,undefined -I"$PROJECT_ROOT/src/audio" \
+	"$PROJECT_ROOT/src/audio/pcm_spsc.c" \
+	"$PROJECT_ROOT/tests/audio/pcm_spsc_test.c" \
+	-o "$BUILD_DIR/pcm_spsc_test"
+"$BUILD_DIR/pcm_spsc_test"

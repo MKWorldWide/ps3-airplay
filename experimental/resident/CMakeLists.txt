@@ -31,6 +31,8 @@ add_executable(ps3_airplay_resident
 	../../src/protocol/raop_receiver.c
 	../../src/codec/alac.c
 	../../src/codec/raop_alac.c
+	../../src/audio/pcm_ring.c
+	../../src/audio/pcm_spsc.c
 	../../src/crypto/raop_crypto.c
 	../../src/observability/receiver_log.c)
 
@@ -49,6 +51,7 @@ target_include_directories(ps3_airplay_resident PRIVATE
 	../../src/discovery
 	../../src/protocol
 	../../src/codec
+	../../src/audio
 	../../src/crypto
 	../../src/observability)
 target_include_directories(ps3_airplay_resident PRIVATE
@@ -56,7 +59,7 @@ target_include_directories(ps3_airplay_resident PRIVATE
 	"${PS3DK_SOURCE}/sdk/include")
 set(PS3_LV2_CRT_DIR "${PS3DEV}/ppu/powerpc64-ps3-elf/lib")
 target_link_libraries(ps3_airplay_resident PRIVATE
-	net sysmodule netctl_stub lv2 m
+	net sysmodule netctl_stub audio lv2 m
 	"${MBEDTLS_CRYPTO_LIBRARY}"
 	"${PS3_LV2_CRT_DIR}/lv2-crti.o"
 	"${PS3_LV2_CRT_DIR}/lv2-crtn.o")

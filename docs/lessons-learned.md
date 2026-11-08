@@ -863,3 +863,10 @@ The v0.1.31 fresh RPCS3 replay verifies the portable-arithmetic correction: the 
 - **Root Cause:** The module stop loop can hit its independent yield-count cap before the configured elapsed-time limit, so return timing is not fixed at five seconds.
 - **Fix:** The test now synchronizes on mock receiver-poll entry before stopping, then waits for the worker's flushed `WORKER_STOPPED` event with its own bounded deadline before retrying stop.
 - **Prevention Rule:** In asynchronous lifecycle tests, synchronize on the actual completion event and use a timeout; do not assume a configured maximum wait consumes its full duration.
+
+## Audio submission success does not qualify worker teardown
+
+- **Problem:** The audio-enabled RPCS3 harness passed two module cycles, then faulted during cycle three before stop/unload could be confirmed.
+- **Root Cause:** Unknown. RPCS3 reported a fatal null-address execution fault in `ps3-airplay-audio` at PRX offset `0x001201c8`. The built PRX maps that offset to the instruction after the `sc` in its `sysThreadExit` import stub. This is location evidence, not a proven explanation.
+- **Fix:** No fix is claimed. Preserve the two passing cycles and the third-cycle failure. Keep the candidate off hardware until a repeatable audio-enabled stop/unload run returns the module list to baseline.
+- **Prevention Rule:** Validate full load/start/audio/stop/join/unload cycles independently from audio API submission; a PCM-submitted event or successful port call does not prove the worker exited or can be safely unloaded.

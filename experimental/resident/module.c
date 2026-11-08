@@ -2,7 +2,10 @@
 #include "raop_alac.h"
 #include "raop_mdns_service.h"
 #include "resident_diagnostics.h"
+#include "pcm_ring.h"
+#include "pcm_spsc.h"
 
+#include <cell/audio.h>
 #include <cell/libnet.h>
 #include <cell/libnetctl.h>
 #include <cell/sysmodule.h>
@@ -10,11 +13,13 @@
 #include <sys/thread.h>
 #include <sys/prx_module.h>
 #include <sys/sys_time.h>
+#include <sys/timer.h>
 
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <stdint.h>
+#include <math.h>
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
@@ -27,6 +32,12 @@
 #define RECEIVER_LOG_PATH "/dev_hdd0/tmp/ps3-airplay.log"
 #endif
 #define RECEIVER_WORKER_STACK 0x10000
+#define RESIDENT_AUDIO_STACK 0x10000
+#define AUDIO_PREBUFFER_FRAMES 2048U
+#define AUDIO_REFILL_FRAMES 1024U
+#define AUDIO_OUTPUT_FRAMES CELL_AUDIO_BLOCK_SAMPLES
+#define AUDIO_TEST_TONE_FRAMES 8192U
+#define AUDIO_TEST_TONE_CHUNK_FRAMES 1024U
 #define WORKER_STOP_TIMEOUT_US 5000000ULL
 #define WORKER_STOP_MAX_POLLS 1000000U
 #ifndef RESIDENT_RTSP_PORT
@@ -44,10 +55,23 @@ static raop_receiver receiver;
 static raop_mdns_service mdns_service;
 static raop_crypto_context crypto_context;
 static sys_ppu_thread_t worker_thread;
+static sys_ppu_thread_t audio_thread;
 static volatile int stop_requested;
 static volatile int worker_exited;
 static volatile int receiver_log_lock;
 static int worker_started;
+static int audio_thread_started;
+static int audio_module_loaded;
+static int audio_initialized_by_module;
+static int audio_port_opened;
+static int audio_port_started;
+static uint32_t audio_port;
+static volatile int audio_stop_requested;
+static volatile int audio_worker_exited;
+static volatile uint32_t pcm_generation;
+static volatile uint32_t pcm_input_rate;
+static volatile uint32_t pcm_input_channels;
+static raop_pcm_spsc decoded_pcm_queue;
 static int net_module_loaded;
 static int net_initialized;
 static int netctl_module_loaded;
@@ -147,6 +171,204 @@ static int log_event(const char *event, int value, size_t bytes)
 	return logged;
 }
 
+static void audio_worker(void *argument)
+{
+	raop_pcm_ring pcm_ring;
+	int16_t staging[AUDIO_REFILL_FRAMES * 2U];
+	float output[AUDIO_OUTPUT_FRAMES * 2U];
+	uint32_t seen_generation = UINT32_MAX;
+	uint32_t input_rate = 44100;
+	uint32_t input_channels = 2;
+	int playback_active = 0;
+	int pcm_reported = 0;
+	(void)argument;
+	raop_pcm_ring_init(&pcm_ring, (uint8_t)input_channels);
+	while (!__atomic_load_n(&audio_stop_requested, __ATOMIC_ACQUIRE)) {
+		uint32_t current_generation = __atomic_load_n(&pcm_generation,
+			__ATOMIC_ACQUIRE);
+		if (current_generation != seen_generation) {
+			seen_generation = current_generation;
+			input_rate = __atomic_load_n(&pcm_input_rate, __ATOMIC_ACQUIRE);
+			input_channels = __atomic_load_n(&pcm_input_channels,
+				__ATOMIC_ACQUIRE);
+			raop_pcm_ring_init(&pcm_ring, (uint8_t)input_channels);
+			playback_active = 0;
+			(void)log_event("AUDIO_SESSION_RESET", (int)input_rate,
+				input_channels);
+		}
+		while (pcm_ring.count < AUDIO_PREBUFFER_FRAMES &&
+			raop_pcm_spsc_count(&decoded_pcm_queue) != 0) {
+			size_t popped = raop_pcm_spsc_pop(&decoded_pcm_queue, staging,
+				AUDIO_REFILL_FRAMES, seen_generation);
+			if (popped == 0)
+				break;
+			(void)raop_pcm_ring_push_native(&pcm_ring, staging, popped);
+		}
+		if (!playback_active && pcm_ring.count >= AUDIO_PREBUFFER_FRAMES) {
+			playback_active = 1;
+			(void)log_event("AUDIO_PLAYBACK_STARTED", (int)pcm_ring.count,
+				(int)input_rate);
+		}
+		if (playback_active) {
+			(void)raop_pcm_ring_render_float(&pcm_ring, input_rate, 48000,
+				output, AUDIO_OUTPUT_FRAMES);
+			if (pcm_ring.count == 0 &&
+				raop_pcm_spsc_count(&decoded_pcm_queue) == 0) {
+				playback_active = 0;
+				(void)log_event("AUDIO_BUFFER_UNDERRUN", 1, 0);
+			}
+		} else {
+			raop_pcm_ring_render_silence(output, AUDIO_OUTPUT_FRAMES);
+		}
+		{
+			int result = cellAudioAdd2chData(audio_port, output,
+				AUDIO_OUTPUT_FRAMES, 1.0f);
+			if (result != 0) {
+				(void)log_event("AUDIO_SUBMIT_FAILED", result, 0);
+				publish_diagnostic_event(AIRPS3_DIAG_EVENT_AUDIO_FAILED);
+				break;
+			}
+			if (playback_active && !pcm_reported) {
+				pcm_reported = 1;
+				publish_diagnostic_event(
+					AIRPS3_DIAG_EVENT_AUDIO_PCM_SUBMITTED);
+			}
+		}
+		(void)sys_timer_usleep(5333U);
+	}
+	__atomic_store_n(&audio_worker_exited, 1, __ATOMIC_RELEASE);
+	sysThreadExit(0);
+}
+
+static int release_audio(void)
+{
+	int result;
+	if (audio_port_started) {
+		result = cellAudioPortStop(audio_port);
+		if (result != 0) {
+			(void)log_event("AUDIO_PORT_STOP_FAILED", result, 0);
+			return 0;
+		}
+		audio_port_started = 0;
+	}
+	if (audio_port_opened) {
+		result = cellAudioPortClose(audio_port);
+		if (result != 0) {
+			(void)log_event("AUDIO_PORT_CLOSE_FAILED", result, 0);
+			return 0;
+		}
+		audio_port_opened = 0;
+	}
+	if (audio_initialized_by_module) {
+		result = cellAudioQuit();
+		if (result != 0) {
+			(void)log_event("AUDIO_QUIT_FAILED", result, 0);
+			return 0;
+		}
+		audio_initialized_by_module = 0;
+	}
+	if (audio_module_loaded) {
+		result = cellSysmoduleUnloadModule(CELL_SYSMODULE_AUDIO);
+		if (result != 0) {
+			(void)log_event("AUDIO_MODULE_UNLOAD_FAILED", result, 0);
+			return 0;
+		}
+		audio_module_loaded = 0;
+	}
+	return 1;
+}
+
+static int start_audio_backend(void)
+{
+	CellAudioPortParam parameters = {
+		CELL_AUDIO_PORT_2CH, CELL_AUDIO_BLOCK_8, 0, 1.0f
+	};
+	int result = cellSysmoduleLoadModule(CELL_SYSMODULE_AUDIO);
+	if (result != 0) {
+		(void)log_event("AUDIO_MODULE_LOAD_FAILED", result, 0);
+		publish_diagnostic_event(AIRPS3_DIAG_EVENT_AUDIO_FAILED);
+		return 0;
+	}
+	audio_module_loaded = 1;
+	result = cellAudioInit();
+	if (result == 0)
+		audio_initialized_by_module = 1;
+	else if (result != (int)CELL_AUDIO_ERROR_ALREADY_INIT) {
+		(void)log_event("AUDIO_INIT_FAILED", result, 0);
+		publish_diagnostic_event(AIRPS3_DIAG_EVENT_AUDIO_FAILED);
+		(void)release_audio();
+		return 0;
+	} else {
+		publish_diagnostic_event(AIRPS3_DIAG_EVENT_AUDIO_INIT_BORROWED);
+	}
+	result = cellAudioPortOpen(&parameters, &audio_port);
+	if (result != 0) {
+		(void)log_event("AUDIO_PORT_OPEN_FAILED", result, 0);
+		publish_diagnostic_event(AIRPS3_DIAG_EVENT_AUDIO_FAILED);
+		(void)release_audio();
+		return 0;
+	}
+	audio_port_opened = 1;
+	result = cellAudioPortStart(audio_port);
+	if (result != 0) {
+		(void)log_event("AUDIO_PORT_START_FAILED", result, 0);
+		publish_diagnostic_event(AIRPS3_DIAG_EVENT_AUDIO_FAILED);
+		(void)release_audio();
+		return 0;
+	}
+	audio_port_started = 1;
+	raop_pcm_spsc_init(&decoded_pcm_queue);
+	__atomic_store_n(&pcm_input_rate, 44100, __ATOMIC_RELAXED);
+	__atomic_store_n(&pcm_input_channels, 2, __ATOMIC_RELAXED);
+	__atomic_store_n(&pcm_generation, 0, __ATOMIC_RELEASE);
+	__atomic_store_n(&audio_stop_requested, 0, __ATOMIC_RELEASE);
+	__atomic_store_n(&audio_worker_exited, 0, __ATOMIC_RELEASE);
+	if (active_diagnostics != NULL) {
+		uint8_t tone[AUDIO_TEST_TONE_CHUNK_FRAMES * 4U];
+		uint32_t offset;
+		const float step = 6.2831853071795864769f * 440.0f / 44100.0f;
+		float phase = 0.0f;
+		uint32_t generation = __atomic_load_n(&pcm_generation,
+			__ATOMIC_ACQUIRE);
+		for (offset = 0; offset < AUDIO_TEST_TONE_FRAMES;
+			offset += AUDIO_TEST_TONE_CHUNK_FRAMES) {
+			uint32_t frame;
+			for (frame = 0; frame < AUDIO_TEST_TONE_CHUNK_FRAMES; ++frame) {
+				int16_t sample = (int16_t)(sinf(phase) * 3932.0f);
+				uint16_t bits = (uint16_t)sample;
+				tone[frame * 4U] = (uint8_t)bits;
+				tone[frame * 4U + 1U] = (uint8_t)(bits >> 8);
+				tone[frame * 4U + 2U] = (uint8_t)bits;
+				tone[frame * 4U + 3U] = (uint8_t)(bits >> 8);
+				phase += step;
+				if (phase >= 6.2831853071795864769f)
+					phase -= 6.2831853071795864769f;
+			}
+			if (raop_pcm_spsc_push_le16(&decoded_pcm_queue, tone,
+					 sizeof(tone), 2, generation) != AUDIO_TEST_TONE_CHUNK_FRAMES) {
+				(void)log_event("AUDIO_TEST_TONE_QUEUE_FAILED", (int)offset, 0);
+				publish_diagnostic_event(AIRPS3_DIAG_EVENT_AUDIO_FAILED);
+				return 0;
+			}
+		}
+		publish_diagnostic_event(AIRPS3_DIAG_EVENT_TEST_TONE_QUEUED);
+		(void)log_event("AUDIO_TEST_TONE_QUEUED", 440,
+			AUDIO_TEST_TONE_FRAMES * 4U);
+	}
+	result = sysThreadCreate(&audio_thread, audio_worker, NULL, 3000,
+		RESIDENT_AUDIO_STACK, THREAD_JOINABLE, "ps3-airplay-audio");
+	if (result != 0) {
+		(void)log_event("AUDIO_WORKER_CREATE_FAILED", result, 0);
+		publish_diagnostic_event(AIRPS3_DIAG_EVENT_AUDIO_FAILED);
+		(void)release_audio();
+		return 0;
+	}
+	audio_thread_started = 1;
+	(void)log_event("AUDIO_READY", (int)audio_port, 0);
+	publish_diagnostic_event(AIRPS3_DIAG_EVENT_AUDIO_READY);
+	return 1;
+}
+
 static void receiver_worker(void *argument)
 {
 	uint8_t address[4];
@@ -154,6 +376,7 @@ static void receiver_worker(void *argument)
 	char host[64];
 	raop_alac_decoder *decoder = NULL;
 	uint64_t decoded_frames = 0;
+	int previous_recording = 0;
 	int result;
 	(void)argument;
 	mdns_service.socket_fd = -1;
@@ -218,11 +441,23 @@ static void receiver_worker(void *argument)
 			(void)log_event(decoder != NULL ? "ALAC_READY" : "ALAC_UNSUPPORTED",
 				(int)receiver.session.offer.fmtp[2],
 				(int)receiver.session.offer.fmtp[6]);
+			if (decoder != NULL) {
+				__atomic_store_n(&pcm_input_rate,
+					(uint32_t)receiver.session.offer.fmtp[10], __ATOMIC_RELAXED);
+				__atomic_store_n(&pcm_input_channels,
+					(uint32_t)receiver.session.offer.fmtp[6], __ATOMIC_RELAXED);
+				(void)__atomic_add_fetch(&pcm_generation, 1U, __ATOMIC_RELEASE);
+				previous_recording = 1;
+			}
 		}
 		if (receiver.session.state != RAOP_SESSION_RECORDING && decoder != NULL) {
 			raop_alac_destroy(decoder);
 			decoder = NULL;
 			decoded_frames = 0;
+			if (previous_recording) {
+				(void)__atomic_add_fetch(&pcm_generation, 1U, __ATOMIC_RELEASE);
+				previous_recording = 0;
+			}
 			memset(decoder_pcm, 0, sizeof(decoder_pcm));
 			memset(&receiver.audio_queue, 0, sizeof(receiver.audio_queue));
 		}
@@ -237,6 +472,18 @@ static void receiver_worker(void *argument)
 						frame.packet.payload_length, decoder_pcm,
 						sizeof(decoder_pcm), &pcm_length, &samples)) {
 						++decoded_frames;
+						if (audio_thread_started) {
+							uint32_t generation = __atomic_load_n(&pcm_generation,
+								__ATOMIC_ACQUIRE);
+							uint8_t channels = (uint8_t)__atomic_load_n(
+								&pcm_input_channels, __ATOMIC_ACQUIRE);
+							size_t accepted = raop_pcm_spsc_push_le16(
+								&decoded_pcm_queue, decoder_pcm, pcm_length,
+								channels, generation);
+							if (accepted != samples)
+								(void)log_event("PCM_QUEUE_DROP",
+									(int)(samples - accepted), (int)pcm_length);
+						}
 						if (decoded_frames == 1 || (decoded_frames % 128U) == 0)
 							(void)log_event("ALAC_FRAME",
 								(int)samples, (int)pcm_length);
@@ -328,6 +575,11 @@ int module_start(size_t args, void *argp)
 	stop_requested = 0;
 	worker_exited = 0;
 	worker_started = 0;
+	audio_thread_started = 0;
+	audio_module_loaded = 0;
+	audio_initialized_by_module = 0;
+	audio_port_opened = 0;
+	audio_port_started = 0;
 	net_module_loaded = 0;
 	net_initialized = 0;
 	netctl_module_loaded = 0;
@@ -413,6 +665,7 @@ int module_start(size_t args, void *argp)
 		goto fail;
 	}
 	worker_started = 1;
+	(void)start_audio_backend();
 	publish_start_diagnostic(args, argp, 7U, 0);
 	publish_diagnostic_event(AIRPS3_DIAG_EVENT_STARTED);
 	return SYS_PRX_RESIDENT;
@@ -445,6 +698,7 @@ int module_stop(size_t args, void *argp)
 	(void)argp;
 
 	__atomic_store_n(&stop_requested, 1, __ATOMIC_RELEASE);
+	__atomic_store_n(&audio_stop_requested, 1, __ATOMIC_RELEASE);
 	if (worker_started) {
 		wait_started_us = sys_time_get_system_time();
 		while (!__atomic_load_n(&worker_exited, __ATOMIC_ACQUIRE) &&
@@ -467,6 +721,26 @@ int module_stop(size_t args, void *argp)
 		}
 		worker_started = 0;
 	}
+	if (audio_thread_started) {
+		wait_started_us = sys_time_get_system_time();
+		wait_polls = 0;
+		while (!__atomic_load_n(&audio_worker_exited, __ATOMIC_ACQUIRE) &&
+			wait_polls < WORKER_STOP_MAX_POLLS) {
+			if (sys_time_get_system_time() - wait_started_us >=
+				WORKER_STOP_TIMEOUT_US)
+				break;
+			++wait_polls;
+			(void)sysThreadYield();
+		}
+		if (!__atomic_load_n(&audio_worker_exited, __ATOMIC_ACQUIRE))
+			return SYS_PRX_STOP_FAILED;
+		join_result = sysThreadJoin(audio_thread, &thread_result);
+		if (join_result != 0)
+			return SYS_PRX_STOP_FAILED;
+		audio_thread_started = 0;
+	}
+	if (!release_audio())
+		return SYS_PRX_STOP_FAILED;
 	release_crypto();
 	if (!release_network())
 		return SYS_PRX_STOP_FAILED;

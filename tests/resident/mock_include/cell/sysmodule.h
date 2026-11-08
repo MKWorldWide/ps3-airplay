@@ -3,6 +3,7 @@
 
 #define CELL_SYSMODULE_NET 1
 #define CELL_SYSMODULE_NETCTL 2
+#define CELL_SYSMODULE_AUDIO 3
 
 int cellSysmoduleLoadModule(int module);
 int cellSysmoduleUnloadModule(int module);

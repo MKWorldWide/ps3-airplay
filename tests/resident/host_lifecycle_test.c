@@ -7,6 +7,7 @@
 #include "../../src/codec/raop_alac.h"
 #include "../../src/crypto/raop_crypto.h"
 #include <cell/libnetctl.h>
+#include <cell/audio.h>
 #include <cell/sysmodule.h>
 #include <sys/prx.h>
 #include <sys/thread.h>
@@ -55,6 +56,14 @@ static int netctl_load_calls;
 static int net_init_calls;
 static int netctl_init_calls;
 static int netctl_term_calls;
+static int audio_init_calls;
+static int audio_quit_calls;
+static int audio_port_open_calls;
+static int audio_port_close_calls;
+static int audio_port_start_calls;
+static int audio_port_stop_calls;
+static int audio_submit_calls;
+static int audio_init_already;
 static int host_socket_calls;
 static int host_connect_calls;
 static int host_getsockname_calls;
@@ -180,6 +189,8 @@ int cellSysmoduleLoadModule(int module)
 			--fail_netctl_load;
 			return -7009;
 		}
+	} else if (module == CELL_SYSMODULE_AUDIO) {
+		return 0;
 	} else
 		return -EINVAL;
 	return 0;
@@ -203,7 +214,66 @@ int cellSysmoduleUnloadModule(int module)
 		}
 		return 0;
 	}
+	if (module == CELL_SYSMODULE_AUDIO)
+		return 0;
 	return -EINVAL;
+}
+
+int cellAudioInit(void)
+{
+	++audio_init_calls;
+	return audio_init_already ? (int)CELL_AUDIO_ERROR_ALREADY_INIT : 0;
+}
+
+int cellAudioQuit(void)
+{
+	++audio_quit_calls;
+	return 0;
+}
+
+int cellAudioPortOpen(CellAudioPortParam *param, uint32_t *port)
+{
+	assert(param != NULL && param->nChannel == CELL_AUDIO_PORT_2CH);
+	++audio_port_open_calls;
+	*port = 1;
+	return 0;
+}
+
+int cellAudioPortClose(uint32_t port)
+{
+	assert(port == 1);
+	++audio_port_close_calls;
+	return 0;
+}
+
+int cellAudioPortStart(uint32_t port)
+{
+	assert(port == 1);
+	++audio_port_start_calls;
+	return 0;
+}
+
+int cellAudioPortStop(uint32_t port)
+{
+	assert(port == 1);
+	++audio_port_stop_calls;
+	return 0;
+}
+
+int cellAudioAdd2chData(uint32_t port, float *samples,
+	unsigned int count, float volume)
+{
+	assert(port == 1 && samples != NULL && count == 256 && volume == 1.0f);
+	++audio_submit_calls;
+	return 0;
+}
+
+int sys_timer_usleep(uint64_t usec)
+{
+	struct timespec delay = {
+		(time_t)(usec / 1000000U), (long)(usec % 1000000U) * 1000L
+	};
+	return nanosleep(&delay, NULL);
 }
 
 int sys_net_initialize_network(void)
@@ -455,6 +525,14 @@ static void reset_mocks(void)
 	net_init_calls = 0;
 	netctl_init_calls = 0;
 	netctl_term_calls = 0;
+	audio_init_calls = 0;
+	audio_quit_calls = 0;
+	audio_port_open_calls = 0;
+	audio_port_close_calls = 0;
+	audio_port_start_calls = 0;
+	audio_port_stop_calls = 0;
+	audio_submit_calls = 0;
+	audio_init_already = 0;
 	host_socket_calls = 0;
 	host_connect_calls = 0;
 	host_getsockname_calls = 0;
@@ -695,6 +773,33 @@ static void test_worker_poll_error_cleanup(void)
 	puts("worker poll-error cleanup and retry after join failure: PASS");
 }
 
+static void test_audio_backend_lifecycle(void)
+{
+	reset_mocks();
+	assert(module_start(0, NULL) == SYS_PRX_RESIDENT);
+	wait_for_worker();
+	assert(audio_init_calls == 1);
+	assert(audio_port_open_calls == 1 && audio_port_start_calls == 1);
+	assert(audio_submit_calls > 0);
+	assert(module_stop(0, NULL) == SYS_PRX_STOP_OK);
+	assert(audio_port_stop_calls == 1 && audio_port_close_calls == 1);
+	assert(audio_quit_calls == 1);
+	puts("resident cellAudio backend startup, output, and cleanup: PASS");
+}
+
+static void test_audio_backend_borrows_existing_init(void)
+{
+	reset_mocks();
+	audio_init_already = 1;
+	assert(module_start(0, NULL) == SYS_PRX_RESIDENT);
+	wait_for_worker();
+	assert(audio_port_open_calls == 1 && audio_submit_calls > 0);
+	assert(module_stop(0, NULL) == SYS_PRX_STOP_OK);
+	assert(audio_port_stop_calls == 1 && audio_port_close_calls == 1);
+	assert(audio_quit_calls == 0);
+	puts("resident audio preserves an already-initialized system mixer: PASS");
+}
+
 int main(void)
 {
 	(void)setvbuf(stdout, NULL, _IONBF, 0);
@@ -709,6 +814,8 @@ int main(void)
 	test_net_unload_retry();
 	test_bounded_worker_stop_retry();
 	test_worker_poll_error_cleanup();
+	test_audio_backend_lifecycle();
+	test_audio_backend_borrows_existing_init();
 	puts("resident host lifecycle simulation: ALL PASS (mocked platform APIs)");
 	return 0;
 }

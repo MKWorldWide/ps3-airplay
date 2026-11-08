@@ -31,6 +31,9 @@ void raop_pcm_ring_clear(raop_pcm_ring *ring);
 /* Input is signed 16-bit little-endian mono/stereo. Returns frames accepted. */
 size_t raop_pcm_ring_push_le16(raop_pcm_ring *ring, const uint8_t *pcm,
 	size_t byte_length);
+/* Input is native-endian signed 16-bit mono/stereo PCM samples. */
+size_t raop_pcm_ring_push_native(raop_pcm_ring *ring, const int16_t *pcm,
+	size_t frame_count);
 /* Stereo float output at 48 kHz. 44.1 kHz FIR adds 31 input frames of delay. */
 size_t raop_pcm_ring_render_float(raop_pcm_ring *ring, uint32_t input_rate,
 	uint32_t output_rate, float *output, size_t output_frames);
