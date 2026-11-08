@@ -30,4 +30,4 @@ This build adds diagnostics, not a proven controller fix. Display visibility is 
 
 ## Controller diagnosis
 
-The poller skips processing when `ioPadGetData` returns a zero-length unchanged report. Its periodic `PAD_HEALTH` reports only `ioPadGetInfo` success and port presence. The next targeted build should record raw digital pad masks and positive report counts, and recognize START from both the PSL1GHT field and documented raw mask. Do not describe v0.2.1 as having fixed controls.
+The poller skips processing when `ioPadGetData` returns a zero-length unchanged report. Its periodic `PAD_HEALTH` reports only `ioPadGetInfo` success and port presence. v0.2.2 adds raw digital masks, positive report counts, and a raw Start-mask fallback alongside the existing PSL1GHT field. Do not describe v0.2.1 as having fixed controls; v0.2.2 still requires hardware verification.

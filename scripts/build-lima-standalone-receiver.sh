@@ -14,7 +14,7 @@ MBEDTLS_INCLUDE="$MBEDTLS_SOURCE/include"
 MBEDTLS_CRYPTO_LIBRARY="$MBEDTLS_PPU_BUILD/library/libmbedcrypto.a"
 OUTPUT_DIR="$PROJECT_ROOT/build/lima-standalone-receiver"
 JOBS="${JOBS:-2}"
-APP_VERSION="${APP_VERSION:-0.2.1}"
+APP_VERSION="${APP_VERSION:-0.2.2}"
 RTSP_PORT="${RTSP_PORT:-5000}"
 PROJECT_REV="$(git -C "$PROJECT_ROOT" rev-parse HEAD 2>/dev/null || true)"
 if [[ -z "$PROJECT_REV" && -f "$PROJECT_ROOT/.source-revision" ]]; then

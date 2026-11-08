@@ -27,6 +27,12 @@ AIRPLAY02 follows conservative pre-1.0 versioning. Increment the patch number fo
 - Hardware: installed through webMAN and launched. The latest 10,658-byte log (SHA-256 `8fd3a3e922808cca9b5182149f0a1aed6c236770381dea2c7a2a59a64602e8e7`) records a single start, pad port presence, initial button mask 0, and a PS menu-open callback at 00:58:05Z. No later `PAD_BUTTONS`, `USER_EXIT_START`, or menu-close event appears. The user reports START exited the first launch, then neither START nor PS worked after reopening. Treat PS callback as delivery, not proof the menu appeared.
 - Artifact is preserved in ignored `work/builds/0.2.1/`. This is a diagnostic candidate, not a controller fix or a stable milestone.
 
+## v0.2.2 controller-input fallback candidate
+
+- Source change: preserve PSL1GHT bitfield decoding and OR in the documented raw digital-button masks; log raw masks when they change and count positive pad input reports per heartbeat.
+- Requested app label: `0.2.2`; SFO APP_VER: `00.42`.
+- Build and hardware results are pending. This additive fallback is intended to rule out bitfield-layout mismatch; it does not establish that the controller produced reports or that the PS menu became visible.
+
 ## Milestones
 
 - **0.1.x — focused fixes and validation.** Each package changes one or a few clearly described items and carries a matching SFO and startup-log version. Failed candidates remain documented; the next distinct package increments the final number.

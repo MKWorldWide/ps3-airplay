@@ -62,6 +62,9 @@ static int pad_info_error_logged;
 static int pad_data_errors[MAX_PORT_NUM];
 static int pad_button_state_seen[MAX_PORT_NUM];
 static unsigned int last_pad_buttons[MAX_PORT_NUM];
+static unsigned int last_pad_digital1[MAX_PORT_NUM];
+static unsigned int last_pad_digital2[MAX_PORT_NUM];
+static unsigned int pad_reports_since_heartbeat;
 static raop_receiver receiver;
 static raop_mdns_service mdns_service;
 static raop_crypto_context crypto_context;
@@ -147,6 +150,8 @@ static void poll_controls(int enabled)
     for (pad = 0; pad < MAX_PORT_NUM; ++pad) {
         padData data;
         unsigned int buttons = 0;
+        unsigned int digital1;
+        unsigned int digital2;
         int data_result;
 
         if (!info.status[pad]) {
@@ -177,14 +182,26 @@ static void poll_controls(int enabled)
             pad_data_errors[pad] = 0;
         }
 
-        buttons |= data.BTN_START ? 1U << 0 : 0;
-        buttons |= data.BTN_SELECT ? 1U << 1 : 0;
-        buttons |= data.BTN_CROSS ? 1U << 2 : 0;
-        buttons |= data.BTN_CIRCLE ? 1U << 3 : 0;
-        buttons |= data.BTN_UP ? 1U << 4 : 0;
-        buttons |= data.BTN_DOWN ? 1U << 5 : 0;
-        buttons |= data.BTN_LEFT ? 1U << 6 : 0;
-        buttons |= data.BTN_RIGHT ? 1U << 7 : 0;
+        ++pad_reports_since_heartbeat;
+        digital1 = data.button[PAD_BUTTON_OFFSET_DIGITAL1];
+        digital2 = data.button[PAD_BUTTON_OFFSET_DIGITAL2];
+
+        /* Decode both PSL1GHT's bitfields and its documented raw digital words. */
+        buttons |= (data.BTN_START || (digital1 & PAD_CTRL_START)) ? 1U << 0 : 0;
+        buttons |= (data.BTN_SELECT || (digital1 & PAD_CTRL_SELECT)) ? 1U << 1 : 0;
+        buttons |= (data.BTN_CROSS || (digital2 & PAD_CTRL_CROSS)) ? 1U << 2 : 0;
+        buttons |= (data.BTN_CIRCLE || (digital2 & PAD_CTRL_CIRCLE)) ? 1U << 3 : 0;
+        buttons |= (data.BTN_UP || (digital1 & PAD_CTRL_UP)) ? 1U << 4 : 0;
+        buttons |= (data.BTN_DOWN || (digital1 & PAD_CTRL_DOWN)) ? 1U << 5 : 0;
+        buttons |= (data.BTN_LEFT || (digital1 & PAD_CTRL_LEFT)) ? 1U << 6 : 0;
+        buttons |= (data.BTN_RIGHT || (digital1 & PAD_CTRL_RIGHT)) ? 1U << 7 : 0;
+        if (!pad_button_state_seen[pad] ||
+            digital1 != last_pad_digital1[pad] ||
+            digital2 != last_pad_digital2[pad]) {
+            (void)log_event("PAD_RAW_MASKS", (int)digital1, (size_t)digital2);
+            last_pad_digital1[pad] = digital1;
+            last_pad_digital2[pad] = digital2;
+        }
         if (!pad_button_state_seen[pad] || buttons != last_pad_buttons[pad]) {
             (void)log_event("PAD_BUTTONS", (int)buttons, (size_t)pad);
             pad_button_state_seen[pad] = 1;
@@ -648,6 +665,9 @@ int main(void)
 		if ((u64)sysGetSystemTime() >= next_heartbeat_us) {
    (void)log_event("APP_HEARTBEAT", (int)receiver.session.state, system_menu_open);
    (void)log_event("PAD_HEALTH", last_pad_result, (size_t)last_pad_mask);
+   (void)log_event("PAD_REPORTS", (int)pad_reports_since_heartbeat,
+    (size_t)last_pad_mask);
+   pad_reports_since_heartbeat = 0;
    (void)log_event("SCREEN_FLIPS", bounded_counter_delta(screen_flips, 0), screen.redraw_mask);
    next_heartbeat_us = sysGetSystemTime() + 10000000U;
   }
