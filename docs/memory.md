@@ -519,3 +519,13 @@ Display candidate restores the standard GPU-side wait-flip command ordering afte
 
 - Authenticated GitHub GraphQL identifies `EsKaye` as the active public Sponsors profile (`hasSponsorsListing=true`, URL `https://github.com/sponsors/EsKaye`). Organization `MKWorldWide` has no Sponsors listing. The Sponsors profile's Short bio and Introduction were updated through the GitHub dashboard with the maintainer-supplied copy; the profile already featured `MKWorldWide/ps3-airplay`.
 - The repository README now has a brief optional support section linking to the EsKaye profile. `.github/FUNDING.yml` declares only `github: EsKaye`; no external funding provider is configured. Change `76fdd381` is on `main`, and the repository-level Sponsorships feature is enabled; the public repository renders its Sponsor button to `github.com/sponsors/EsKaye`.
+
+## Experimental resident overnight work (2026-11-08)
+
+- All work is isolated to `experimental/resident-airplay` in a separate worktree. The stable `main` checkout, published v1.0.0 tag/assets, and physical consoles are out of scope.
+- The resident receiver remains diagnostic: it handles RAOP receive/decrypt/ALAC decode and logs decoded frame counts, but intentionally discards decoded PCM. No PS3 audio output or game coexistence is implemented or established.
+- The resident build now accepts configurable log path, RTSP port, and RTP base port; defaults remain `/dev_hdd0/tmp/ps3-airplay.log`, 5000, and 6000. The dedicated RPCS3 harness uses a distinct log and ports 5001/6100 to avoid host service conflicts.
+- `module_stop` now waits up to five seconds for the worker's cleanup-complete signal before joining; timeout or join failure returns `SYS_PRX_STOP_FAILED` and keeps module resources resident. RPCS3 execution of repeated load/start/stop cycles is not yet verified.
+- Linux host suite, PPU build, PRX structural check, and diagnostic package generation passed in the 2026-11-08 pass. One initial `raop_receiver_test` run failed on its 500 ms packet-observation assertion; a direct rerun and the subsequent full suite passed, so retain as a timing-sensitive test observation rather than a reproduced receiver defect.
+- A dedicated RPCS3 package uses title ID `RPRX90001`, confirmed absent from the local emulator installation before creation. The PRX is embedded under `USRDIR`; package inspection confirmed the entry. Actual install/run awaits emulator UI access.
+- Host synthetic encrypted RTP-to-ALAC-to-PCM tests passed; this demonstrates host decoder/pipeline behavior only. The resident PRX does not emit PCM to an audio device.

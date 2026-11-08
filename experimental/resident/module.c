@@ -8,6 +8,7 @@
 #include <sys/prx.h>
 #include <sys/thread.h>
 #include <sys/prx_module.h>
+#include <sys/sys_time.h>
 
 #include <arpa/inet.h>
 #include <netinet/in.h>
@@ -21,8 +22,18 @@
 #include <unistd.h>
 #endif
 
+#ifndef RECEIVER_LOG_PATH
 #define RECEIVER_LOG_PATH "/dev_hdd0/tmp/ps3-airplay.log"
+#endif
 #define RECEIVER_WORKER_STACK 0x10000
+#define WORKER_STOP_TIMEOUT_US 5000000ULL
+#define WORKER_STOP_MAX_POLLS 1000000U
+#ifndef RESIDENT_RTSP_PORT
+#define RESIDENT_RTSP_PORT 5000
+#endif
+#ifndef RESIDENT_RTP_BASE_PORT
+#define RESIDENT_RTP_BASE_PORT 6000
+#endif
 
 extern void __libc_init_array(void);
 extern void __libc_fini_array(void);
@@ -33,6 +44,7 @@ static raop_mdns_service mdns_service;
 static raop_crypto_context crypto_context;
 static sys_ppu_thread_t worker_thread;
 static volatile int stop_requested;
+static volatile int worker_exited;
 static volatile int receiver_log_lock;
 static int worker_started;
 static int net_module_loaded;
@@ -120,12 +132,15 @@ static void receiver_worker(void *argument)
 	(void)argument;
 	mdns_service.socket_fd = -1;
 
-	if (!raop_receiver_open(&receiver, 5000, 6000, &receiver_log)) {
+	if (!raop_receiver_open(&receiver, RESIDENT_RTSP_PORT,
+		RESIDENT_RTP_BASE_PORT, &receiver_log)) {
 		(void)log_event("RECEIVER_OPEN_FAILED", -1, 0);
+		__atomic_store_n(&worker_exited, 1, __ATOMIC_RELEASE);
 		sysThreadExit(0);
 	}
 	if (!log_event("RECEIVER_READY", raop_receiver_rtsp_port(&receiver), 0)) {
 		raop_receiver_close(&receiver);
+		__atomic_store_n(&worker_exited, 1, __ATOMIC_RELEASE);
 		sysThreadExit(0);
 	}
 	if (local_ipv4(address)) {
@@ -222,6 +237,7 @@ static void receiver_worker(void *argument)
 	raop_mdns_service_close(&mdns_service);
 	raop_receiver_close(&receiver);
 	(void)log_event("WORKER_STOPPED", 0, 0);
+	__atomic_store_n(&worker_exited, 1, __ATOMIC_RELEASE);
 	sysThreadExit(0);
 }
 
@@ -263,6 +279,7 @@ int module_start(size_t args, void *argp)
 	 * lifecycle and does not use the TLS-backed sys_ppu_thread_create shim. */
 	__libc_init_array();
 	stop_requested = 0;
+	worker_exited = 0;
 	worker_started = 0;
 	net_module_loaded = 0;
 	net_initialized = 0;
@@ -346,12 +363,27 @@ fail_runtime:
 int module_stop(size_t args, void *argp)
 {
 	uint64_t thread_result = 0;
+	uint64_t wait_started_us;
+	uint32_t wait_polls = 0;
 	int join_result;
 	(void)args;
 	(void)argp;
 
 	__atomic_store_n(&stop_requested, 1, __ATOMIC_RELEASE);
 	if (worker_started) {
+		wait_started_us = sys_time_get_system_time();
+		while (!__atomic_load_n(&worker_exited, __ATOMIC_ACQUIRE) &&
+			wait_polls < WORKER_STOP_MAX_POLLS) {
+			if (sys_time_get_system_time() - wait_started_us >=
+				WORKER_STOP_TIMEOUT_US)
+				break;
+			++wait_polls;
+			(void)sysThreadYield();
+		}
+		if (!__atomic_load_n(&worker_exited, __ATOMIC_ACQUIRE))
+			return SYS_PRX_STOP_FAILED;
+		/* The worker has completed receiver cleanup and is at sysThreadExit;
+		 * join now only to reap its already-terminating joinable thread. */
 		join_result = sysThreadJoin(worker_thread, &thread_result);
 		if (join_result != 0) {
 			/* The listener may still be writing directly to the same log.

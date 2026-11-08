@@ -11,6 +11,9 @@ MBEDTLS_PPU_BUILD="$DEPS_ROOT/build-ppu-$MBEDTLS_VERSION"
 MBEDTLS_INCLUDE_DIR="$MBEDTLS_SOURCE/include"
 MBEDTLS_CRYPTO_LIBRARY="$MBEDTLS_PPU_BUILD/library/libmbedcrypto.a"
 BUILD_DIR="${BUILD_DIR:-$(pwd)/build/lima-resident}"
+RESIDENT_LOG_PATH="${RESIDENT_LOG_PATH:-/dev_hdd0/tmp/ps3-airplay.log}"
+RESIDENT_RTSP_PORT="${RESIDENT_RTSP_PORT:-5000}"
+RESIDENT_RTP_BASE_PORT="${RESIDENT_RTP_BASE_PORT:-6000}"
 JOBS="${JOBS:-2}"
 
 export PS3DEV PS3DK PS3DK_SOURCE DEPS_ROOT MBEDTLS_SOURCE MBEDTLS_INCLUDE_DIR
@@ -20,7 +23,10 @@ export PATH="$PS3DEV/bin:$PS3DEV/ppu/bin:$PS3DEV/spu/bin:$PATH"
 ./scripts/build-lima-crypto.sh
 
 cmake -S experimental/resident -B "$BUILD_DIR" \
-	-DCMAKE_TOOLCHAIN_FILE="$PS3DK_SOURCE/cmake/ps3-ppu-toolchain.cmake"
+	-DCMAKE_TOOLCHAIN_FILE="$PS3DK_SOURCE/cmake/ps3-ppu-toolchain.cmake" \
+	-DRESIDENT_LOG_PATH="$RESIDENT_LOG_PATH" \
+	-DRESIDENT_RTSP_PORT="$RESIDENT_RTSP_PORT" \
+	-DRESIDENT_RTP_BASE_PORT="$RESIDENT_RTP_BASE_PORT"
 BUILD_ARGS=(--build "$BUILD_DIR" --target ps3_airplay_resident --parallel "$JOBS")
 if [[ "${CLEAN:-0}" == 1 ]]; then
 	BUILD_ARGS+=(--clean-first)

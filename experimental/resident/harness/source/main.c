@@ -1,0 +1,147 @@
+#include <sys/prx.h>
+
+#include <stdio.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <unistd.h>
+
+#define APP_LOG_PATH "/dev_hdd0/tmp/ps3-airplay-resident-harness.log"
+#define MODULE_LOG_PATH "/dev_hdd0/tmp/ps3-airplay-resident-test.log"
+#define MODULE_PATH "/dev_hdd0/game/RPRX90001/USRDIR/ps3-airplay-receiver.prx"
+#define TEST_CYCLES 3U
+#define EVENT_WAIT_POLLS 400U
+#define EVENT_POLL_US 25000U
+#define ACTIVE_HOLD_US 250000U
+
+static FILE *app_log;
+
+static void event(const char *name, int value)
+{
+	if (app_log != NULL) {
+		(void)fprintf(app_log, "event=%s value=%d\n", name, value);
+		(void)fflush(app_log);
+	}
+	(void)printf("event=%s value=%d\n", name, value);
+}
+
+static long file_size(const char *path)
+{
+	struct stat info;
+	return stat(path, &info) == 0 ? (long)info.st_size : 0;
+}
+
+static int log_contains_since(long offset, const char *needle)
+{
+	char line[512];
+	FILE *input = fopen(MODULE_LOG_PATH, "rb");
+	if (input == NULL)
+		return 0;
+	if (offset > 0 && fseek(input, offset, SEEK_SET) != 0) {
+		(void)fclose(input);
+		return 0;
+	}
+	while (fgets(line, sizeof(line), input) != NULL) {
+		if (strstr(line, needle) != NULL) {
+			(void)fclose(input);
+			return 1;
+		}
+	}
+	(void)fclose(input);
+	return 0;
+}
+
+static int wait_for_event(long offset, const char *needle)
+{
+	unsigned int poll;
+	for (poll = 0; poll < EVENT_WAIT_POLLS; ++poll) {
+		if (log_contains_since(offset, needle))
+			return 1;
+		(void)usleep(EVENT_POLL_US);
+	}
+	return 0;
+}
+
+static int run_cycle(unsigned int cycle)
+{
+	long log_offset = file_size(MODULE_LOG_PATH);
+	sys_prx_id_t module_id;
+	int module_result = 0;
+	int result;
+	char name[32];
+	(void)snprintf(name, sizeof(name), "CYCLE_%u_BEGIN", cycle);
+	event(name, (int)cycle);
+
+	module_id = sys_prx_load_module(MODULE_PATH, 0, NULL);
+	if (module_id < 0) {
+		event("LOAD_FAILED", module_id);
+		return 0;
+	}
+	event("LOAD_OK", module_id);
+	result = sys_prx_start_module(module_id, 0, NULL, &module_result, 0, NULL);
+	if (result != 0) {
+		event("START_FAILED", result);
+		result = sys_prx_unload_module(module_id, 0, NULL);
+		event("UNLOAD_AFTER_START_FAILURE", result);
+		return 0;
+	}
+	event("START_OK", module_result);
+	if (module_result != SYS_PRX_RESIDENT) {
+		event("START_NOT_RESIDENT", module_result);
+		result = sys_prx_unload_module(module_id, 0, NULL);
+		event("UNLOAD_AFTER_NONRESIDENT_START", result);
+		return 0;
+	}
+	if (!wait_for_event(log_offset, "event=RECEIVER_READY")) {
+		event("RECEIVER_READY_TIMEOUT", (int)cycle);
+		result = sys_prx_stop_module(module_id, 0, NULL, &module_result, 0, NULL);
+		if (result == 0) {
+			result = sys_prx_unload_module(module_id, 0, NULL);
+			event("CLEANUP_AFTER_STARTUP_TIMEOUT", result);
+		}
+		return 0;
+	}
+	event("RECEIVER_READY", (int)cycle);
+	(void)usleep(ACTIVE_HOLD_US);
+
+	result = sys_prx_stop_module(module_id, 0, NULL, &module_result, 0, NULL);
+	event("STOP_RESULT", result);
+	if (result != 0)
+		return 0;
+	if (!wait_for_event(log_offset, "event=WORKER_STOPPED")) {
+		event("WORKER_STOP_EVENT_MISSING", (int)cycle);
+		return 0;
+	}
+	event("WORKER_STOPPED", (int)cycle);
+	result = sys_prx_unload_module(module_id, 0, NULL);
+	event("UNLOAD_RESULT", result);
+	if (result != 0)
+		return 0;
+	if (!wait_for_event(log_offset, "event=MODULE_STOP")) {
+		event("MODULE_STOP_EVENT_MISSING", (int)cycle);
+		return 0;
+	}
+	event("CYCLE_PASS", (int)cycle);
+	return 1;
+}
+
+int main(int argc, const char **argv)
+{
+	unsigned int cycle;
+	(void)argc;
+	(void)argv;
+	app_log = fopen(APP_LOG_PATH, "wb");
+	event(app_log != NULL ? "HARNESS_START" : "HARNESS_LOG_OPEN_FAILED", 0);
+	(void)printf("AIR PS3 resident lifecycle test; no audio output is expected.\n");
+	for (cycle = 1; cycle <= TEST_CYCLES; ++cycle) {
+		if (!run_cycle(cycle)) {
+			event("HARNESS_FAIL", (int)cycle);
+			if (app_log != NULL)
+				(void)fclose(app_log);
+			return 1;
+		}
+	}
+	event("HARNESS_PASS", (int)TEST_CYCLES);
+	if (app_log != NULL)
+		(void)fclose(app_log);
+	return 0;
+}

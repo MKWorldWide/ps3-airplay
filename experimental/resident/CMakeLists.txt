@@ -9,6 +9,12 @@ endif()
 set(PS3DK_SOURCE "$ENV{PS3DK_SOURCE}")
 set(MBEDTLS_INCLUDE_DIR "$ENV{MBEDTLS_INCLUDE_DIR}")
 set(MBEDTLS_CRYPTO_LIBRARY "$ENV{MBEDTLS_CRYPTO_LIBRARY}")
+set(RESIDENT_LOG_PATH "/dev_hdd0/tmp/ps3-airplay.log" CACHE STRING
+	"Runtime log path used by the resident module")
+set(RESIDENT_RTSP_PORT "5000" CACHE STRING
+	"RTSP listen port used by the resident module")
+set(RESIDENT_RTP_BASE_PORT "6000" CACHE STRING
+	"RTP audio/control/timing base port used by the resident module")
 if(NOT EXISTS "${MBEDTLS_INCLUDE_DIR}/mbedtls/aes.h" OR
 	NOT EXISTS "${MBEDTLS_CRYPTO_LIBRARY}")
 	message(FATAL_ERROR "Set MBEDTLS_INCLUDE_DIR and MBEDTLS_CRYPTO_LIBRARY to the verified Mbed TLS 3.6.7 build")
@@ -33,6 +39,11 @@ target_compile_options(ps3_airplay_resident PRIVATE
 	-Wall -Wextra -Werror -ffunction-sections -fdata-sections
 	-fno-unwind-tables -fno-asynchronous-unwind-tables -fno-exceptions)
 target_compile_definitions(ps3_airplay_resident PRIVATE MBEDTLS_NO_PLATFORM_ENTROPY)
+target_compile_definitions(ps3_airplay_resident PRIVATE
+	RECEIVER_LOG_PATH=\"${RESIDENT_LOG_PATH}\")
+target_compile_definitions(ps3_airplay_resident PRIVATE
+	RESIDENT_RTSP_PORT=${RESIDENT_RTSP_PORT}
+	RESIDENT_RTP_BASE_PORT=${RESIDENT_RTP_BASE_PORT})
 target_link_options(ps3_airplay_resident PRIVATE -Wl,--gc-sections)
 target_include_directories(ps3_airplay_resident PRIVATE
 	../../src/discovery
@@ -45,7 +56,7 @@ target_include_directories(ps3_airplay_resident PRIVATE
 	"${PS3DK_SOURCE}/sdk/include")
 set(PS3_LV2_CRT_DIR "${PS3DEV}/ppu/powerpc64-ps3-elf/lib")
 target_link_libraries(ps3_airplay_resident PRIVATE
-	net sysmodule netctl_stub lv2
+	net sysmodule netctl_stub lv2 m
 	"${MBEDTLS_CRYPTO_LIBRARY}"
 	"${PS3_LV2_CRT_DIR}/lv2-crti.o"
 	"${PS3_LV2_CRT_DIR}/lv2-crtn.o")

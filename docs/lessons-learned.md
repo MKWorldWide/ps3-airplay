@@ -800,3 +800,24 @@ The v0.1.31 fresh RPCS3 replay verifies the portable-arithmetic correction: the 
 - **Root Cause:** The repository's Settings → General → Features → Sponsorships toggle was disabled; a valid default-branch `FUNDING.yml` does not itself turn on this repository feature.
 - **Fix:** Enabled the repository's Sponsorships feature and confirmed the public page shows Sponsor and a sponsor card for EsKaye.
 - **Prevention Rule:** Verify both the default-branch funding file and repository-level Sponsorships toggle, then inspect the public repository page for the rendered button.
+
+## Keep target link dependencies explicit
+
+- **Problem:** The resident PRX failed to link after the shared session code's `powf` reference was retained.
+- **Root Cause:** The resident target omitted libm although the target code calls a math function.
+- **Fix:** Link `m` explicitly on the resident PRX target and rerun the complete PPU build and structural validator.
+- **Prevention Rule:** Each independently linked target must declare its own libraries; successful host linking does not prove the PPU link graph is complete.
+
+## Configure package overlays before the packaging helper checks them
+
+- **Problem:** The diagnostic PKG built successfully but initially omitted its resident PRX payload.
+- **Root Cause:** The PS3DK package helper tests whether its `PKGFILES` directory exists at CMake configure time; the custom command created the directory only later during the build.
+- **Fix:** Create the overlay directory during configuration, then populate it with the build dependency and verify the resulting package listing includes the PRX.
+- **Prevention Rule:** Check both build dependency output and the final package's internal file list; a successful package target does not prove the intended overlay was included.
+
+## Record timing-sensitive receiver test behavior
+
+- **Problem:** One host-suite run failed because `raop_receiver_test` did not observe a sent RTP packet within its 500 ms wait.
+- **Root Cause:** Not established. A direct rerun and the next complete host suite passed; do not label a single intermittent result as a fixed product bug.
+- **Fix:** Retain the exact failure in the development checkpoint and rerun the isolated test plus full suite once; both passed.
+- **Prevention Rule:** Preserve initial failures as evidence and distinguish flakiness from a reproduced defect before changing production timing or weakening assertions.
