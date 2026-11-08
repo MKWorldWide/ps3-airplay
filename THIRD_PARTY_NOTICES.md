@@ -12,6 +12,9 @@ It is third-party material and is not covered by this repository's MIT license.
 
 The repository's initial public commit already included this compatibility
 key. Removing it from the current tree would not erase that historical copy.
+The public receiver package also includes the key data in its statically linked
+executable. This project preserves the MIT attribution/license for the key-data
+copy from OpenAirPlay 1 below; no Apple affiliation or endorsement is implied.
 
 ## `azarucha/sys-airplay` mDNS reference
 
@@ -78,11 +81,23 @@ SOFTWARE.
 ## Mbed TLS build dependency
 
 The Lima crypto build uses the external Mbed TLS 3.6.7 source release for the
-`mbedcrypto` host and PS3 PPU libraries. The source is downloaded and SHA-256
-verified by `scripts/build-lima-crypto.sh`; it is not copied into this
-repository. Mbed TLS is dual-licensed under Apache-2.0 or GPL-2.0-or-later;
+statically linked `mbedcrypto` host and PS3 PPU libraries. The source is
+downloaded and SHA-256 verified by `scripts/build-lima-crypto.sh`; it is not
+copied into this repository. Mbed TLS is dual-licensed under Apache-2.0 or
+GPL-2.0-or-later. The upstream 3.6.7 license text is retained at
+[`licenses/MBED-TLS-3.6.7-LICENSE.txt`](licenses/MBED-TLS-3.6.7-LICENSE.txt);
 see the [upstream license](https://github.com/Mbed-TLS/mbedtls/blob/mbedtls-3.6.7/LICENSE)
 and [3.6.7 release](https://github.com/Mbed-TLS/mbedtls/releases/tag/mbedtls-3.6.7).
+
+## PS3DK and PSL1GHT build/runtime libraries
+
+The pinned PS3DK v0.27.0 and PSL1GHT runtime libraries are linked into the
+standalone EBOOT. Their upstream MIT license texts are retained in
+[`licenses/PS3DK-LICENSE.txt`](licenses/PS3DK-LICENSE.txt),
+[`licenses/PSL1GHT-LICENSE.txt`](licenses/PSL1GHT-LICENSE.txt), and
+[`licenses/PSL1GHT-RSX-LICENSE.txt`](licenses/PSL1GHT-RSX-LICENSE.txt).
+The compiler and package tools are build-time dependencies and are not included
+in the PKG.
 
 ## Hammerton ALAC decoder
 

@@ -1,8 +1,10 @@
 # Versioning policy
 
-AIRPLAY02 follows conservative pre-1.0 versioning. Increment the patch number for each distinct fix or small improvement that produces a new package: `0.1.4`, `0.1.5`, `0.1.6`, and so on. Never reuse a published or tested version number for different package contents. Record the exact package hash beside every result.
+AIRPLAY02's current public-release candidate is app `1.0.0`, with SFO `APP_VER` and `VERSION` set to `01.00`. The mapping for the next package is app `1.0.1` / SFO `01.01`, then `1.0.2` / `01.02`. Keep app semantic versions in `release.json`; update the app and SFO values together for each package. Never write `1.0.01`, reuse a package version, or edit generated SFO files by hand. The build scripts and startup marker read from the checked-in release config. `scripts/test-release-config.py` checks the current mapping and the next patch mapping.
 
-**Latest installed and log-tested package:** AIRPLAY02 `0.2.8`, SFO `00.48`, source `9f7af0027b7c3e9470a1583bbfbf676f9525f72d`. PKG size 3,906,640 bytes; SHA-256 `e70d957de4a0fe2b0f8a7bd3a87f63cabaab2f12726e6341508a5f9b8c5de383`. FTP download-back and installed SFO/EBOOT match the validated package payload. A user-supplied development-unit log summary covers 10m41s and reports 69,632 RTP packets, 17 missing observations all recovered, and no queue drops, concealment/skips, PCM underflows, or ALAC failures. This is shorter than the 30-minute target and does not establish audible quality or display/resume behavior. See `docs/PUBLIC_RELEASE_PLAN.md` for evidence boundaries and next gates.
+No v1.0.0 release tag or GitHub Release exists yet. Candidate package generation does not imply publication or hardware installation. Record the exact source commit, toolchain, package size/hash, ELF hash, SFO identity, and extracted asset hashes for every candidate.
+
+**Latest installed and log-tested package:** AIRPLAY02 `0.2.8`, SFO `00.48`, source `9f7af0027b7c3e9470a1583bbfbf676f9525f72d`. PKG size 3,906,640 bytes; SHA-256 `e70d957de4a0fe2b0f8a7bd3a87f63cabaab2f12726e6341508a5f9b8c5de383`. The user's later Gate 0 summary supersedes earlier shorter captures: about 45 minutes, four XMB open/close cycles, and no reported PCM underflows, ALAC failures, RTP queue drops, concealed/skipped frames, or screen presentation failures. A maximum service interval near 45 ms occurred during XMB resume; the user accepted this brief resume hitch for Gate 0. This is user-provided summarized evidence, not a fresh independent raw-log audit or a claim of flawless sound/display.
 
 **Known-safe functional baseline:** AIRPLAY02 `0.2.4` / SFO `00.44`. User confirms PS opens the system menu, START exits cleanly to XMB, and AirPlay streams music. Resume returns with a dimmed screen and frozen loading indicator; brief audio stutters remain. The 16 KiB per-launch diagnostic cap was reached about 37 seconds into the observed active-stream session. This is a functional rollback baseline, not a quality/stability release.
 
@@ -56,9 +58,10 @@ The immutable `safe-v0.2.4` Git tag points to packaged source commit `f870d823f1
 ## Milestones
 
 - **0.1.x — focused fixes and validation.** Each package changes one or a few clearly described items and carries a matching SFO and startup-log version. Failed candidates remain documented; the next distinct package increments the final number.
-- **0.2.0 — stable diagnostic application.** The standalone app launches and exits reliably, provides actionable capped logs, and exposes basic settings and diagnostic toggles. This milestone does not claim working AirPlay audio.
-- **0.3.0 — stable AirPlay receiver.** Discovery, connection, streamed audio, pause/resume, volume, reconnect, and sustained playback are verified on real hardware. RPCS3 and host tests are useful gates but do not replace console and iPhone evidence.
-- **Later milestones — separately demonstrated capabilities.** Game-audio coexistence, resident-module operation, and other major features require their own feasibility and hardware evidence.
+- **1.0.0 — focused standalone AirPlay receiver release.** Gate 0 is user accepted; exact-source build, package, privacy, license/notice, and publication gates are tracked separately. The initial package uses app `1.0.0` / SFO `01.00`.
+- **1.1.x — metadata and artwork.** Add only bounded, tested Now Playing behavior after the receiver baseline is released.
+- **1.2.x and later — controller/display settings.** Treat DualShock transport controls and visual options as separate features with explicit hardware acceptance.
+- **Separate feasibility work — resident playback and game-audio coexistence.** These require independent feasibility and hardware evidence; no universal game-audio mixing capability is claimed.
 
 ## Release rules
 

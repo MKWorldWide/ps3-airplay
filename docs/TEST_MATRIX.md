@@ -1,5 +1,15 @@
 # Test matrix
 
+## v1.0.0 release gate preparation (2026-11-08)
+
+| Test | Result | Boundary |
+|---|---|---|
+| App/SFO version source | PASS: `release.json` reports app `1.0.0`, SFO `01.00`; regression test accepts next `1.0.1` / `01.01` and rejects malformed semantic versions. | Host-side config test only; package SFO pending the Lima build. |
+| Release evidence verifier | PASS: synthetic debug-PKG header accepted when source/hash/check statuses match; mismatched hash and pending validation status were rejected. | Validates metadata and package envelope, not a real release package. |
+| v0.2.8 Gate 0 hardware acceptance | PASS, user accepted: about 45 minutes, four XMB cycles, no reported PCM underflows, ALAC failures, RTP queue drops, concealed/skipped frames, or screen-presentation failures. | User-supplied summary; ~45 ms maximum service interval on XMB resume retained as a known hitch. No fresh raw-log audit in this pass. |
+| v1.0.0 exact-source build and package | PENDING | Must run from the committed source archive in pinned Lima; neither PS3 is modified. |
+| GitHub tag/release | BLOCKED | Do not create until exact-source build, package, privacy, notices, and release-branch gates pass. |
+
 ## v0.2.0 candidate work (2026-11-07)
 
 | Test | Result | Boundary |

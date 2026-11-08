@@ -1,36 +1,28 @@
 # AIR PS3 roadmap
 
-This roadmap is the current plan for turning AIR PS3 into a stable, public AirPlay 1 audio receiver, then adding optional Now Playing and display features. The stable receiver is a focused milestone; metadata, controller controls, and visual customization do not block that release.
+## Current state — v1.0.0 release candidate
 
-For detailed acceptance criteria, hardware boundaries, and release checks, see [PUBLIC_RELEASE_PLAN.md](PUBLIC_RELEASE_PLAN.md). Historical engineering evidence remains in [TEST_MATRIX.md](TEST_MATRIX.md) and the dated reports under `docs/reports/`.
-
-## Current state — v0.2.8 / SFO 00.48
-
-- Identity: repository `MKWorldWide/ps3-airplay`; application `AIRPLAY02`; XMB title **AIR PS3**; AirPlay receiver label **AirPS3**.
-- The v0.2.8 candidate passed the pinned Lima host, PPU, ELF, SFO, artwork, and debug-PKG validation. It was installed on the development PS3; FTP download-back and installed SFO/EBOOT matched the validated package payload.
-- A user-supplied summary of the development-unit log reports 10m41s of active-stream telemetry: 69,632 RTP packets, 17 missing-packet observations all recovered, no logged queue drops/concealment/skips/PCM underflows/ALAC failures, and queue/PCM occupancy within expected bounds. This is telemetry evidence, not subjective proof of uninterrupted audible quality.
-- The same summary reports successful RTSP OPTIONS responses, one stream setup, AirPlay volume updates, one FLUSH, and repeated rejected timing-packet diagnostics. Timing-packet behavior remains open for investigation.
-- No XMB menu/resume events appear in the summarized capture. The v0.2.8 display, menu composition/resume, clean exit, repeatability, and sustained 30-minute playback criteria are not yet established.
-- The GitHub repository is public, `main` is the default branch, and there are currently no GitHub Releases (read-only check, 2026-11-08). Do not change repository visibility or publish a release as part of roadmap work.
+- Version source is `release.json`: app `1.0.0`, SFO `01.00`, title ID `AIRPLAY02`, XMB title `AIR PS3`, RAOP service name `AirPS3`.
+- Gate 0 is user-accepted from the v0.2.8 dev-unit run: about 45 minutes, four XMB cycles, no reported PCM underflows, ALAC failures, RTP queue drops, concealed/skipped frames, or screen-presentation failures. The user accepted a brief ~45 ms service interval on XMB resume as a known hitch. This is summarized user evidence, not a new raw-log audit.
+- The v1.0.0 candidate must be rebuilt from one exact source revision with the full Lima gate. A release tag/package is not published yet. Current source is on the existing feature branch and should be integrated to the intended release branch before publication.
+- Public release distribution remains gated on review of third-party notices, artwork permission/provenance, exact debug-PKG contents, automated candidate verification, and release-branch integration. Neither PS3 is changed as part of release preparation.
 
 ## Release path
 
-| Gate / phase | Goal | Current state |
-|---|---|---|
-| Gate 0 — v0.2.8 candidate acceptance | Verify artifact identity; foreground image; PS-menu open/close/resume; START exit; real iPhone discovery/session; audio and reconnect; fresh logs; safe rollback | Build and installation verified. Short telemetry run reported. Display/resume, user-observed audio quality, repeat sessions, clean exit, and 30-minute run remain open. |
-| Phase 1 — Stable receiver | Bound or fix long stalls/full-queue recovery; keep diagnostics off the audio/control hot path; pass repeatable hardware playback/reconnect/exit criteria; document support and recovery | Release blocked on Gate 0 and the stable-release checklist. Keep candidate/beta language until evidence passes. Target stable receiver milestone: 0.3.0, subject to final version review. |
-| Phase 2 — Now Playing | Add bounded title/artist/album/artwork handling based on verified sender behavior | Planned after the stable receiver milestone. |
-| Phase 3 — DualShock controls | Add local volume/mute and only sender-supported transport controls | Planned after protocol capability and focus/button behavior are tested. Keep separate from AirPlay `SET_PARAMETER` volume handling. |
-| Phase 4 — Display settings | Add safe dimming, backgrounds, fonts, layout, artwork size, transitions, and ambient mode | Planned after display and XMB resume are stable. Never draw over or assume ownership of VSH. |
-| Phase 5 — Release publication | Complete exact-source/package/privacy/license checks, public installation guidance, checksums and release notes | Repository is already public; no downloadable GitHub Release exists yet. Publication remains a separate, evidence-gated action. |
+1. Keep release identity centralized in `release.json`; app `1.0.0` maps to SFO `01.00`, next patch `1.0.1` to `01.01`.
+2. Run the pinned Lima host/sanitizer, PPU, ELF, SFO, artwork, extraction, and debug-PKG checks from a clean committed source revision.
+3. Produce `release-evidence.json` and `SHA256SUMS.txt` alongside the ignored local package; independently verify source SHA, version, package envelope, and payload records.
+4. Resolve privacy and distribution gates. If any check is unresolved or fails, do not create a tag or GitHub Release.
+5. Stage a draft only after all checks pass; publish separately through the manual GitHub workflow. The publish job alone has `contents: write`.
+6. Keep hardware installation separate. This task does not install, restart, or alter either PS3.
 
 ## Priority order
 
-1. Finish Gate 0 with a single controlled development-unit run and exact version/hash identification.
-2. Establish a repeatable 30-minute receiver session, then extend the soak only after shorter runs pass; retain separate results for the development and primary test units.
-3. Use fresh logs to classify stalls, RTP gaps/recovery, timing packets, PCM occupancy/underflows, logger queue pressure, and shutdown. Do not infer audible quality from counters alone.
-4. Resolve remaining stable-receiver and public-distribution blockers; then prepare the focused 0.3.0 receiver release.
-5. Start metadata, DualShock, and display-setting phases independently after the stable receiver gate.
+1. Complete the exact-source Lima build for app `1.0.0` / SFO `01.00` and record package, ELF, and extracted-payload evidence.
+2. Finish the privacy, license/notice, package-format, and release-branch reviews. Keep the tag and GitHub Release absent while any gate is open.
+3. Stage a reviewable draft only after every Gate 1 check passes; publish through the manual workflow.
+4. Retain the ~45 ms XMB-resume service interval as a known polish item. Gate 0 is user accepted; no fresh PS3 installation occurs during this work.
+5. Start metadata, DualShock, and display-setting phases independently after the focused stable receiver release.
 
 ## Scope boundaries
 

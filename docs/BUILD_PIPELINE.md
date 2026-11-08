@@ -8,44 +8,23 @@ The v01.01 reference decrypted by RPCS3 is an ELF64 big-endian PPC64 `ET_EXEC`, 
 
 ## Required per-build release gate
 
-Run one command for every standalone package so host regressions, PPU component checks, the standalone ELF build, and package validation cannot be accidentally skipped:
+`release.json` is the single version/identity source. The current candidate is app `1.0.0` / SFO `01.00`; update both fields there for each subsequent package (`1.0.1` / `01.01`, then `1.0.2` / `01.02`). Do not hand-edit generated SFO data or use `1.0.01`. `scripts/test-release-config.py` checks the current and next mapping. The standalone Makefile and build/package scripts read defaults from this file; the combined gate rejects conflicting environment overrides.
+
+Use the existing x86_64 Lima guest with the pinned PS3DK v0.27.0 PPU toolchain, recorded PSL1GHT checkout, and matching Mbed TLS PPU library. The legacy GCC 7.2/binutils 2.22 script is a comparison experiment only. The release workflow does not attempt to recreate this local toolchain in GitHub Actions: it accepts only a package produced by this exact-source gate, accompanied by generated evidence and hashes.
+
+From a clean committed checkout in Lima:
 
 ```sh
 export PS3DK_SOURCE="$HOME/ps3-airplay-host/ps3-sdk-src-v0.27.0"
 export SOURCE_REVISION="$(git rev-parse HEAD)"
-export APP_VERSION=0.2.5
-export SFO_VERSION=00.45
 bash scripts/release-lima-standalone-receiver.sh
 ```
 
-The release gate requires a clean tracked worktree and a full matching source revision. It runs `build-lima-crypto.sh`, `build-lima-standalone-receiver.sh`, generates the runtime RGB background from `assets/air-ps3/artwork-source.png`, validates `ICON0.PNG` and `PIC1.PNG` as direct resizes of that source, then runs `package-lima-standalone-receiver.sh` with fail-fast behavior. The image conversion requires Pillow (`python3-pil` on Ubuntu). The packager includes project-managed artwork rather than the generic SDK icon and verifies extracted asset equality. Keep build outputs and package files under ignored `work/`; never deploy a package that failed any stage. Record the exact source revision and output hash. The first physical launch remains a separate hardware test.
+The script reads app/SFO versions from `release.json`, verifies a clean tracked tree and exact full source revision, tests the version mapping, builds crypto and runs host/sanitizer tests, builds the CellOS PPC64 ELF, generates the runtime RGB background from `assets/air-ps3/artwork-source.png`, checks the supplied artwork derivatives, packages a type-1 debug PKG, extracts it, validates SFO/content ID/relative package paths/assets/envelope, then writes path-free `release-evidence.json` and `SHA256SUMS.txt` beside the ignored local package. Pillow is required in Lima for deterministic RGB artwork generation. Build outputs stay under ignored `build/` or `work/`; never deploy or publish a package that failed any stage.
 
-AIR PS3 packaging defaults are `XMB_TITLE="AIR PS3"`, `APP_VERSION=0.2.8`, and `SFO_VERSION=00.48` for this candidate. The RAOP DNS-SD instance uses the existing hardware-derived unique prefix followed by `@AirPS3`; the hardware address itself is not committed. The existing title/content ID remain unchanged.
+The generated evidence records source SHA, app/SFO/title/content identity, compiler/linker/PSL1GHT, ELF and PKG hashes/sizes, extracted EBOOT/SFO/artwork hashes, and completed validators. `scripts/verify-release-evidence.py` independently checks that source/version and evidence match the selected release config, the PKG envelope/type/content ID/size are valid, and the PKG hash is exact. `scripts/stage-github-release.sh` additionally re-extracts the PKG and checks its SFO and payload. It refuses to create a tag or draft unless `docs/RELEASE_GATE_1.md` says PASS.
 
-The release path is:
-
-1. Run `scripts/release-lima-standalone-receiver.sh` for the combined fail-fast gate; its first stage runs `scripts/build-lima-crypto.sh` for portable protocol/audio tests and PPU object checks.
-2. Export the pinned toolchain paths, exact source revision, and next unused `APP_VERSION`.
-3. Run `scripts/build-lima-standalone-receiver.sh`. It builds Mbed TLS, clean-builds the receiver, and validates the resulting ELF against the v01.01 ABI/layout reference. It emits a build manifest with the source revision, compiler/linker versions, PSL1GHT revision, and ELF hash.
-4. Run `scripts/package-lima-standalone-receiver.sh`. It verifies the ELF again, creates the NPDRM SELF and matching SFO/content ID, builds the package under a relative content-ID directory, extracts and checks the unfinalized package (including APP_VER and asset bytes), then validates a type-1 debug package matching v01.01. Finalized NPDRM format is an explicit optional mode. The bundled `pkg` reader cannot extract finalized NPDRM type `0x80000001`, so extraction is deliberately checked before finalization. The script refuses to overwrite a versioned package or intermediate.
-5. Install and launch only in RPCS3 for the first gate. Keep physical console deployment separate and require the established recovery procedure and user authorization.
-
-Example, with paths adjusted to the local Lima guest:
-
-```sh
-export PS3DK_SOURCE="$HOME/ps3-airplay-host/ps3-sdk-src-v0.27.0"
-export PS3DEV="$PS3DK_SOURCE/stage/ps3dev"
-export SOURCE_REVISION="<full SHA of the exact source commit copied into Lima>"
-export APP_VERSION=0.1.30
-export SFO_VERSION=00.30
-# Optional emulator-only probe when the host's port 5000 is occupied.
-export RTSP_PORT=5001
-bash scripts/build-lima-crypto.sh
-bash scripts/build-lima-standalone-receiver.sh
-bash scripts/package-lima-standalone-receiver.sh
-```
-
-Keep the generated package, build manifest, and test logs outside Git. Record package SHA-256, size, source revision, and emulator outcome in a sanitized report. Never treat matching ELF headers or package extraction as proof of PS3 launch, visible display, AirPlay connection, or audible music.
+The local package is a candidate only. After privacy, licensing, source-branch and package checks pass, the staging helper creates a draft with install instructions, notices, release notes, evidence, and checksum. The manual `.github/workflows/publish-release.yml` workflow validates the exact source tag and package SHA before publication; `contents: write` is scoped to its final publish job. A tag/draft is never created by ordinary pushes. Do not install this comparison build on either PS3 as part of release preparation.
 
 ## Current evidence and limits
 

@@ -4,9 +4,22 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 : "${PS3DK_SOURCE:?Set PS3DK_SOURCE to the pinned PS3DK v0.27.0 tree}"
-: "${APP_VERSION:?Set the unique app/package version for this build}"
-: "${SFO_VERSION:?Set the matching XX.YY SFO version for this build}"
-export XMB_TITLE="${XMB_TITLE:-AIR PS3}"
+CONFIG="$PROJECT_ROOT/scripts/read-release-config.py"
+RELEASE_APP_VERSION="$(python3 "$CONFIG" app_version)"
+RELEASE_SFO_VERSION="$(python3 "$CONFIG" sfo_version)"
+RELEASE_TITLE="$(python3 "$CONFIG" xmb_title)"
+RELEASE_FORMAT="$(python3 "$CONFIG" package_format)"
+APP_VERSION="${APP_VERSION:-$RELEASE_APP_VERSION}"
+SFO_VERSION="${SFO_VERSION:-$RELEASE_SFO_VERSION}"
+if [[ "$APP_VERSION" != "$RELEASE_APP_VERSION" || "$SFO_VERSION" != "$RELEASE_SFO_VERSION" ]]; then
+	echo "Build versions must match release.json ($RELEASE_APP_VERSION / $RELEASE_SFO_VERSION)" >&2
+	exit 1
+fi
+export XMB_TITLE="${XMB_TITLE:-$RELEASE_TITLE}"
+if [[ "$XMB_TITLE" != "$RELEASE_TITLE" ]]; then
+	echo "XMB_TITLE must match release.json ($RELEASE_TITLE)" >&2
+	exit 1
+fi
 PS3DEV="${PS3DEV:-$PS3DK_SOURCE/stage/ps3dev}"
 
 if git -C "$PROJECT_ROOT" rev-parse --verify HEAD >/dev/null 2>&1; then
@@ -37,6 +50,13 @@ if [[ ! "$SFO_VERSION" =~ ^[0-9]{2}\.[0-9]{2}$ ]]; then
 fi
 
 export PROJECT_ROOT PS3DEV SOURCE_REVISION="$PROJECT_REV" APP_VERSION SFO_VERSION
+export PACKAGE_FORMAT="${PACKAGE_FORMAT:-$RELEASE_FORMAT}"
+if [[ "$PACKAGE_FORMAT" != "$RELEASE_FORMAT" ]]; then
+	echo "PACKAGE_FORMAT must match release.json ($RELEASE_FORMAT)" >&2
+	exit 1
+fi
+python3 "$SCRIPT_DIR/test-release-config.py"
+python3 "$SCRIPT_DIR/test-release-evidence.py"
 bash "$SCRIPT_DIR/build-lima-crypto.sh"
 MBEDTLS_INCLUDE="${DEPS_ROOT:-$HOME/ps3-airplay-host/crypto-deps}/src/mbedtls-3.6.7/include" \
  bash "$SCRIPT_DIR/run-forensic-tests.sh"
@@ -51,3 +71,15 @@ PACKAGE="$PROJECT_ROOT/build/lima-standalone-package/ps3-airplay-receiver-${APP_
 test -s "$PACKAGE"
 sha256sum "$PACKAGE"
 wc -c "$PACKAGE"
+python3 "$SCRIPT_DIR/write-release-evidence.py" \
+	--project-root "$PROJECT_ROOT" --package "$PACKAGE" \
+	--source-revision "$PROJECT_REV" --app-version "$APP_VERSION" \
+	--sfo-version "$SFO_VERSION" --package-format "$PACKAGE_FORMAT" \
+	--output "$PROJECT_ROOT/build/lima-standalone-package/release-evidence.json"
+python3 "$SCRIPT_DIR/verify-release-evidence.py" \
+	--package "$PACKAGE" \
+	--evidence "$PROJECT_ROOT/build/lima-standalone-package/release-evidence.json" \
+	--expected-source "$PROJECT_REV" \
+	--expected-sha256 "$(sha256sum "$PACKAGE" | awk '{print $1}')" \
+	--release-config "$PROJECT_ROOT/release.json"
+(cd "$PROJECT_ROOT/build/lima-standalone-package" && sha256sum -c SHA256SUMS.txt)

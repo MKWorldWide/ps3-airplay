@@ -1,6 +1,7 @@
 # PSL1GHT standalone AirPlay receiver. Inputs remain fixed and local-first.
 .SUFFIXES:
 .DEFAULT_GOAL := all
+REPO_ROOT := $(abspath $(dir $(firstword $(MAKEFILE_LIST)))/../..)
 
 ifeq ($(strip $(PSL1GHT)),)
 $(error Set PSL1GHT to the installed ps3dev directory)
@@ -39,7 +40,7 @@ INCLUDES := include
 TITLE := AIR PS3
 APPID := AIRPLAY02
 CONTENTID := UP0001-$(APPID)_00-0000000000000000
-APP_VERSION ?= 0.2.7
+APP_VERSION ?= $(shell python3 "$(REPO_ROOT)/scripts/read-release-config.py" app_version)
 RTSP_PORT ?= 5000
 
 ifeq ($(LEGACY_RUNTIME),1)

@@ -6,7 +6,7 @@ An open source AirPlay 1 (RAOP) receiver project for PlayStation 3 homebrew, dev
 
 ## Project status
 
-This is experimental software. AIRPLAY02 v0.2.8 / SFO `00.48` passed the host/PPU/package gate and was installed on the development PS3 with its transferred package and installed metadata verified. A user-supplied summary of a 10m41s run reports active RTP and PCM processing, with all 17 reported missing-packet observations recovered and no logged queue drops, concealment/skips, PCM underflows, or ALAC failures. These counters do not establish uninterrupted audible quality. Visible display, PS-menu resume, clean exit, repeat reconnects, and a 30-minute user-confirmed playback run remain open. See the [roadmap](docs/ROADMAP.md), [public release plan](docs/PUBLIC_RELEASE_PLAN.md), [test matrix](docs/TEST_MATRIX.md), and [versioning policy](docs/VERSIONING.md).
+This is experimental software. The user accepted the AIRPLAY02 v0.2.8 / SFO `00.48` Gate 0 run after about 45 minutes, with four XMB open/close cycles and no reported PCM underflows, ALAC failures, RTP queue drops, concealed/skipped frames, or screen presentation failures. The summarized log showed a maximum audio-service interval near 45 ms during XMB resume; this remains a brief resume hitch. These are user-provided observations, not a fresh independent raw-log audit. The project is preparing app `1.0.0` / SFO `01.00`; no release is published yet. See the [roadmap](docs/ROADMAP.md), [public release plan](docs/PUBLIC_RELEASE_PLAN.md), [release gate](docs/RELEASE_GATE_1.md), [installation guide](docs/INSTALLATION.md), [test matrix](docs/TEST_MATRIX.md), and [versioning policy](docs/VERSIONING.md).
 
 The resident PRX currently receives and decodes supported audio packets for diagnostics; it does not output PCM. Game audio coexistence is a separate feasibility question. No universal in-game mixing capability is claimed.
 
@@ -25,6 +25,8 @@ The resident PRX currently receives and decodes supported audio packets for diag
 - [Architecture and project boundaries](docs/ARCHITECTURE.md)
 - [Development setup](docs/DEV_SETUP.md)
 - [Standalone build and package pipeline](docs/BUILD_PIPELINE.md)
+- [Installation, removal, and rollback](docs/INSTALLATION.md)
+- [Gate 1 release status](docs/RELEASE_GATE_1.md)
 - [Roadmap](docs/ROADMAP.md)
 - [Public stable release and feature plan](docs/PUBLIC_RELEASE_PLAN.md)
 - [Test matrix](docs/TEST_MATRIX.md)

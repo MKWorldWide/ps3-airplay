@@ -92,3 +92,10 @@ Big-endian PCM bytes and paced target packet/decode/PCM path now validate in RPC
 - The 30m03s dev run reports 26,814 PCM underflow output frames and a maximum audio-service gap of 35.842ms. These are plausible dropout/pacing risks; neither counter establishes an audible artifact or identifies its cause. A controlled same-source listening comparison is still needed.
 - The RTP queue averaged about 136 of 256 slots across the full v0.2.7 application session and peaked at 177. No pending queue drops were reported. Monitor latency/backlog before changing the bound.
 - The capture contains no XMB menu/resume cycle. The 350ms host/mock guard is not physical display acceptance.
+
+## Public v1.0.0 release candidate (2026-11-08)
+
+- Gate 0 is accepted based on the user's summary of a ~45-minute v0.2.8 dev-unit run with four XMB cycles and no named packet/decode/PCM/presentation failures. A ~45 ms service interval occurred during XMB resume and is accepted as a brief hitch, not a claim of flawless resume or acoustics. Preserve the evidence provenance.
+- A fresh v1.0.0 package has not yet been independently validated. Do not create a release tag or GitHub Release if the exact-source build, package extraction, privacy scan, branch integration, or notices review fails.
+- The release includes the AIRPLAY02 debug PKG, which is not promised to install on retail firmware. The PS3DK/PSL1GHT/Mbed TLS environment is local to Lima and is not provisioned on GitHub-hosted runners; release automation only validates and publishes the exact locally built artifact.
+- User-supplied artwork is authorized for use in this project and package by direct user instruction; do not imply that the MIT code license grants wider rights. Keep third-party notices with the release assets.

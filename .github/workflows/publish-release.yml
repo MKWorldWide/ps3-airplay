@@ -1,0 +1,110 @@
+name: Publish verified AIR PS3 release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing draft tag, for example v1.0.0
+        required: true
+        type: string
+      source_sha:
+        description: Full source commit SHA for the release
+        required: true
+        type: string
+      package_sha256:
+        description: Expected SHA-256 of the debug PKG asset
+        required: true
+        type: string
+
+permissions: {}
+
+jobs:
+  validate:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify tag points at the selected source
+        env:
+          EXPECTED_SOURCE: ${{ inputs.source_sha }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          [[ "$EXPECTED_SOURCE" =~ ^[0-9a-f]{40}$ ]]
+          test "$RELEASE_TAG" = "v$(python3 scripts/read-release-config.py app_version)"
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SOURCE"
+          test "$(git rev-parse "refs/tags/$RELEASE_TAG^{commit}")" = "$EXPECTED_SOURCE"
+          test "$(git rev-parse origin/main)" = "$EXPECTED_SOURCE"
+      - name: Download draft assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          test "$(gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft)" = "true"
+          mkdir -p build/release-assets
+          gh release download "$RELEASE_TAG" --dir build/release-assets \
+            --pattern '*.pkg' --pattern 'release-evidence.json' --pattern 'SHA256SUMS.txt' \
+            --pattern 'INSTALLATION.md' --pattern 'THIRD_PARTY_NOTICES.md' \
+            --pattern '*.txt' --pattern '*.md'
+      - name: Validate package, evidence, and hashes
+        env:
+          EXPECTED_SOURCE: ${{ inputs.source_sha }}
+          EXPECTED_PKG_SHA256: ${{ inputs.package_sha256 }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          pkg_count="$(find build/release-assets -maxdepth 1 -type f -name '*.pkg' | wc -l)"
+          test "$pkg_count" -eq 1
+          pkg="$(find build/release-assets -maxdepth 1 -type f -name '*.pkg' -print -quit)"
+          test -n "$pkg"
+          evidence=build/release-assets/release-evidence.json
+          test -s "$evidence"
+          test -s build/release-assets/INSTALLATION.md
+          test -s build/release-assets/THIRD_PARTY_NOTICES.md
+          test -s build/release-assets/MBED-TLS-3.6.7-LICENSE.txt
+          test -s build/release-assets/PS3DK-LICENSE.txt
+          test -s build/release-assets/PSL1GHT-LICENSE.txt
+          test -s build/release-assets/PSL1GHT-RSX-LICENSE.txt
+          python3 - <<'PY'
+          from pathlib import Path
+          actual = {p.name for p in Path("build/release-assets").iterdir() if p.is_file()}
+          expected = {
+              "ps3-airplay-receiver-1.0.0.pkg", "release-evidence.json", "SHA256SUMS.txt",
+              "RELEASE_NOTES-v1.0.0.md", "INSTALLATION.md", "THIRD_PARTY_NOTICES.md",
+              "MBED-TLS-3.6.7-LICENSE.txt", "PS3DK-LICENSE.txt", "PSL1GHT-LICENSE.txt",
+              "PSL1GHT-RSX-LICENSE.txt",
+          }
+          if actual != expected:
+              raise SystemExit("unexpected release asset set")
+          PY
+          (cd build/release-assets && sha256sum -c SHA256SUMS.txt)
+          python3 scripts/verify-release-evidence.py \
+            --package "$pkg" --evidence "$evidence" \
+            --expected-source "$EXPECTED_SOURCE" \
+            --expected-sha256 "$EXPECTED_PKG_SHA256" \
+            --release-config release.json
+
+  publish:
+    needs: validate
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    environment: public-release
+    permissions:
+      contents: write
+    steps:
+      - name: Publish validated draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          release_id="$(gh api "repos/$GH_REPO/releases/tags/$RELEASE_TAG" --jq .id)"
+          test -n "$release_id"
+          test "$(gh api "repos/$GH_REPO/releases/$release_id" --jq .draft)" = "true"
+          gh api --method PATCH "repos/$GH_REPO/releases/$release_id" \
+            -F draft=false -F prerelease=false >/dev/null

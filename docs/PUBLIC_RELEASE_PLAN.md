@@ -1,92 +1,46 @@
 # Public stable release and feature plan
 
 **Status checked:** 2026-11-08
-**Current candidate:** AIRPLAY02 v0.2.8 / SFO `00.48`, XMB title `AIR PS3`, RAOP name `AirPS3`
-**Repository:** `MKWorldWide/ps3-airplay` is public; `main` is the default branch. No GitHub Releases are listed. These GitHub facts were checked read-only; this plan does not change them.
+**Release target:** AIRPLAY02 app `1.0.0` / SFO `01.00`, XMB title `AIR PS3`, RAOP name `AirPS3`
+**Repository:** `MKWorldWide/ps3-airplay` is public; `main` is the default branch. No GitHub Release exists. The working checkout is preserved on its current feature branch; release must wait until the candidate source is integrated into the intended release branch.
 
-This plan keeps the first stable release focused on receiving AirPlay audio. Now Playing, controller features, and visual settings can follow as separate releases.
+This release stays focused on the standalone AirPlay 1 receiver. Now Playing, extra controller transport controls, and visual settings remain later work.
 
-## Evidence and current release blockers
+## Gate 0 — User accepted v0.2.8 hardware run
 
-### v0.2.8 package and build
+The user reports the installed AIRPLAY02 v0.2.8 / SFO `00.48` development unit ran for about 45 minutes and completed four XMB open/close cycles. The latest summarized log showed no PCM underflows, ALAC failures, RTP queue drops, concealed/skipped frames, or screen-presentation failures. A maximum audio-service interval of about 45 ms occurred during XMB resume; the user accepted that brief resume hitch for Gate 0. This is user-supplied summarized evidence, not a fresh independent raw-log audit. The audio service interval is not a subjective sound-quality measure, and callbacks/counters do not prove every visual or audible detail.
 
-The exact-source Lima gate passed for source `9f7af0027b7c3e9470a1583bbfbf676f9525f72d`. The CellOS PPC64 ELF, SFO, debug PKG, extracted assets, and package envelope were validated. The package is AIRPLAY02 v0.2.8 / SFO `00.48`; its SHA-256 is `e70d957de4a0fe2b0f8a7bd3a87f63cabaab2f12726e6341508a5f9b8c5de383`. Its exact build metadata is in [VERSIONING.md](VERSIONING.md) and the [v0.2.8 engineering report](reports/air_ps3_v028_reliability_branding.md).
+Earlier v0.2.8 evidence remains in its engineering report and version history, but the newer 45-minute user summary supersedes the old 10m41s note for Gate 0 duration. Never combine separate test units or runs. The known earlier multi-second stall/full-RTP-queue event remains a risk requiring bounded host fault-injection evidence; do not infer it away from a clean soak summary.
 
-The package was installed on the development PS3. The FTP upload/download-back was byte-identical to the validated package; installed SFO and EBOOT matched the extracted installation payload. This proves transfer and installation identity, not launch or playback quality.
+## Gate 1 — v1.0.0 public release preparation
 
-### Development-unit stream telemetry
+### Identity and build
 
-The following figures come from the user's supplied summary of a read-only log capture. The raw log is not included here or in the public repository:
+- App semantic version `1.0.0`; PS3 SFO `APP_VER` and `VERSION` `01.00`.
+- Next package mapping: `1.0.1` / `01.01`, then `1.0.2` / `01.02`; no leading-zero semantic versions such as `1.0.01`.
+- Preserve `AIRPLAY02`, `AIR PS3`, `AirPS3`, and the user-approved artwork.
+- `release.json` is the version source of truth. Lima builds must pass the host/sanitizer suite, PPU/ELF checks, SFO identity, package extraction, asset comparison, and debug-PKG envelope validation. A generated local candidate is not a public release or a PS3 deployment.
+- Candidate metadata records full source SHA, pinned toolchain, package size/hash, ELF hash, SFO identity, and extracted payload hashes. GitHub automation consumes only that exact candidate and fails closed on mismatch.
 
-| Observation | Reported result | Interpretation boundary |
-|---|---:|---|
-| Active stream window | 10m41s, 07:05:05Z–07:15:46Z | Shorter than the required 30-minute acceptance run. |
-| RTP | 69,632 packets; 17 missing-packet observations, all recovered | No reported packet loss remained unrecovered in this capture. |
-| RTP queue | 79–102 of 256 packets | Occupancy range only; not a latency or audible-quality measurement. |
-| PCM ring | 12,056–12,635 of 16,384 frames | No underflows were reported in the summary; ring occupancy alone does not prove sound reached the TV/speakers. |
-| Audio service/render | Maximum service interval 15.33 ms; maximum render 1.754 ms | Logged maxima; physical audio quality still requires human listening. |
-| RTSP and controls | 330 OPTIONS requests returned 200; one stream setup; 18 AirPlay volume updates; one FLUSH | Does not test DualShock volume/mute or transport buttons. |
-| Timing packets | Repeated timing-packet rejects and one accepted timing reply | Investigate against sender behavior; no audio loss was reported alongside these events. |
-| XMB/display | No menu-open, menu-close, or resume events in capture | Display appearance and resume were not tested by this log. |
+### Distribution and safety
 
-This summary establishes active receiver telemetry. It does **not** independently establish that the entire interval was audibly uninterrupted, that the display was stable, or that XMB resume worked.
+- The current PKG is a type-1 debug/homebrew package. Installation is intended for a compatible CFW homebrew environment; retail firmware installation is not promised.
+- The receiver is standalone. No boot plugin, resident SPRX, LV2 patch, firmware change, or game-audio mixing is included.
+- The supplied artwork is public at the maintainer's explicit direction. Third-party software/key notices must accompany source and package distribution; the AirPort Express RAOP compatibility key is not a project credential and is separately attributed in `THIRD_PARTY_NOTICES.md`.
+- Do not include private device/network identifiers, raw logs, local build folders, or private agent instructions in release assets.
+- Installation, normal START exit, removal, rollback, and recovery are documented in `INSTALLATION.md`.
 
-### Earlier v0.2.7 evidence, kept separate by test unit
+### Publication gate
 
-- **Development unit:** a 30-minute v0.2.7 run reported 26,814 PCM underflow frames, maximum audio-service interval 35.842 ms, and RTP queue average near 136/256 with a peak of 177.
-- **Primary test unit:** a later v0.2.7 run after AirPlay reconnection lasted 17m05s and reported no queue drops, concealment, underflows, or ALAC failures, with a 16.79 ms maximum service interval.
-- **Primary test unit earlier failure:** one run showed an approximately 5.44-second RTSP/audio-service stall, a full RTP queue, drops, concealment, and PCM underflows. A new AirPlay session restored normal operation. The cause was not proven; recovery after a new session does not prove automatic recovery within a stalled session.
+The current release gate is recorded in `RELEASE_GATE_1.md`. A v1.0.0 tag and GitHub Release must not be created until the exact-source package and privacy, build, package, and licensing reviews all pass. The draft-staging helper checks the gate document and candidate evidence before creating a tag or draft. Publication is a separate manual `workflow_dispatch`; its only write-capable job uses `contents: write`.
 
-Do not combine these separate units or runs into one performance claim. Preserve each raw log privately and associate future summaries with unit role, package version/hash, source revision, test interval, and acquisition provenance.
+## First public stable receiver acceptance
 
-### Blocking items before a stable receiver release
-
-1. **Display and VSH lifecycle:** no v0.2.8 evidence yet for stable foreground pixels, exact XMB title/art presentation, PS-menu open/close, repeated resume, or expected restoration. The application does not own VSH composition.
-2. **Human-confirmed playback quality:** fresh telemetry has no reported decode/underflow failures, but it does not replace listening confirmation through the intended output path.
-3. **Duration and repeatability:** the supplied v0.2.8 run is 10m41s, below the 30-minute target. Repeat launches, reconnects, and clean exit need evidence.
-4. **Stall and recovery behavior:** exercise RTSP stalls, full RTP backlog, logger queue pressure, writer failure, and session reconnect with bounded fault-injection and then hardware evidence. Do not assume the logger or resync change is proven from host tests alone.
-5. **Timing packet compatibility:** identify why timing packets are rejected, determine whether the sender expects a supported response, and correlate any changes with playback. Do not accept or parse arbitrary timing traffic just to silence the log.
-6. **Public distribution readiness:** inventory source and asset licenses, third-party notices, build tooling, CFW/PKG requirements, install/removal instructions, and recovery procedure. The code has an MIT license; the artwork's reuse terms and all build/distribution dependencies still need explicit review.
-
-## Gate 0 — Complete v0.2.8 candidate acceptance
-
-Keep this as one controlled, measured development-unit validation before a longer soak.
-
-1. **Record exact identity:** source commit, PKG SHA-256, SFO APP_VER/VERSION, title ID, XMB title, and installed EBOOT/SFO comparison. Retain a known-good rollback package for the same unit.
-2. **Foreground display:** user confirms the artwork and title are visible, stable, and free of unintended overlays.
-3. **XMB lifecycle:** while idle, press PS to open/close the system menu, resume, repeat the cycle at least twice, then press START and confirm clean return to XMB. Record screen brightness/flicker/loading-indicator observations separately from log callbacks.
-4. **Receiver route:** with an iPhone on a compatible local network, record whether it discovers AirPS3, completes RTSP setup/RECORD, streams, receives volume changes, pauses/resumes, flushes, disconnects, and reconnects. Record sender/app capability; test Spotify where practical. Discovery alone is not a connection.
-5. **Short playback and listening:** have the user confirm actual audio through the intended HDMI/TV/speaker path and note crackle, gaps, volume behavior, and XMB interaction. The diagnostic and pipeline counters are supporting evidence only.
-6. **Duration:** after clean launch/exit and short playback pass, run at least 30 minutes, then perform repeat sessions. Extend to a longer soak only if shorter runs show no hang, display failure, or worsening audio.
-7. **Log review:** retain the original private log; publish no raw log. Analyze RTSP stage times, service intervals, RTP gaps/recovery/drop/resync, queue occupancy, conceal/skips, PCM occupancy/underflows, ALAC failures, logger depth/drops/write maxima, volume/FLUSH, timing packets, disconnect, and cleanup. Keep development and primary test-unit evidence in separate folders and reports.
-8. **Recovery:** document expected START/webMAN exit path, package rollback, and what to do if the app hangs or fails to show. Do not alter firmware, boot plugins, or system video settings for this gate.
-
-**Human observation required:** visible display and XMB behavior, controller operation, iPhone sender actions, and audible quality.
-**Hardware action boundary:** this planning pass performs none. Any new installation, replacement, restart, or settings change must follow the user's current authorization and an established recovery route.
-
-Gate 0 passes only when package identity is exact, display/lifecycle behavior is repeatable, streamed audio is human-confirmed, the 30-minute run completes, reconnect and exit behave, and logs reveal no unresolved reliability issue. A clean counter sample is necessary but not sufficient.
-
-## Phase 1 — Stable public receiver release
-
-Keep this release focused on reliable foreground AirPlay audio.
-
-### Acceptance
-
-- Gate 0 passes on the exact release candidate; repeat install/launch and session results on the intended supported setup.
-- The known multi-second stall/full-queue condition is reproduced or otherwise bounded with fault-injection; recovery and drop behavior are deterministic, bounded, and visible in logs.
-- Audio/control servicing remains responsive when the log queue is full, the writer is slow, or the sink fails. Queue loss and shutdown-tail limits are documented.
-- AirPlay discovery, RTSP setup/record, RTP receive, decrypt, ALAC, PCM output, pause/resume, FLUSH, AirPlay volume, disconnect/reconnect, controller exit, and XMB return are tested end to end where supported.
-- At least 30 minutes of user-confirmed continuous playback and repeat sessions complete without hang or forced shutdown; longer soak follows the progressive stability plan.
-- Display, controller, audio, and log outcomes are recorded separately. No host-only result is labeled hardware pass.
-
-### Deliverables
-
-- Exact source revision and package hashes, version-aligned SFO/title/content identity, reproducible build/test instructions, and verified included assets.
-- Supported PS3/CFW requirements and clear limitations, including that the debug PKG is not promised to install on retail firmware.
-- XMB installation, normal exit, removal, rollback, and safe recovery instructions.
-- Concise release notes and known-issues list; public raw logs and machine/device/network identifiers excluded.
-- License/notice review for project code, artwork, PS3DK/PSL1GHT, crypto/codec libraries, and any redistributed build tools. Confirm the exact debug PKG format and all included files are suitable for public distribution.
-- Staged beta/RC label until all acceptance criteria pass. Target stable receiver milestone is 0.3.0, pending version review after evidence is complete.
+- Rebuild v1.0.0 from one committed source revision and record hashes/evidence.
+- Verify exact artifact identity and the debug package's CFW-only scope; keep host and hardware results separate.
+- Preserve Gate 0 as user-accepted evidence. A fresh v1.0.0 hardware launch is still a useful follow-up, but this task does not install or alter either PS3.
+- Retain the accepted resume hitch as a known polish item; avoid claiming flawless XMB composition or zero latency.
+- Confirm release notes, installation/removal/recovery steps, exact notices, artwork authorization, and the candidate assets before publication.
 
 ## Phase 2 — Now Playing metadata and artwork
 

@@ -14,7 +14,7 @@ MBEDTLS_INCLUDE="$MBEDTLS_SOURCE/include"
 MBEDTLS_CRYPTO_LIBRARY="$MBEDTLS_PPU_BUILD/library/libmbedcrypto.a"
 OUTPUT_DIR="$PROJECT_ROOT/build/lima-standalone-receiver"
 JOBS="${JOBS:-2}"
-APP_VERSION="${APP_VERSION:-0.2.7}"
+APP_VERSION="${APP_VERSION:-$(python3 "$(dirname "${BASH_SOURCE[0]}")/read-release-config.py" app_version)}"
 RTSP_PORT="${RTSP_PORT:-5000}"
 PROJECT_REV="$(git -C "$PROJECT_ROOT" rev-parse HEAD 2>/dev/null || true)"
 if [[ -z "$PROJECT_REV" && -f "$PROJECT_ROOT/.source-revision" ]]; then
@@ -59,6 +59,8 @@ python3 "$PROJECT_ROOT/scripts/validate-ps3-elf.py" \
 PSL1GHT_REV="$(git -C "$PSL1GHT" rev-parse HEAD 2>/dev/null || printf 'unavailable')"
 {
 	printf 'pipeline=PS3DK-v0.27.0-PPU + PSL1GHT\n'
+	printf 'ps3dk_version=v0.27.0\n'
+	printf 'mbedtls_version=%s\n' "$MBEDTLS_VERSION"
 	printf 'app_version=%s\n' "$APP_VERSION"
 	printf 'rtsp_port=%s\n' "$RTSP_PORT"
 	printf 'project_revision=%s\n' "$SOURCE_REVISION"

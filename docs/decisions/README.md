@@ -2,6 +2,8 @@
 
 This directory contains project decisions and release evidence suitable for the repository. Private machine notes, raw outputs, and unique device identifiers are excluded.
 
+- [AIR PS3 v1.0.0 release candidate pipeline](2026-11-08_0317_v1-release-candidate-pipeline.md)
+
 - [Public stable release roadmap](2026-11-08_0240_public_stable_roadmap.md)
 - [Validate v0.1.37 and bound hardware claims](2026-11-07_1642_v0137_validation.md)
 - [Prepare v0.1.37 audio and display stability candidate](2026-11-07_1622_v0137_audio_display.md)

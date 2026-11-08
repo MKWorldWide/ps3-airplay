@@ -737,3 +737,10 @@ The v0.1.31 fresh RPCS3 replay verifies the portable-arithmetic correction: the 
 - **Root Cause:** Git index, reflogs, and object storage legitimately change as commits and tests are performed; these are not stable file-manifest inputs.
 - **Fix:** Keep the pre-cutover full-copy manifest as evidence, compare project files separately from `.git`, and validate repository integrity with `git fsck`, refs, status, and worktree checks.
 - **Prevention Rule:** Use content manifests for project files and Git-native integrity checks for repository metadata; investigate all non-Git deltas explicitly.
+
+## Keep app and SFO release versions in one validated source
+
+- **Problem:** Historical build scripts had stale and inconsistent version defaults (0.2.7, 0.2.8/00.48, and older explicit examples), making an accidental mismatched or reused package possible.
+- **Root Cause:** Version values were copied across shell scripts, the receiver Makefile, documentation, and generated SFO inputs rather than read from one checked-in configuration.
+- **Fix:** `release.json` now holds app `1.0.0` and SFO `01.00`; build entry points read it, reject conflicting overrides, and have regression checks for `1.0.1`/`01.01` and malformed versions. Evidence ties the package hash and extracted metadata to an exact source SHA.
+- **Prevention Rule:** Change app/SFO versions together in the manifest before a build; never rename an old PKG, edit generated SFO values by hand, or tag until exact-source validation passes.
