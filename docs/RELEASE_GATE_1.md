@@ -8,8 +8,8 @@ The user accepted Gate 0 for AIRPLAY02 v0.2.8 / SFO `00.48`: about 45 minutes on
 |---|---|---|
 | Gate 0 hardware acceptance | PASS, user accepted | v0.2.8 run and observations above. No fresh console operation is authorized or performed here. |
 | Release identity | PASS | `release.json`: app `1.0.0`, SFO `01.00`, AIRPLAY02 / AIR PS3 / AirPS3. Next mapping is `1.0.1` / `01.01`. |
-| Exact-source Lima build | PASS | Built from committed source `f3da352809f81daac5e3b61a35d7fc18362bf1cc` in the pinned PS3DK v0.27.0 / PSL1GHT environment; compiler 16.1.0, linker binutils 2.42, PSL1GHT `dd4e8c9be744e3273d665c393fa6d97a87402e2e`; host ASan/UBSan suite and PPU build passed. |
-| Package, SFO, assets | PASS | AIRPLAY02 debug PKG, 3,906,640 bytes, SHA-256 `ef8f0afdacef560e9f5825fa9539247f3eb17e7791282aa6790f086fa8b1288e`; extracted `APP_VER=01.00`, `VERSION=01.00`, `TITLE_ID=AIRPLAY02`, `TITLE=AIR PS3`; package envelope, extracted structure, ELF, artwork, and embedded assets validated. |
+| Exact-source Lima build | PASS, pre-attribution rewrite | Built from former source SHA `f3da352809f81daac5e3b61a35d7fc18362bf1cc`; the same source tree is now commit `a1edbba176f31076eccd10d2c627916963cb5605`. Toolchain: PS3DK v0.27.0 / PSL1GHT, compiler 16.1.0, linker binutils 2.42, PSL1GHT `dd4e8c9be744e3273d665c393fa6d97a87402e2e`; host ASan/UBSan and PPU build passed. Artifact evidence still names the former SHA; rebuild from the exact main tip before release. |
+| Package, SFO, assets | PASS, candidate | AIRPLAY02 debug PKG, 3,906,640 bytes, SHA-256 `ef8f0afdacef560e9f5825fa9539247f3eb17e7791282aa6790f086fa8b1288e`; extracted `APP_VER=01.00`, `VERSION=01.00`, `TITLE_ID=AIRPLAY02`, `TITLE=AIR PS3`; package envelope, extracted structure, ELF, artwork, and embedded assets validated. This package was built before the attribution rewrite; its content tree is preserved, but its evidence references the former commit SHA. |
 | Privacy review | PASS for this source/doc pass | Full staged diff and changed files reviewed; targeted local-path, private IPv4, MAC, email, and secret-assignment scans returned no matches. No secret-scanner binary was available, so none was installed. Raw logs, local build directories, and agent instructions are excluded. Exact built release assets still require a final review before staging. |
 | License/distribution review | PASS for documented components | Project MIT, ALAC notice, OpenAirPlay key-data notice, Mbed TLS 3.6.7 license, and PS3DK/PSL1GHT/RSX license texts are included in the repository and release asset list. The user explicitly authorized the supplied artwork for public project/PKG use; no broader image license is asserted. |
 | Release branch integration | PENDING | Current work is on the preserved feature branch; integrate the verified candidate into main and build from the exact current `origin/main` tip before publishing. |
@@ -31,4 +31,6 @@ The package format is a PS3 type-1 debug PKG. The workflow is intentionally a pu
 
 No tag or GitHub Release was created for this blocked candidate.
 
-Build evidence and host-only boundary are recorded in [the candidate build report](reports/air_ps3_v1_0_0_candidate_build.md). Neither PS3 was changed.
+Build evidence and host-only boundary are recorded in [the candidate build report](reports/air_ps3_v1_0_0_candidate_build.md); that build pass did not change either PS3.
+
+The commit identity correction and rewritten public refs are documented in [the attribution migration report](reports/git_author_attribution_migration.md).
