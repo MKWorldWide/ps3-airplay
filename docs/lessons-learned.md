@@ -682,3 +682,11 @@ The v0.1.31 fresh RPCS3 replay verifies the portable-arithmetic correction: the 
 - Root Cause: The test allowed only30ticks regardless of the selected guard.
 - Fix: Derive the test horizon from the guard plus bounded flip completion.
 - Prevention Rule: Test time bounds relative to the configured deadline and verify the default separately against the product target.
+
+
+## Finite-filter evaluation
+
+- Problem: A converter can score very well on audible-band tones but less well on fullband noise/impulses.
+- Root Cause: The short FIR and long reference have different Nyquist transition bands.
+- Fix: Publish both passband fidelity and transition/image measurements; test actual music and per-block cost separately.
+- Prevention Rule: Never summarize a finite resampler as uniformly equivalent to a long reference or extrapolate host cost into PS3 deadline guarantees.

@@ -21,7 +21,7 @@ Newest window since the first snapshot: missing deltas 3,016, recoveries 3,017, 
 
 1. **Linear interpolation spectral error (confirmed, strongest fidelity evidence).** 20 kHz amplitude was about 0.482 of expected and analytic sine SNR 4.17 dB. This can dull or roughen sound without ALAC failure or PCM starvation; it does not explain every timing symptom.
 2. **Residual concealment/discontinuities (confirmed).** First 108 markers cluster in the first 74 seconds of streaming, not solely initial prebuffer. Fourteen more appear later, including reconnect. Each marker inserts zero PCM, creating possible abrupt boundaries. No malformed-packet or late-resend delta supports the old payload cap or universal late recovery as the remaining cause. The logs do not identify why particular requests went unanswered; no new concealment DSP or resend tuning is justified yet.
-3. **Audio notification service delays (unmeasured on PS3).** Healthy PCM does not prove the correct GameOS block was written before its deadline. Shared-loop network, decode, callbacks and synchronous logging can delay service. Measure before changing threads or deadlines.
+3. **Audio notification service delays (unmeasured on PS3).** Healthy PCM does not prove the correct GameOS block was written before its deadline. Shared-loop network, decode, callbacks and synchronous logging can delay service. The app has no separate output worker or explicit priority adjustment; actual runtime priority/wake latency was not sampled. No application lock contention was identified in this serial path; libc file locking and HDD cost remain possible contributors. Measure before changing threads or deadlines.
 4. **Independent clock drift (unmeasured, lower current attribution).** RTP timestamps are parsed but unused for playout; sync 0xd4 is ignored. RTT is not sender/local clock mapping. No drift correction is implemented or introduced here. Stable buffers and exact nominal ratio contradict a gross rate error, but cannot rule out independent oscillator mismatch.
 
 ## Quantitative clock audit
@@ -39,11 +39,11 @@ First four epochs from the earlier snapshot (completed five-second intervals onl
 
 Queued minus consumed equals each final PCM gauge. Epoch 2's difference is explained by 3,457 silent underflow output frames ×147/160 plus lookahead/phase rounding. The other epochs agree within two lookahead frames. These are submitted copies, not HDMI sample measurements. Independent drift ppm is **not measurable** from this record: batching, RTP queue variation, resets and timestamp quantization exceed the signal being estimated. No buffer-driven pitch adjustment is added.
 
-Candidate adds aggregate service-gap maximum, render-cost maximum, observed block count, repeated/skipped modular read-index observations, main-log-call maximum and monotonic audio-stat interval milliseconds. No per-block disk I/O is added. Service counts include deliberate silence. Modular indices cannot detect whole-buffer-cycle lapses; repeat/skip counters are observations, not definitive xruns. MAIN_LOG_US_MAX measures main wrapper timestamp/format/write/flush, excluding protocol calls that bypass that wrapper. Incoming RTP timestamp consistency and full sender-clock mapping remain explicit follow-ups.
+Candidate adds aggregate service-gap maximum, render-cost maximum, observed block count, repeated/skipped modular read-index observations, main-log-call maximum and monotonic audio-stat interval milliseconds. No per-block disk I/O is added. Service counts include deliberate silence. Modular indices cannot detect whole-buffer-cycle lapses; repeat/skip counters are observations, not definitive xruns. MAIN_LOG_US_MAX measures main wrapper timestamp/format/write/flush, excluding protocol calls that bypass that wrapper. Incoming RTP timestamp consistency and full sender-clock mapping remain explicit follow-ups. A precise next clock probe should keep a fixed 16-entry anchor history of monotonic arrival time, unwrapped RTP timestamp and sequence; count timestamp increments inconsistent with negotiated samples×sequence advance, treating wrap/reset as epochs. Parse sync 0xd4 RTP/NTP anchors, fit a long-window sender-to-local slope, and report ppm/residual maxima once per 30 seconds, without applying correction. Arrival jitter biases short fits, so require at least 10 minutes and compare physical output notification timestamps. At 100 ppm, expected input/output divergence is 4.41 frames/s (264.6 frames/min); at 20 ppm it is 52.92 frames/min. The observed ring and RTP queue fluctuations can hide this signal in short samples. No such sender-clock fit is claimed here.
 
 ## Resampler experiment and selection
 
-Reference: independent double-precision SciPy `resample_poly`, using a 40,961-tap Kaiser beta-12 prototype and explicit alignment of candidate delay. [SciPy documents its FIR polyphase resampling](https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.resample_poly.html); windowed-sinc FIR is also an established audio approach in [Android's sampling documentation](https://developer.android.com/ndk/guides/audio/sampling-audio).
+Reference versions: NumPy 2.0.2 and SciPy 1.13.1. Reference: independent double-precision SciPy `resample_poly`, using a 40,961-tap Kaiser beta-12 prototype and explicit alignment of candidate delay. [SciPy documents its FIR polyphase resampling](https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.resample_poly.html); windowed-sinc FIR is also an established audio approach in [Android's sampling documentation](https://developer.android.com/ndk/guides/audio/sampling-audio).
 
 Analytic 20 kHz comparison: linear 4.17 dB SNR; four-point cubic 5.09 dB; Blackman sinc 32 taps 22.84 dB, 48 taps 44.66 dB, 64 taps 75.12 dB. The candidate uses **64 taps ×160 rational phases**, generated with the Python standard library. Runtime uses static float coefficients and a 64-frame stereo history; no allocation, transcendental math, locks or floating clock accumulation. Integer phase retains exact 160:147 behavior. 48 kHz input retains its direct path.
 
@@ -59,13 +59,13 @@ Added coefficient storage 40,960 bytes, history 256 bytes plus index; fixed caus
 | 18 kHz | 80.85 | +0.000592 | -83.17 |
 | 20 kHz | 75.09 | -0.001079 | -78.02 |
 
-Quantized-input reference SNR excludes input quantization error; analytic tone SNR includes it (candidate 75.07 dB at 20 kHz). THD+noise includes quantization and interpolation images, not isolated analog THD. Measured tone passband gain span is ~0.0017 dB; a continuous sweep/complete stopband guarantee is not claimed. Full-band white-noise and impulse reference SNR are only **25.35/25.20 dB**, because this short filter has a wider transition near input Nyquist than the much longer reference. Bandlimited-noise reference SNR is **90.33 dB**. This is a measured limitation, not a hidden failed test.
+Quantized-input reference SNR excludes input quantization error; analytic tone SNR includes it (candidate 75.07 dB at 20 kHz). THD+noise includes quantization and interpolation images, not isolated analog THD. Measured tone passband gain span is ~0.0017 dB; a continuous sweep/complete stopband guarantee is not claimed. A steady-state FFT gives the largest nonfundamental bin at **-78.15 dBc** (23.9 kHz) for the20 kHz tone, and **-83.66 dBc** for18 kHz. At 21 kHz the gain is -0.414dB and largest image -26.23dBc; at 22 kHz it is -5.507dB and -1.06dBc. These explicitly show the transition-band limitation, rather than a broad stopband claim. Full-band white-noise and impulse reference SNR are only **25.35/25.20 dB**, because this short filter has a wider transition near input Nyquist than the much longer reference. Bandlimited-noise reference SNR is **90.33 dB**. This is a measured limitation, not a hidden failed test.
 
-Ten seconds of the FFmpeg public codec-test music sample [luckynight.flac](https://samples.ffmpeg.org/A-codecs/lossless/) gives **63.75 dB** reference SNR after 44.1 kHz s16le preparation. Audio stays local and is not redistributed. The former user microphone file was unavailable. Chunk sizes 1/256/480 and fresh stream restarts produce bit-identical results. A 600-second production-ring test retains exact sample conservation and no underflow.
+Ten seconds of the FFmpeg public codec-test music sample [luckynight.flac](https://samples.ffmpeg.org/A-codecs/lossless/) improves from **33.79 dB** (production linear converter) to **63.75 dB** reference SNR after 44.1 kHz s16le preparation. Audio stays local and is not redistributed. The former user microphone file was unavailable. Chunk sizes 1/256/480 and fresh stream restarts produce bit-identical results. A 600-second production-ring test retains exact sample conservation and no underflow.
 
 ## Scheduling and cost
 
-Same-host optimized stereo benchmark: linear median **0.426 ms/audio-second**, FIR **3.754 ms/audio-second**, worst observed FIR **5.518 ms/audio-second** across 20 runs. This includes ring fill/copy and startup; it is host cost, not PS3 deadline evidence. FIR is materially more expensive but remains well below realtime in this environment. PS3 costs must be measured by the new counters before a long soak.
+Same-host optimized stereo benchmark: linear median **0.426 ms/audio-second**, FIR **3.754 ms/audio-second**, worst observed FIR **5.518 ms/audio-second** across 20 runs. This includes ring fill/copy and startup; it is host cost, not PS3 deadline evidence. FIR is materially more expensive but remains well below realtime in this environment. PS3 costs must be measured by the new counters before a long soak. A separate 10,000-block256-frame benchmark measured mean18.746us, p99=21us, maximum40us, versus5,333us nominal block duration, on host. Supplemental emulated Linux SRC cost is mean332.35us, p99=375.97us, max1.340ms/block; these are x86 guest observations, not PPU measurements. Actual1920x1080 image-copy benchmark measured mean1.309ms/max1.713ms per buffer on the native host and14.914ms/max40.974ms in emulated Linux; the presenter mock does not model this work or physical compositor duration.
 
 Existing synchronous format/write/fflush test: mean 2.1 µs, median 2 µs, p99 5 µs, max 221 µs over 10,000 events on host temporary storage. This cannot establish GameOS HDD latency; buffering policy is preserved to retain crash diagnostics. No threading or logger redesign is justified by host costs. The new maximum counters may miss hangs before their next aggregate emission and do not reveal every latency distribution.
 
@@ -79,4 +79,29 @@ Candidate retains the same bounded mechanism with a **350 ms guard**, then waits
 
 ## Validation and release boundary
 
-Host ASan/UBSan RTP, PCM, exact long-run ratio, reorder/jitter, payload/decrypt/ALAC fixtures, presenter timeout/cycle mocks and callback state tests pass. The offline independent-reference test and host benchmarks pass their stated thresholds. The complete Linux release gate and artifact identity results are recorded below after the exact source is committed and built. No candidate hardware behavior or reliable long soak is claimed. Candidate v0.2.7 / SFO 00.47 is prepared only if that gate passes; it must not be deployed automatically.
+Host ASan/UBSan RTP, PCM, exact long-run ratio, reorder/jitter, payload/decrypt/ALAC fixtures, presenter timeout/cycle mocks and callback state tests pass. The offline independent-reference test and host benchmarks pass their stated thresholds. The complete Linux release gate passed from exact source `39e918ce15d70e4dec1a25ec2369a166651057f0`: host ASan/UBSan crypto/session/discovery/RTSP/RTP/decrypt/ALAC/PCM tests, cap/append, 4,352 malformed-codec cases, 600-second conservation, retry bounds, four display guard windows and callback mocks, PowerPC components/app, CellOS ELF, NPDRM SELF and debug PKG extraction/identity/asset checks. The additional standalone SRC/copy benchmarks were also run separately after the exact-source build, and added to future gates; no application source changed afterward. No candidate hardware behavior or reliable long soak is claimed. Candidate v0.2.7 / SFO 00.47 passed that gate and awaits explicit hardware-test authorization.
+
+## Reproduction commands
+
+Use the existing Linux/PPU release environment; the independent offline reference additionally requires NumPy and SciPy. Test audio preparation is local only.
+
+```sh
+bash scripts/run-forensic-tests.sh
+python3 tests/audio/resampler_fidelity.py --output build/fidelity-reference.json
+# Add --music to analyze a locally prepared 44.1 kHz stereo s16le input.
+cc -O2 -std=c11 -Wall -Wextra -Werror -Isrc/audio tests/audio/pcm_cost_test.c src/audio/pcm_ring.c -o build/pcm-cost
+build/pcm-cost
+python3 tests/observability/display_copy_cost.py
+# Existing PS3DK_SOURCE environment required:
+APP_VERSION=0.2.7 SFO_VERSION=00.47 bash scripts/release-lima-standalone-receiver.sh
+```
+
+## Validated release candidate
+
+- Source: `39e918ce15d70e4dec1a25ec2369a166651057f0`.
+- AIRPLAY02 **v0.2.7 / SFO 00.47**, production RTSP 5000.
+- PKG: **3,273,456 bytes**, SHA-256 `48251b3d741328fa78a5cda9bccd76ab02a79ec664d49ce29edfd819eb9f9993`.
+- ELF: 2,754,928 bytes, SHA-256 `8da9e671981d8f0354558d03b6953e9c79cd6be5108ec683cd56530c58650fe5`.
+- Local retained output: ignored `work/builds/0.2.7/`, including manifest and complete release log. Local PKG hash equals guest output.
+- No console transfer/install/launch. Candidate is ready for a controlled authorized hardware test, with v0.2.6 and safe-v0.2.4 retained. It is not a stable release or hardware audio/display acceptance.
+- Before accepting it: compare the same music, capture render/service/log maxima, repeat PS-menu/resume/START twice, then progressively extend playback. Expected sub500 ms restore relies on physical compositor and copy/service costs remaining within the measured budget; hardware confirmation is required.

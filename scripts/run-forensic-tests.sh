@@ -31,3 +31,7 @@ build/forensic/timing
 "$CC" -O2 -std=c11 -Wall -Wextra -Werror -Isrc/observability \
  tests/observability/log_cost_test.c src/observability/receiver_log.c -o build/forensic/log-cost
 build/forensic/log-cost
+"$CC" -O2 -std=c11 -Wall -Wextra -Werror -Isrc/audio \
+ tests/audio/pcm_cost_test.c src/audio/pcm_ring.c -o build/forensic/pcm-cost
+build/forensic/pcm-cost
+python3 tests/observability/display_copy_cost.py

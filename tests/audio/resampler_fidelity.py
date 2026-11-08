@@ -2,7 +2,7 @@
 Run with numpy/scipy installed. Optional --music is a private 44.1k stereo s16le file.
 The normal release gate remains dependency-free and tests the production C code.
 """
-import argparse, ctypes, json, subprocess, tempfile, time
+import argparse, ctypes, json, subprocess, time
 from pathlib import Path
 import numpy as np
 from scipy import signal
@@ -51,4 +51,27 @@ result['host_seconds_per_audio_second_worst']=float(max(costs)/(len(y)/48000))
 if args.music:
     music=np.fromfile(args.music,dtype='<i2').reshape(-1,2)
     y,_,_=run(music);result['private_music_reference_snr_db']=snr(y,reference(music,len(y)))
+# A one-second steady segment has exact FFT bins at integer frequencies.
+result['spectrum']=[]
+for f in [1000,10000,18000,20000,21000,22000]:
+    xx=np.rint(20000*np.sin(2*np.pi*f*np.arange(89200)/44100)).astype('<i2')
+    yy,_,_=run(np.column_stack((xx,-xx)))
+    a=yy[48000:96000,0]
+    assert len(a)==48000
+    spec=np.abs(np.fft.rfft(a));mask=np.ones(len(spec),bool);mask[f-1:f+2]=False
+    result['spectrum'].append({'hz':f,'gain_db':float(20*np.log10(spec[f]*2/48000/(20000/32768))),
+        'largest_other_bin_dbc':float(20*np.log10(spec[mask].max()/spec[f]))})
+# Bounded alternative kernels, evaluated on the same analytic 20k signal.
+n=np.arange(48000); t=n*147/160; idx=np.floor(t).astype(int); frac=t-idx
+wave=lambda q:np.sin(2*np.pi*20000*q/44100)
+error_snr=lambda a,b:float(10*np.log10(np.mean(b*b)/np.mean((a-b)**2)))
+xm,x0,x1,x2=wave(idx-1),wave(idx),wave(idx+1),wave(idx+2)
+linear=x0*(1-frac)+x1*frac
+cubic=((-.5*xm+1.5*x0-1.5*x1+.5*x2)*frac+(xm-2.5*x0+2*x1-.5*x2))*frac**2+(-.5*xm+.5*x1)*frac+x0
+result['alternatives_20k_snr_db']={'linear':error_snr(linear,wave(t)),'cubic':error_snr(cubic,wave(t))}
+for taps in [32,48,64]:
+    delay=taps//2-1; k=np.arange(taps); v=k[None,:]+frac[:,None]-delay
+    w=np.where(np.abs(v)<taps/2,.42+.5*np.cos(np.pi*v/(taps/2))+.08*np.cos(2*np.pi*v/(taps/2)),0)
+    c=np.sinc(v)*w;c/=c.sum(axis=1)[:,None]
+    result['alternatives_20k_snr_db'][str(taps)+'tap']=error_snr((c*wave(idx[:,None]-k)).sum(axis=1),wave(t-delay))
 Path(args.output).write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result,indent=2))

@@ -387,3 +387,16 @@ The emitter used a paced diagnostic fixture; target output submission is not pro
 - Hardware pending: PS menu opens, close/resume gives bright stable image without frozen overlay, START exits, repeat twice; then same-song AirPlay comparison with malformed/retry/concealment deltas. Keep safe-v0.2.4 rollback.
 
 - v0.2.6 exact-source release gate PASS: encrypted 1,416-byte reference PCM, resend split/retry budgets, presenter mocks, all existing host/sanitizer tests, PPU ELF/NPDRM/PKG/SFO. Physical tests remain pending.
+
+
+## v0.2.7 fidelity/resume candidate
+
+| Check | Result | Boundary |
+|---|---|---|
+| Full Linux release gate / PowerPC / ELF-SELF-PKG | PASS | Exact packaged source39e918c; SFO00.47 |
+|64tap SRC independent reference, sine/noise/impulse/music | PASS stated thresholds |20k reference SNR75.09dB; music63.75dB; fullband-noise25.35dB exposes transition limit |
+| Phase continuity / stream restart / sample ratio | PASS |1/256/480 chunks exact;600 simulated seconds, no underflow |
+| RTP retry/loss/reorder regressions | PASS |Existing bounded policy preserved; host fixtures only |
+|250/350/500/750ms display guards, repeated/rapid menu/callback cycles | PASS |Default350ms mock settles under500ms, stall timeout retained |
+| Audio service/read-index aggregator and cost probes | PASS host |Physical PS3 timing still unmeasured; maxima are observations |
+| v0.2.7 physical audio / PS menu / resume / START | NOT RUN |No deployment; explicit hardware authorization required |
