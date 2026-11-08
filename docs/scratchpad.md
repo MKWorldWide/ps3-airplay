@@ -1,8 +1,8 @@
 # Current scratchpad
 
-- Task: publish existing AIR PS3 v1.0.0 only; no next-version work and no PS3/RPCS3 operations.
-- `main` is current at `b33241e`; EsKaye author verified. The merged `lily/air-ps3-v028` branch was removed locally and remotely; historical fidelity and forensic branches remain.
-- Full pinned-Lima build from `b33241e` passed. Exact PKG: 3,906,640 bytes, SHA-256 `74a2376c159d12809b5fbba7a0f7ef868d1877eafcfcb8b07b97730484290d21`, SFO `01.00`. Do not use this artifact after the next docs commit; rebuild from new HEAD.
-- Public refs scan: 116 commits resolve as EsKaye (115) and MKWorldWide (1 initial org commit); no local paths, private IPv4, MACs or emails. One intentional third-party RAOP compatibility key is present and attributed. The package email-pattern matches are encrypted payload noise; no hits in extracted EBOOT/text assets.
-- Issues #1/#2 closed with historical evidence boundaries; #3–#6 open. No PRs, releases, workflow runs, wiki, discussions, LFS or submodules were found. Public art use was explicitly authorized.
-- The draft helper rejected the previous gate header. The required exact `**Release gate status: PASS**` marker is restored. Next: commit/push this correction, rebuild from final main, rerun asset scan, stage draft, dispatch and verify workflow/release.
+- Task: publish existing AIR PS3 v1.0.0; no next-version work and no PS3/RPCS3 operations.
+- Release source/tag `e1fdb44b03e2beb048954aded0eda5ae11248215`; exact Lima build passed. PKG is 3,906,640 bytes, SHA-256 `b815536168c5c1994ff6a5bb79f4aa16ffed6720691239bd9066e0a9e2075c43`, app `1.0.0`, SFO `01.00`.
+- All 10 release assets are in a draft, hash-checked locally. Draft tag is v1.0.0; its browser URL is still synthetic until publication. No release is published.
+- First Actions run verified tag/source, then failed because tag-based `gh release download` could not resolve draft assets with the workflow token. Authenticated asset-ID download succeeded locally. Workflow is patched to fetch draft assets through the Releases API, check exact set/state/sizes, then run original hashes/evidence checks.
+- Next: privacy-review and commit/push workflow/docs fix to main, dispatch workflow again with tag SHA and package hash, wait for validation/publish, verify release URL and exact asset hashes. Tag stays pinned to its verified release-source commit; the workflow-only follow-up commit does not change the package source.
+- Issues #1/#2 closed on historical evidence; #3–#6 open. No console changed.

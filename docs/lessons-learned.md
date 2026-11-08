@@ -779,3 +779,10 @@ The v0.1.31 fresh RPCS3 replay verifies the portable-arithmetic correction: the 
 - **Root Cause:** `scripts/stage-github-release.sh` intentionally requires the exact `**Release gate status: PASS**` marker.
 - **Fix:** Restore the documented status marker and keep explanatory context in surrounding text; retain the evidence verifier as the independent source/hash check.
 - **Prevention Rule:** Treat release-gate headings and row states as a script interface; add a regression check if the schema is changed.
+
+## Download draft release assets by release and asset ID
+
+- **Problem:** The GitHub Actions job passed draft lookup but `gh release download TAG` returned not found for a draft release.
+- **Root Cause:** The draft had a synthetic `untagged-*` browser URL; tag-based download failed in the workflow context although authenticated release/asset-ID API calls worked. The precise GitHub CLI/token interaction is not established.
+- **Fix:** Enumerate the authenticated draft release and its exact asset set, then download uploaded assets by API asset ID with the octet-stream accept header. Keep size, SHA256SUMS, release-evidence, and exact-source checks.
+- **Prevention Rule:** Test the workflow using a real draft release and the same token permissions; distinguish draft release identity from its temporary browser URL.

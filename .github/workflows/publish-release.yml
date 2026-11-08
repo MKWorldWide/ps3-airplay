@@ -39,7 +39,7 @@ jobs:
           test "$RELEASE_TAG" = "v$(python3 scripts/read-release-config.py app_version)"
           test "$(git rev-parse HEAD)" = "$EXPECTED_SOURCE"
           test "$(git rev-parse "refs/tags/$RELEASE_TAG^{commit}")" = "$EXPECTED_SOURCE"
-          test "$(git rev-parse origin/main)" = "$EXPECTED_SOURCE"
+          git merge-base --is-ancestor "$EXPECTED_SOURCE" origin/main
       - name: Download draft assets
         env:
           GH_TOKEN: ${{ github.token }}
@@ -48,10 +48,50 @@ jobs:
         run: |
           test "$(gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft)" = "true"
           mkdir -p build/release-assets
-          gh release download "$RELEASE_TAG" --dir build/release-assets \
-            --pattern '*.pkg' --pattern 'release-evidence.json' --pattern 'SHA256SUMS.txt' \
-            --pattern 'INSTALLATION.md' --pattern 'THIRD_PARTY_NOTICES.md' \
-            --pattern '*.txt' --pattern '*.md'
+          python3 - <<'PY'
+          import os
+          import pathlib
+          import subprocess
+
+          repo = os.environ["GH_REPO"]
+          tag = os.environ["RELEASE_TAG"]
+          expected = {
+              "ps3-airplay-receiver-1.0.0.pkg", "release-evidence.json", "SHA256SUMS.txt",
+              "RELEASE_NOTES-v1.0.0.md", "INSTALLATION.md", "THIRD_PARTY_NOTICES.md",
+              "MBED-TLS-3.6.7-LICENSE.txt", "PS3DK-LICENSE.txt", "PSL1GHT-LICENSE.txt",
+              "PSL1GHT-RSX-LICENSE.txt",
+          }
+          release_ids = subprocess.check_output(
+              ["gh", "api", f"repos/{repo}/releases", "--paginate", "--jq",
+               '.[] | select(.tag_name == env.RELEASE_TAG and .draft == true) | .id'],
+              text=True,
+          ).split()
+          if len(release_ids) != 1:
+              raise SystemExit("expected exactly one draft release for the selected tag")
+          release_id = release_ids[0]
+          rows = subprocess.check_output(
+              ["gh", "api", f"repos/{repo}/releases/{release_id}/assets", "--paginate", "--jq",
+               '.[] | [.id, .name, .size, .state] | @tsv'],
+              text=True,
+          ).splitlines()
+          assets = [line.split("\t") for line in rows]
+          names = [row[1] for row in assets if len(row) == 4]
+          if len(names) != len(expected) or set(names) != expected:
+              raise SystemExit("draft release asset set is incomplete or unexpected")
+          out = pathlib.Path("build/release-assets")
+          for asset_id, name, size, state in assets:
+              if state != "uploaded" or pathlib.Path(name).name != name:
+                  raise SystemExit("draft contains an invalid asset record")
+              with (out / name).open("wb") as target:
+                  subprocess.run(
+                      ["gh", "api", f"repos/{repo}/releases/assets/{asset_id}",
+                       "-H", "Accept: application/octet-stream"],
+                      check=True, stdout=target,
+                  )
+              if (out / name).stat().st_size != int(size):
+                  raise SystemExit(f"downloaded asset size mismatch: {name}")
+          print(f"downloaded {len(names)} authenticated draft assets for {tag}")
+          PY
       - name: Validate package, evidence, and hashes
         env:
           EXPECTED_SOURCE: ${{ inputs.source_sha }}
@@ -103,7 +143,8 @@ jobs:
           GH_REPO: ${{ github.repository }}
           RELEASE_TAG: ${{ inputs.tag }}
         run: |
-          release_id="$(gh api "repos/$GH_REPO/releases/tags/$RELEASE_TAG" --jq .id)"
+          release_id="$(gh api "repos/$GH_REPO/releases" --paginate --jq \
+            '.[] | select(.tag_name == env.RELEASE_TAG and .draft == true) | .id' | head -n 1)"
           test -n "$release_id"
           test "$(gh api "repos/$GH_REPO/releases/$release_id" --jq .draft)" = "true"
           gh api --method PATCH "repos/$GH_REPO/releases/$release_id" \
