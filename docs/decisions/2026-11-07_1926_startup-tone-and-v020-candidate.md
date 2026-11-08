@@ -54,8 +54,7 @@ Tone-free startup path is implemented. The measurement makes high-frequency inte
 
 ## Known limitations / follow-ups
 
-- Cross-build/link the standalone ELF and validate the package from the committed source revision.
-- Record the built PKG hash, SFO version, and package structure in this report.
+- Continue with measured resampler comparisons and the missing controller/jitter/PCM telemetry.
 - Assess a bounded higher-quality resampler with fidelity and CPU measurements before changing playback code.
 - Add RTP arrival-jitter and PCM starvation/occupancy metrics; add controller button transition logging.
 - Test package launch/exit and streamed audio on hardware only after a future explicit deployment request.
@@ -89,4 +88,4 @@ The diagnostic tone can no longer verify GameOS audio output on app startup. It 
 
 ## Next recommended step
 
-Commit and push this source/test/documentation pass after the privacy review; then cross-build and validate the 0.2.0 / SFO 00.40 package from that exact committed revision, preserving hardware as unmodified.
+Continue improving measurable audio continuity and runtime diagnostics. Keep hardware unmodified until a separate explicit deployment request.

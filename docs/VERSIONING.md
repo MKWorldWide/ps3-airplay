@@ -4,6 +4,17 @@ AIRPLAY02 follows conservative pre-1.0 versioning. Increment the patch number fo
 
 **Current candidate:** per the maintainer's explicit version choice, the next app/package label is `0.2.0` and SFO `APP_VER` continues at `00.40`. This is a candidate label, not a claim that the 0.2.0 stable diagnostic milestone has passed; hardware exit, controls, settings/toggles, and fresh-console validation remain outstanding.
 
+## v0.2.0 candidate package record
+
+- Source: `b8bab2015551a7044dba26717611e524ed43f4ec` on `main` (startup tone removed; PCM ring quality baseline added).
+- Artifact: `ps3-airplay-receiver-0.2.0.pkg`, AIRPLAY02, app log marker `0.2.0`, SFO APP_VER `00.40`.
+- Size / SHA-256: 3,231,472 bytes / `924a01ef0ef812e1badb8e94011930f5187c4dba91b253e578e16ab72de4f29b`.
+- ELF: 2,754,472 bytes, CellOS PPC64 executable, five PT_LOAD segments; SHA-256 `bc2c1f951624d0124f7771a50c0c3febe3d48c85cfd341691bc34cf4c5136875`.
+- Build: existing Lima VM, PS3DK v0.27.0 PPU compiler 16.1.0, GNU ld 2.42, PSL1GHT revision `dd4e8c9be744e3273d665c393fa6d97a87402e2e`.
+- Checks: full Lima host/sanitizer and PPU component suite; standalone PPU ELF validation; AIRPLAY02/SFO identity, content ID, package extraction, relative paths, icon/background equality, EBOOT comparison, and finalized NPDRM envelope PASS.
+- Runtime: not installed or launched in RPCS3 or on PS3. This candidate does not yet meet stable 0.2.0 acceptance: settings/toggles, reliable controller exit, fresh hardware validation, and stable audio remain open.
+- The finalized PKG is preserved locally under ignored `work/builds/0.2.0/`.
+
 ## Milestones
 
 - **0.1.x — focused fixes and validation.** Each package changes one or a few clearly described items and carries a matching SFO and startup-log version. Failed candidates remain documented; the next distinct package increments the final number.

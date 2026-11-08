@@ -4,9 +4,10 @@
 
 | Test | Result | Boundary |
 |---|---|---|
-| Startup tone absent from production renderer and link list | PASS by source inspection; tone component remains host-tested but is not linked by the receiver Makefile. | Not yet a rebuilt package/runtime check. |
+| Startup tone absent from production renderer and link list | PASS by source/link inspection; receiver ELF built without the tone object or startup/completion events. The standalone tone component remains host-tested. | No current PS3/RPCS3 runtime check. |
 | Production PCM ring 44.1 kHz to 48 kHz quality baseline | PASS structurally: six frequencies, 48,000 output frames each, zero underflows, zero dropped frames. Measured SNR: 92.30 dB (100 Hz), 54.64 dB (1 kHz), 26.78 dB (5 kHz), 15.03 dB (10 kHz), 8.47 dB (15 kHz), 4.17 dB (20 kHz). | Host synthetic tones only; indicates linear interpolation attenuation at high frequencies and does not isolate physical dropout causes. |
-| App/package version and SFO version | Requested defaults: package/app `0.2.0`, SFO `00.40`. | Package generation and extraction validation pending. This is not a stable 0.2.0 milestone claim. |
+| App/package version and SFO version | PASS: AIRPLAY02, app marker `0.2.0`, SFO APP_VER `00.40`; finalized PKG validated. | Candidate only, not a stable 0.2.0 milestone claim. |
+| Finalized package and extraction | PASS: 3,231,472 bytes; SHA-256 `924a01ef0ef812e1badb8e94011930f5187c4dba91b253e578e16ab72de4f29b`; five package entries, extracted EBOOT/SFO/icon/background checks passed. | Build and container validation only. |
 | PS3/RPCS3 runtime | NOT RUN. | Physical console remains at XMB; no transfer, installation, or launch in this pass. |
 
 This matrix distinguishes portable host evidence and cross-build evidence from real hardware validation. Update rows only when the listed scenario is actually exercised.
