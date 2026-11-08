@@ -444,3 +444,10 @@ Display candidate restores the standard GPU-side wait-flip command ordering afte
 - Deployed the already validated AIRPLAY02 v0.2.6 / SFO 00.46 package under standing install authorization. Local package is 3,233,072 bytes, SHA-256 `472915766a1b950f44558259a3583b5931c0bb3f8d3a8b0e5f1a044715927ca6`. FTP download-back matched byte-for-byte before installation.
 - Closed the previous v0.2.5 session through webMAN; its final log records `SYSUTIL_EXIT_GAME`, cleanup completion and `APP_STOP`. The private log snapshots remain ignored under the local hardware work directory.
 - After webMAN installation, FTP-read PARAM.SFO reports AIRPLAY02 / 00.46 and the installed EBOOT is 452,592 bytes, matching the package's recorded extracted EBOOT size. The app is installed at XMB and was not launched in this deployment pass. No audio or display-resume result for v0.2.6 is established.
+
+
+## v0.2.6 first hardware playback (2026-11-07)
+
+- User reports stuttering has mostly stopped, with slight audio unsteadiness remaining. Current log identifies AIRPLAY02 v0.2.6, APP_START 03:28:34Z, RECORD 03:28:51Z, and continuous counters through 03:31:55Z. Encrypted 44.1 kHz AirPlay, 352-sample ALAC frames and PCM submission are active.
+- In ~3m04s of streaming, 3,282 missing RTP sequence numbers reconcile to 3,174 recovered plus 108 concealed (96.7% recovered). Concealment is ~0.86 seconds at 352 samples/44.1 kHz. Zero ALAC failures, PCM underflow events, PCM drops, or malformed RTP deltas were logged. PCM ring occupancy was 12,077-12,635/16,384 and RTP queue depth 87-102/256. These counters support reduced stuttering and no observed PCM starvation; slight subjective instability remains unexplained.
+- The display log reached `SCREEN_RESUME_SETTLED` after MENU/DRAW begin/end callbacks; physical brightness and visual stability remain unconfirmed. This is a short sample, not a soak. See `reports/2026-11-07_v026_first_playback.md`. Raw log remains private and ignored.
