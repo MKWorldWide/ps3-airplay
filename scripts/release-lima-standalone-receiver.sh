@@ -40,6 +40,9 @@ bash "$SCRIPT_DIR/build-lima-crypto.sh"
 MBEDTLS_INCLUDE="${DEPS_ROOT:-$HOME/ps3-airplay-host/crypto-deps}/src/mbedtls-3.6.7/include" \
  bash "$SCRIPT_DIR/run-forensic-tests.sh"
 bash "$SCRIPT_DIR/build-lima-standalone-receiver.sh"
+python3 "$SCRIPT_DIR/prepare-diagnostic-background.py" \
+	"$PROJECT_ROOT/assets/diagnostic-background.jpg" \
+	"$PROJECT_ROOT/build/diagnostic-background.rgb"
 bash "$SCRIPT_DIR/package-lima-standalone-receiver.sh"
 
 PACKAGE="$PROJECT_ROOT/build/lima-standalone-package/ps3-airplay-receiver-${APP_VERSION}.pkg"

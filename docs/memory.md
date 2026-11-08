@@ -460,3 +460,8 @@ Display candidate restores the standard GPU-side wait-flip command ordering afte
 - In that run, three RTSP RECORD sessions span about 29m23s. The log reports 183,808 RTP packets, 14,982 missing observations, 14,953 recovery insertions and 29 concealed frames; zero ALAC failures, invalid batches or pending drops. PCM underflow totaled 26,814 output frames (~0.56s equivalent at 48kHz), not necessarily a single continuous dropout. Audio-service gap peaked at 35.842ms; render time peaked at 1.885ms. These counters identify an output/pacing concern but do not establish audible quality.
 - The log does not include an XMB menu/resume cycle during playback. Physical XMB resume, display stability and audible output remain unverified. Preserve the raw logs privately; the exact snapshot and aggregate analysis remain in ignored local work data.
 - The full host/ASan/UBSan, PPU, ELF/SELF/PKG gate and independent fidelity tests passed for source revision `39e918c`; final post-relocation rebuild remains required. Package reference hash remains unchanged.
+
+## Relocated build pipeline
+
+- Canonical local checkout: `PS3 Airplay`, branch `main`; v0.2.7 fidelity source and forensic branch history are integrated. Physical console state is not changed by migration verification.
+- The one-command Lima release gate now builds crypto/tests, PPU ELF, derives `build/diagnostic-background.rgb` from the checked-in JPEG, and packages/validates AIRPLAY02. Image conversion requires Pillow (`python3-pil` on Ubuntu). App behavior and release version remain unchanged by this pipeline correction.

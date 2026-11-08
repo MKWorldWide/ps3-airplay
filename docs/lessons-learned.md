@@ -697,3 +697,10 @@ The v0.1.31 fresh RPCS3 replay verifies the portable-arithmetic correction: the 
 - **Root Cause:** Parallel worktrees advanced from different commits; a branch’s unique commit does not imply its whole tip tree should replace newer main content.
 - **Fix:** Compare merge bases and current tree diffs, fast-forward the validated fidelity branch, retain the forensic commit as merge ancestry, and keep newer main reports/tests/source where the older branch diverged.
 - **Prevention Rule:** Back up all worktrees and ignored data, compare exact file contents at branch tips, and make selective integration choices explicit before removing worktrees.
+
+## Keep the release gate self-contained for generated package assets
+
+- **Problem:** The relocated clean-source release run built and validated the ELF but stopped before packaging because the expected runtime RGB background did not exist.
+- **Root Cause:** The package script required the generated background while the combined release script omitted its image-conversion step; the Lima guest also lacked Pillow.
+- **Fix:** Add the deterministic JPEG-to-RGB conversion to the combined release gate, document Pillow as a host dependency, and install Ubuntu's `python3-pil` in the existing Lima guest.
+- **Prevention Rule:** Verify the release command from a fresh tracked-source export, not a worktree carrying ignored build outputs; include every generated package input in the orchestrator.

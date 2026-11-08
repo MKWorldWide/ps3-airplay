@@ -18,7 +18,7 @@ export SFO_VERSION=00.45
 bash scripts/release-lima-standalone-receiver.sh
 ```
 
-The release gate requires a clean tracked worktree and a full matching source revision. It runs `build-lima-crypto.sh`, `build-lima-standalone-receiver.sh`, then `package-lima-standalone-receiver.sh` with fail-fast behavior. Keep build outputs and package files under ignored `work/`; never deploy a package that failed any stage. Record the exact source revision and output hash. The first physical launch remains a separate hardware test.
+The release gate requires a clean tracked worktree and a full matching source revision. It runs `build-lima-crypto.sh`, `build-lima-standalone-receiver.sh`, generates the runtime RGB background from the checked-in JPEG, then runs `package-lima-standalone-receiver.sh` with fail-fast behavior. The image conversion requires Pillow (`python3-pil` on Ubuntu). Keep build outputs and package files under ignored `work/`; never deploy a package that failed any stage. Record the exact source revision and output hash. The first physical launch remains a separate hardware test.
 
 The release path is:
 
