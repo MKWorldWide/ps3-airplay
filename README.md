@@ -40,3 +40,13 @@ The maintainer reports that v1.0.0 is running beautifully on the development PS3
 ## License
 
 Project code is licensed under [MIT](LICENSE), subject to the third-party terms in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). Package assets and required license texts are provided with the release.
+
+### ❤️ Support Development
+
+AIR PS3 is free, community-developed homebrew software.
+
+If you’re enjoying it and want to support future improvements, new features, and other MKWorldWide experiments, consider becoming a [GitHub Sponsor](https://github.com/sponsors/EsKaye).
+
+Your support helps keep the experiments alive, the hardware running, and the ideas flowing.
+
+**Sponsorship is completely optional. AIR PS3 remains free to download and use.**

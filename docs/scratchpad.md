@@ -1,9 +1,7 @@
 # Current scratchpad
 
-- Task complete: v1.0.0 is published and the public package checksum was verified after download.
-- Published release: https://github.com/MKWorldWide/ps3-airplay/releases/tag/v1.0.0
-- Release tag target: `v1.0.0` → `e1fdb44b03e2beb048954aded0eda5ae11248215`; app `1.0.0`, SFO `01.00`, AIRPLAY02.
-- PKG: `ps3-airplay-receiver-1.0.0.pkg`, 3,906,640 bytes, SHA-256 `b815536168c5c1994ff6a5bb79f4aa16ffed6720691239bd9066e0a9e2075c43`.
-- Workflow `42468858833` passed source/tag, all 10 release assets, size, SHA256SUMS, package evidence, and publication. No console/RPCS3 operation occurred in this release pass.
-- Remaining hardware claims are bounded by user-reported qualitative v1.0.0 status and earlier summarized v0.2.8 Gate 0 evidence; no fresh runtime test was run.
-- Do not begin next-version features in this task.
+- Task: finish native GitHub Sponsors support for AIR PS3 without touching app code, versions, release artifacts, licensing, or consoles.
+- Verified active public Sponsors listing: EsKaye at `https://github.com/sponsors/EsKaye`; `MKWorldWide` has no Sponsors listing. Profile Short bio and Introduction saved; `MKWorldWide/ps3-airplay` was already featured.
+- Local changes: `.github/FUNDING.yml` contains only `github: EsKaye`; README adds optional support copy linked to the profile.
+- YAML, GraphQL profile data, featured repository, README placement, and link checks passed. Next: create decision log, stage and privacy-review exact diff, commit/push `main`, then verify the public repository Sponsor button and profile page.
+- Keep the v1.0.0 app/release unchanged.

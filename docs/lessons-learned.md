@@ -786,3 +786,10 @@ The v0.1.31 fresh RPCS3 replay verifies the portable-arithmetic correction: the 
 - **Root Cause:** The validation job used `contents: read`; its workflow token received no draft record. GitHub documents that draft listings are only returned to actors with push access.
 - **Fix:** Grant `contents: write` to the validation job. The job uses it for GET-only release/asset retrieval; a separate publish job performs the visibility change. Workflow `42468858833` then passed exact asset, size, checksum, evidence, and source checks and published v1.0.0.
 - **Prevention Rule:** For unpublished release assets, check the endpoint's draft visibility requirements and give only the isolated inspection job the minimum effective permission. Confirm every stage from run logs and independently verify the published downloads.
+
+## Distinguish Sponsors profiles from repository funding buttons
+
+- **Problem:** A GitHub account may be the code owner or connected developer without being the account that can receive sponsorships.
+- **Root Cause:** Personal and organization Sponsors listings are separate, and the repository Sponsor button reads funding providers from the default branch's `.github/FUNDING.yml`.
+- **Fix:** Verify the active listing through authenticated GitHub data, edit its profile in the Sponsors dashboard, feature the project there, and configure the same account in `FUNDING.yml`. Keep README support copy clearly optional and link directly to the active listing.
+- **Prevention Rule:** Confirm the sponsorable account before writing funding metadata; after the default-branch change, verify both the public listing and the repository's rendered Sponsor button.
