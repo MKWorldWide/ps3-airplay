@@ -1,6 +1,6 @@
 # AIR PS3 Resident Overnight Report
 
-**Report timestamp:** 2026-11-08 06:48 EDT
+**Report timestamp:** 2026-11-08 06:50 EDT
 
 **Branch:** `experimental/resident-airplay`
 
@@ -32,6 +32,7 @@ The experimental resident PRX now has a bounded worker cleanup wait, preserves n
 | Harness package | PASS | Diagnostic package title ID `RPRX90001`; package listing contains the module. The extracted module compared byte-for-byte with the current built PRX. |
 | Harness module-count baseline check | BLOCKED | The harness compiles a check that `sys_prx_get_module_list` returns to its pre-test count after each of three unloads, and fails closed on query errors or a full 256-entry list. The package was not run, so counts and runtime API behavior are unknown. This check does not measure sockets or all allocations. |
 | RPCS3 install and 3-cycle runtime | BLOCKED | Computer-use reported that the Mac is locked. No package was installed or run in RPCS3. The installed 0.0.43-20570 build's matching source registers load/start/stop/unload APIs, but that code-level check is not runtime evidence. |
+| RPCS3 command-line fallback | BLOCKED | A locally launched `rpcs3 --help` process produced no output or exit within ten seconds; only that probe process was terminated. The already-running RPCS3 instance and its settings were left alone, and no package was installed. This does not establish emulator incompatibility. |
 | Resident PS3 audio output | UNTESTED | The current PRX decodes frames, logs counts, then clears PCM. It has no PS3 audio output path. Host PCM tests do not establish sound output from the PRX. |
 | Background/game coexistence | UNTESTED | No PCM output queue or PS3 audio submission exists, so no coexistence experiment was performed. |
 | Physical PS3/Cobra compatibility | UNTESTED | No physical console was contacted. |
