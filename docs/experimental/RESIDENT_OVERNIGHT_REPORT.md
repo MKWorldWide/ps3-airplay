@@ -23,12 +23,45 @@ Corrected PKG SHA-256:
 | Corrected SFO fields | PASS | Extracted SFO reports title ID `RPRX90002` and both version fields `00.01`. |
 | Initial package install | PASS | Console title directory appeared; installed SPRX SHA-256 matched the signed build. |
 | Initial launch | FAIL (user-reported) | User observed the same launch error previously associated with the bad version string; no harness log was retrieved. |
-| Corrected package install/launch | UNTESTED | Corrected PKG is built; installation and runtime log retrieval are pending. |
+| Corrected app install/launch | PASS (app) | The corrected title starts and writes its verbose harness log. |
+| Resident module load | FAIL | `sys_prx_load_module` returns `0x80010007` (`ENOEXEC`) on cycle one; the PRX never reaches `module_start`. |
 | Network receive, audible output, Cobra/autoload | UNTESTED | No RAOP session, sound check, or boot-plugin change was performed. |
 
 The earlier hardware-package section is a checkpoint for the first package and
 its hashes. This correction supersedes its SFO and PKG hash; the PRX, SPRX, and
 harness SELF are unchanged.
+
+## Corrected hardware run and SPRX loader failure (2026-11-08 23:09 EDT)
+
+After removing the first four-file diagnostic title, the corrected package was
+installed fresh. Its console-side SFO parses as `TITLE_ID=RPRX90002`,
+`APP_VER=00.01`, and `VERSION=00.01`. The console-side SPRX SHA-256 matches
+the signed build exactly:
+`9fae9ed955c023aca2077654625510e80766f899c9eaa4998cad4af5f1588817`.
+
+The app itself starts and writes
+`/dev_hdd0/tmp/ps3-airplay-resident-harness.log`. On its first configured
+cycle, `sys_prx_load_module` returns `-2147418105`, which is `0x80010007` and
+maps to `ENOEXEC` in the pinned PS3DK errno definitions. The harness logs
+`HARNESS_FAIL value=1`, then its foreground test audio port stops and closes
+with result zero and `cellAudioQuit` returns zero. There is no `LOAD_OK`,
+resident startup event, receiver-ready event, worker, or PRX teardown event.
+The 50-cycle run therefore stops at cycle one.
+
+| Hardware result | Status | Evidence |
+|---|---|---|
+| SFO identity/version | PASS | Installed title ID `RPRX90002`, `APP_VER=00.01`, `VERSION=00.01`. |
+| Embedded module identity | PASS | Installed module hash equals the freshly built signed SPRX hash. |
+| Harness launch and logger | PASS | Harness log opened and records cycle count, baseline, audio setup, and load result. |
+| Resident PRX loader acceptance | FAIL | Loader returns `0x80010007` (`ENOEXEC`) before module startup. |
+| Harness audio-port cleanup | PASS | Port stop, close, and audio quit return zero after load failure. |
+| RAOP, resident PCM, audible output, 50-cycle cleanup | UNTESTED | Module did not load. |
+
+The exact runtime log is local and ignored under `build/resident-hardware/`;
+it contains no stream payload. Do not substitute the RPCS3 `.fake.sprx` for
+this production SPRX without a separate reviewed hardware test decision. The
+physical test is BLOCKED on understanding why this loader rejects the signed
+SPRX.
 
 ## Fresh hardware package build (2026-11-08 22:49 EDT)
 

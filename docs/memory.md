@@ -4,7 +4,7 @@
 
 - The first installed `RPRX90002` hardware harness used SFO `APP_VER=0.1.0` and `VERSION=0.1.0`. The user reported the same launch error previously associated with an invalid version string and directed that both SFO values be `00.01`.
 - Updated the harness source SFO values to `00.01`, rebuilt the package, and parsed the extracted SFO independently: `TITLE_ID=RPRX90002`, `APP_VER=00.01`, `VERSION=00.01`. Corrected package SHA-256: `54d5d299c6831a18e7c0474aac3577a8a02de443a7a3b98e03f64d242b9010b9`.
-- The initial package installation was observed on the console by its title directory and matching production SPRX hash. The first launch attempt yielded no harness log before the SFO issue was reported. The corrected package still needs to be installed and launched; do not claim runtime success until its verbose log is retrieved.
+- Installed the corrected package after preserving and removing only the prior four-file diagnostic title. The console-side SFO now reports `00.01` for both fields, and the installed SPRX hash matches the signed build exactly. The harness starts and writes its verbose log, but its first module load fails with `0x80010007` (`ENOEXEC`); `HARNESS_FAIL=1`. Foreground audio init/open/start and stop/close/quit all return zero. The PRX never reaches `module_start`, so no resident worker, network session, PCM output, or module unload cycle was exercised. Hardware readiness remains BLOCKED on SPRX loader compatibility.
 
 ## Resident hardware diagnostic package (2026-11-08)
 

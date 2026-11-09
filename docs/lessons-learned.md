@@ -926,3 +926,10 @@ The v0.1.31 fresh RPCS3 replay verifies the portable-arithmetic correction: the 
 - **Root Cause:** Its SFO `APP_VER` and `VERSION` fields were `0.1.0`, while the user identified the required PS3 value as `00.01`.
 - **Fix:** Set both harness SFO fields to `00.01`, rebuild, extract, and parse the package SFO to verify `TITLE_ID`, `APP_VER`, and `VERSION` before reinstalling.
 - **Prevention Rule:** Validate PS3 SFO values in the generated package and match the established fixed-width version format before installation; an XML source edit alone is not sufficient evidence.
+
+## Treat on-device ENOEXEC as a loader gate
+
+- **Problem:** The installed harness reached its first `sys_prx_load_module` call, which returned `0x80010007` (`ENOEXEC`) for the production signed SPRX.
+- **Root Cause:** Not yet established. The installed file hash matches the freshly built SPRX and the package SFO is correct, so the failure occurs after title launch but before resident `module_start`.
+- **Fix:** No PRX format change is claimed. The harness stops after the first failed load, and its foreground audio port shuts down cleanly. Preserve the exact signed artifact and log while reviewing module format, signing and target-loader expectations.
+- **Prevention Rule:** Verify the installed module hash, report syscall errors in hexadecimal and symbolic form, and stop before repeated lifecycle tests when the first loader call rejects the module. Never infer hardware compatibility from a successful package install or SELF structural check.
