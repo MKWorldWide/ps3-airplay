@@ -891,3 +891,10 @@ The v0.1.31 fresh RPCS3 replay verifies the portable-arithmetic correction: the 
 - **Root Cause:** The worker's local PCM ring, staging buffer, and output buffer totaled at least 72,008 bytes while its configured stack was 65,536 bytes, excluding call frames. This stack overrun is the leading explanation. Three cycles passed after moving those buffers to static, single-worker-owned module storage, though the precise old faulting instruction was not independently mapped.
 - **Fix:** Keep the large audio buffers outside the worker stack and retain one-worker-at-a-time lifecycle ownership. Rebuild the package and verify repeated stop/join/unload cycles plus the module-count baseline in RPCS3.
 - **Prevention Rule:** Measure aggregate local buffer size against configured thread stacks before runtime testing; include call-frame margin and rerun the complete repeated lifecycle when storage ownership changes.
+
+## Distinguish test tones and SELF container types
+
+- **Problem:** Separate foreground and resident `cellAudio` submission events used the same tone and could not establish whether a future captured output contained both sources. The emulator package's fake SPRX could also be confused with a hardware candidate.
+- **Root Cause:** API return values show accepted submissions, not audible mixing, and both PS3DK containers share an SCE SELF header despite different type fields.
+- **Fix:** Use distinct generated frequencies for any future audio capture and validate signed SPRX (`0x00010001`) separately from RPCS3 fake SPRX (`0x80000001`). Report loader/key-table compatibility as unknown until the target loader accepts the exact production artifact.
+- **Prevention Rule:** Design generated audio probes so their sources can be distinguished in captured output; label each binary by container type and never infer hardware compatibility from the emulator-only package.

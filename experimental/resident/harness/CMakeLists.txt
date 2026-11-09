@@ -4,6 +4,7 @@ project(ps3_airplay_resident_harness C)
 include(ps3-self)
 
 set(RESIDENT_SPRX "" CACHE FILEPATH "Built RPCS3-loadable diagnostic SPRX to embed")
+set(HARNESS_TEST_CYCLES "50" CACHE STRING "Audio-enabled resident lifecycle cycles")
 set(HARNESS_PKGFILES "${CMAKE_CURRENT_BINARY_DIR}/pkg_files" CACHE PATH
 	"Package overlay containing the diagnostic PRX")
 file(MAKE_DIRECTORY "${HARNESS_PKGFILES}")
@@ -25,6 +26,8 @@ target_include_directories(ps3-airplay-resident-harness PRIVATE
 	"${CMAKE_CURRENT_SOURCE_DIR}/..")
 target_compile_options(ps3-airplay-resident-harness PRIVATE
 	-Wall -Wextra -Werror)
+target_compile_definitions(ps3-airplay-resident-harness PRIVATE
+	TEST_CYCLES=${HARNESS_TEST_CYCLES})
 target_link_libraries(ps3-airplay-resident-harness PRIVATE lv2)
 target_link_libraries(ps3-airplay-resident-harness PRIVATE audio m)
 

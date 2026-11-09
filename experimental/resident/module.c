@@ -36,7 +36,7 @@
 #define AUDIO_PREBUFFER_FRAMES 2048U
 #define AUDIO_REFILL_FRAMES 1024U
 #define AUDIO_OUTPUT_FRAMES CELL_AUDIO_BLOCK_SAMPLES
-#define AUDIO_TEST_TONE_FRAMES 8192U
+#define AUDIO_TEST_TONE_FRAMES RAOP_PCM_SPSC_CAPACITY
 #define AUDIO_TEST_TONE_CHUNK_FRAMES 1024U
 #define WORKER_STOP_TIMEOUT_US 5000000ULL
 #define WORKER_STOP_MAX_POLLS 1000000U
@@ -234,6 +234,7 @@ static void audio_worker(void *argument)
 				raop_pcm_spsc_count(&decoded_pcm_queue) == 0) {
 				playback_active = 0;
 				(void)log_event("AUDIO_BUFFER_UNDERRUN", 1, 0);
+				publish_diagnostic_event(AIRPS3_DIAG_EVENT_AUDIO_DRAINED);
 			}
 		} else {
 			raop_pcm_ring_render_silence(audio_output, AUDIO_OUTPUT_FRAMES);
@@ -343,7 +344,8 @@ static int start_audio_backend(void)
 	__atomic_store_n(&pcm_generation, 0, __ATOMIC_RELEASE);
 	__atomic_store_n(&audio_stop_requested, 0, __ATOMIC_RELEASE);
 	__atomic_store_n(&audio_worker_exited, 0, __ATOMIC_RELEASE);
-	if (active_diagnostics != NULL) {
+	if (active_diagnostics != NULL &&
+		(active_diagnostics->flags & AIRPS3_DIAG_FLAG_SUPPRESS_TEST_TONE) == 0) {
 		uint8_t tone[AUDIO_TEST_TONE_CHUNK_FRAMES * 4U];
 		uint32_t offset;
 		const float step = 6.2831853071795864769f * 440.0f / 44100.0f;

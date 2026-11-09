@@ -1,9 +1,42 @@
 # AIR PS3 Resident Development Report
 
-**Updated:** 2026-11-08 19:05 EDT
+**Updated:** 2026-11-08 19:31 EDT
 **Branch:** `experimental/resident-airplay`
 **Source baseline:** `53e24116e8d9a26db80deeafd568be72bf8cf6d6`
 **Scope:** RPCS3 lifecycle and diagnostic harness; no physical PS3 was contacted.
+
+## Pre-hardware test-gate implementation (2026-11-08 19:31 EDT)
+
+The harness source now defaults to 50 audio-enabled load/start/stop/unload
+cycles. It rotates four modes: no seeded resident PCM, stop immediately after
+resident PCM submission, stop after an audio-worker drain event, and a longer
+foreground/resident two-port submission. Resident test PCM fills the bounded
+16,384-frame queue. The resident diagnostic tone is 440 Hz and the foreground
+tone is 660 Hz, making a future audio capture able to distinguish the two
+signals.
+
+These harness changes have **not** been built into a package or executed in
+RPCS3 in this pass. The current environment has no PS3DK/Mbed TLS Lima checkout
+or PPU compiler, and the previously used SSH/Lima endpoints are unavailable.
+The last verified RPCS3 result remains the earlier three-cycle package; do not
+attribute that result to the expanded harness source.
+
+Added a container validator and four host unit cases. They verify the PS3DK
+SELF header types `0x00010001` for the production SPRX and `0x80000001` for the
+RPCS3 fake SPRX, and explicitly report target-loader compatibility as not
+established. The RPCS3 package script now rejects a package containing more
+than one SPRX and byte-compares its sole embedded fake SPRX with fresh build
+output. The validator passed against the retained local container files, but
+the production `.sprx` was not rebuilt with this source revision. Its format
+check does not validate CFW/Cobra key acceptance, and no hardware-ready
+resident package has been assembled.
+
+RAOP packets were not sent through the resident PRX. RPCS3 still reports
+`EADDRNOTAVAIL`; no captured or independently heard output was obtained. The
+three-cycle result does not establish 50-cycle stress, resource cleanup beyond
+the module count, or real audio mixing. `sysThreadJoin` remains a blocking call
+after the worker signals cleanup completion; its bounded behavior under a
+stuck exit path is not established. **Hardware readiness remains NOT READY.**
 
 ## Latest audio-backend checkpoint (2026-11-08 17:56 EDT)
 
@@ -152,6 +185,8 @@ hardware test.
 | Three-cycle audio teardown | PASS | Rebuilt candidate completed three audio-enabled cycles; each stop and unload returned zero and each worker reported stopped. |
 | Module-list baseline | PASS | Harness log recorded initial count six and count six after each of three unloads. This is not a full socket or heap leak check. |
 | Two-port coexistence | PASS (submission only) | Harness submitted 940 foreground blocks while the resident reported PCM submission through its separate port. Acoustic mixing was not verified. |
+| Expanded 50-cycle harness source | PASS (static/host) / UNTESTED (RPCS3) | Source rotates no-seed, immediate-stop, event-confirmed drain, and extended two-port submission modes and uses distinct generated tones. It has not been rebuilt or run. |
+| Resident container type validation | PASS (format only) | Four host unit cases pass; retained artifacts classify as production SELF type `0x00010001` and RPCS3 fake type `0x80000001`. Target loader acceptance is not established. |
 | Synthetic RAOP decode-to-output | PASS (host PCM render) / UNTESTED (RPCS3) | Lima socket test sends encrypted RTP through decrypt, ALAC, SPSC, PCM ring, and 44.1-to-48 kHz rendering without underflow. No PRX/RPCS3 receive-to-audio run is established. |
 | Physical console / Cobra / in-game audio | UNTESTED | No physical PS3 was contacted. |
 
@@ -234,7 +269,10 @@ successful run is the passing lifecycle result.
    packet flow has yet run through the resident PRX in RPCS3. No physical
    console was tested.
 
-## Candidate artifacts and SHA-256
+## Last built artifacts before expanded harness source changes
+
+These hashes identify the previously tested three-cycle candidate, not the
+current working source after the expanded harness and diagnostic-flag changes.
 
 Artifacts are in ignored `build/rpcs3-candidate/`; generated binaries and logs
 are not committed.

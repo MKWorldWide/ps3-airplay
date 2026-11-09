@@ -3,17 +3,18 @@
 `module.c` wires diagnostic-only `_raop._tcp` mDNS, bounded persistent RTSP
 session handling, three UDP channels with RTP parsing/queueing, PS3 network and
 netctl initialization, Mbed TLS crypto, bounded ALAC decode, and capped file
-logging into a PS3DK PRX start/stop lifecycle. It answers Apple-Challenge,
-recovers encrypted AES session keys, decrypts and decodes supported ALAC RTP
-frames, logs periodic sample/byte counts, then clears payload and PCM. It has
-no audio output and cannot play music yet.
+logging into a PS3DK PRX start/stop lifecycle. Decoded PCM is transferred over
+a bounded SPSC queue to a separate audio worker, buffered in the existing PCM
+ring, resampled to 48 kHz, and submitted through a `cellAudio` port. The current
+RPCS3 diagnostic mode can seed a synthetic 440 Hz buffer to exercise this path;
+that seed is not AirPlay receive evidence or proof of audible output.
 
 The session parses the bounded SDP codec/key/IV offer and recovers the key for
 `et=1` using the standard AirPort RSA-OAEP/SHA-1 profile. Key/IV memory clears
 on TEARDOWN and disconnect. The worker uses the PS3 RNG adapter for RSA
 blinding and gets the local MAC through netctl for Apple-Response signatures.
-L16 decode, sender-clock mapping, a latency-sized jitter buffer, PCM buffering
-and output remain absent. It sends timing probes and bounded resend requests;
+L16 decode, sender-clock mapping, and a latency-sized scheduled jitter buffer
+remain absent. It sends timing probes and bounded resend requests;
 matching 0xD6 responses are sequence-inserted into the small bounded RTP queue,
 but there is no scheduled playback-recovery guarantee.
 
@@ -60,16 +61,30 @@ capacity is reached, so a truncated count cannot pass as leak-free. Each
 package build is extracted and its embedded SPRX is compared byte for byte
 with the current build output, guarding against stale SDK overlays.
 
-The 2026-11-08 RPCS3 run completed three clean load/start/stop/unload cycles.
+The last completed 2026-11-08 RPCS3 run completed three clean audio-enabled
+load/start/stop/unload cycles.
 Each cycle reached `RECEIVER_READY`, stopped its worker, unloaded successfully,
 and returned the module count to baseline six. RPCS3 does not permit this
 module's file logger to open its path; the harness reports `LOG_UNAVAILABLE`
 through a diagnostics structure passed to the module. The separate test app
-also successfully initialized a `cellAudio` port and submitted a 5-second
-440 Hz test tone; this validates the app-level RPCS3 API path only, not PRX
-audio, independently heard sound, synthetic RAOP receive, Cobra compatibility,
-hardware loading, or in-game coexistence. See the overnight report for exact
-status and artifact hashes.
+and resident each submitted through distinct `cellAudio` ports, but the last
+run used 440 Hz for both generated sources and did not capture audio. It
+therefore proves API submission only, not distinguishable mixed sound,
+synthetic RAOP receive, Cobra compatibility, hardware loading, or game audio
+coexistence. The harness source now defaults to 50 cycles alternating between
+no seeded resident PCM, stop immediately after resident PCM submission, stop
+after an explicit audio-worker drain event, and a longer dual-port submission. Its foreground test
+tone is 660 Hz so a future audio capture can distinguish it from the resident
+440 Hz seed. This expanded harness has not yet been rebuilt or run in RPCS3.
+See the overnight report for exact status and artifact hashes.
+
+`scripts/validate-resident-containers.py` verifies that a freshly built signed
+SPRX has PS3DK SELF type `0x00010001` and the emulator-only `.fake.sprx` has
+type `0x80000001`. The harness package build runs this check before packaging
+and requires its package to contain exactly one SPRX byte-matching the fresh
+fake container. This distinguishes the two container formats; it does not
+establish that the production SPRX is accepted by a particular Evilnat/Cobra
+key table. No hardware-ready resident package has been produced or tested.
 
 ## Mocked host lifecycle simulation
 

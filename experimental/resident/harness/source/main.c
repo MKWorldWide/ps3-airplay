@@ -11,12 +11,16 @@
 
 #define APP_LOG_PATH "/dev_hdd0/tmp/ps3-airplay-resident-harness.log"
 #define MODULE_PATH "/dev_hdd0/game/RPRX90001/USRDIR/ps3-airplay-receiver.fake.sprx"
-#define TEST_CYCLES 3U
+#ifndef TEST_CYCLES
+#define TEST_CYCLES 50U
+#endif
 #define EVENT_WAIT_POLLS 400U
 #define EVENT_POLL_US 25000U
 #define MODULE_LIST_CAPACITY 256U
 #define AUDIO_PROBE_BLOCKS 940U
+#define AUDIO_PROBE_SHORT_BLOCKS 94U
 #define AUDIO_PROBE_AMPLITUDE 0.12f
+#define AUDIO_PROBE_FREQUENCY_HZ 660.0f
 
 static FILE *app_log;
 static uint32_t foreground_audio_port;
@@ -106,7 +110,8 @@ static int start_audio_probe(void)
 static int submit_foreground_audio_probe(unsigned int blocks)
 {
 	float samples[CELL_AUDIO_BLOCK_SAMPLES * 2U];
-	const float phase_step = 6.2831853071795864769f * 440.0f / 48000.0f;
+	const float phase_step = 6.2831853071795864769f *
+		AUDIO_PROBE_FREQUENCY_HZ / 48000.0f;
 	unsigned int block;
 	unsigned int frame;
 	for (block = 0; block < blocks; ++block) {
@@ -197,12 +202,22 @@ static int run_cycle(unsigned int cycle, unsigned int baseline_module_count)
 	int module_result = 0;
 	int result;
 	uint32_t diagnostic_events;
+	unsigned int mode = cycle % 4U;
 	airps3_resident_diagnostics diagnostics = {
-		AIRPS3_RESIDENT_DIAGNOSTICS_MAGIC, 0U, 0, 0U
+		AIRPS3_RESIDENT_DIAGNOSTICS_MAGIC, 0U, 0, 0U,
+		mode == 0U ? AIRPS3_DIAG_FLAG_SUPPRESS_TEST_TONE : 0U
 	};
 	char name[32];
 	(void)snprintf(name, sizeof(name), "CYCLE_%u_BEGIN", cycle);
 	event(name, (int)cycle);
+	if (mode == 0U)
+		event("CYCLE_MODE_NO_RAOP_PCM", (int)cycle);
+	else if (mode == 1U)
+		event("CYCLE_MODE_STOP_DURING_PCM", (int)cycle);
+	else if (mode == 2U)
+		event("CYCLE_MODE_STOP_AFTER_PCM_DRAIN", (int)cycle);
+	else
+		event("CYCLE_MODE_DUAL_TONE_SUBMISSION", (int)cycle);
 
 	module_id = sys_prx_load_module(MODULE_PATH, 0, NULL);
 	if (module_id < 0) {
@@ -255,6 +270,8 @@ static int run_cycle(unsigned int cycle, unsigned int baseline_module_count)
 		event("RESIDENT_AUDIO_STATUS_PENDING", (int)cycle);
 	if ((diagnostic_events & AIRPS3_DIAG_EVENT_AUDIO_INIT_BORROWED) != 0U)
 		event("RESIDENT_AUDIO_REUSED_SYSTEM_INIT", (int)cycle);
+	if ((diagnostic_events & AIRPS3_DIAG_EVENT_TEST_TONE_QUEUED) != 0U)
+		event("RESIDENT_TEST_TONE_QUEUED", 440);
 	if ((diagnostic_events & AIRPS3_DIAG_EVENT_STARTED) == 0U) {
 		event("MODULE_START_EVENT_MISSING", (int)cycle);
 		(void)stop_and_unload(module_id, &diagnostics,
@@ -269,18 +286,39 @@ static int run_cycle(unsigned int cycle, unsigned int baseline_module_count)
 		return 0;
 	}
 	event("RECEIVER_READY", (int)cycle);
-	if (!wait_for_audio_pcm(&diagnostics)) {
-		event("RESIDENT_PCM_SUBMISSION_MISSING", (int)cycle);
-		(void)stop_and_unload(module_id, &diagnostics,
-			baseline_module_count, cycle);
-		return 0;
+	if (mode != 0U) {
+		if (!wait_for_audio_pcm(&diagnostics)) {
+			event("RESIDENT_PCM_SUBMISSION_MISSING", (int)cycle);
+			(void)stop_and_unload(module_id, &diagnostics,
+				baseline_module_count, cycle);
+			return 0;
+		}
+		event("RESIDENT_PCM_SUBMITTED_TO_MIXER", (int)cycle);
 	}
-	event("RESIDENT_PCM_SUBMITTED_TO_MIXER", (int)cycle);
-	event("TWO_ACTIVE_AUDIO_PORTS", (int)cycle);
-	if (!submit_foreground_audio_probe(AUDIO_PROBE_BLOCKS)) {
-		(void)stop_and_unload(module_id, &diagnostics,
-			baseline_module_count, cycle);
-		return 0;
+	if (mode == 2U) {
+		if (!wait_for_diagnostic_event(&diagnostics,
+			AIRPS3_DIAG_EVENT_AUDIO_DRAINED)) {
+			event("RESIDENT_PCM_DRAIN_TIMEOUT", (int)cycle);
+			(void)stop_and_unload(module_id, &diagnostics,
+				baseline_module_count, cycle);
+			return 0;
+		}
+		event("RESIDENT_PCM_DRAINED", (int)cycle);
+	} else if (mode == 3U) {
+		event("TWO_ACTIVE_AUDIO_PORTS", (int)cycle);
+		event("FOREGROUND_TONE_HZ", (int)AUDIO_PROBE_FREQUENCY_HZ);
+		if (!submit_foreground_audio_probe(AUDIO_PROBE_BLOCKS)) {
+			(void)stop_and_unload(module_id, &diagnostics,
+				baseline_module_count, cycle);
+			return 0;
+		}
+	} else if (mode == 0U) {
+		event("FOREGROUND_TONE_HZ", (int)AUDIO_PROBE_FREQUENCY_HZ);
+		if (!submit_foreground_audio_probe(AUDIO_PROBE_SHORT_BLOCKS)) {
+			(void)stop_and_unload(module_id, &diagnostics,
+				baseline_module_count, cycle);
+			return 0;
+		}
 	}
 
 	if (!stop_and_unload(module_id, &diagnostics,
@@ -299,7 +337,10 @@ int main(int argc, const char **argv)
 	(void)argv;
 	app_log = fopen(APP_LOG_PATH, "wb");
 	event(app_log != NULL ? "HARNESS_START" : "HARNESS_LOG_OPEN_FAILED", 0);
-	(void)printf("AIR PS3 resident audio-backend and lifecycle test; no synthetic RAOP stream is sent.\n");
+	event("HARNESS_CYCLE_COUNT", (int)TEST_CYCLES);
+	event("RESIDENT_TEST_TONE_HZ", 440);
+	event("FOREGROUND_TONE_HZ", (int)AUDIO_PROBE_FREQUENCY_HZ);
+	(void)printf("AIR PS3 resident audio stress harness; synthetic RAOP is not sent.\n");
 	result = get_module_count(&baseline_module_count);
 	if (result != 0) {
 		event("MODULE_LIST_FAILED_AT_START", result);

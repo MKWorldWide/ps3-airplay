@@ -19,10 +19,15 @@ export PATH="$PS3DEV/bin:$PS3DEV/ppu/bin:$PS3DEV/spu/bin:$PATH"
 
 "$PROJECT_ROOT/scripts/build-lima-resident.sh"
 
+python3 "$PROJECT_ROOT/scripts/validate-resident-containers.py" \
+	--signed-sprx "$RESIDENT_BUILD_DIR/ps3-airplay-receiver.sprx" \
+	--fake-sprx "$RESIDENT_BUILD_DIR/ps3-airplay-receiver.fake.sprx"
+
 cmake -S "$PROJECT_ROOT/experimental/resident/harness" \
 	-B "$HARNESS_BUILD_DIR" \
 	-DCMAKE_TOOLCHAIN_FILE="$PS3DK_SOURCE/cmake/ps3-ppu-toolchain.cmake" \
 	-DRESIDENT_SPRX="$RESIDENT_BUILD_DIR/ps3-airplay-receiver.fake.sprx" \
+	-DHARNESS_TEST_CYCLES="${HARNESS_TEST_CYCLES:-50}" \
 	-DHARNESS_PKGFILES="$HARNESS_BUILD_DIR/pkg_files"
 # The SDK helper checks PKGFILES at configure time but omits overlay files from
 # the generated package command's dependencies. Force a fresh package so every
@@ -40,6 +45,11 @@ trap 'rm -rf "$VERIFY_DIR"' EXIT
 	--extract "$HARNESS_BUILD_DIR/ps3-airplay-resident-harness.pkg")
 PACKAGED_SPRX="$(find "$VERIFY_DIR" -type f \
 	-name ps3-airplay-receiver.fake.sprx -print -quit)"
+PACKAGED_SPRX_COUNT="$(find "$VERIFY_DIR" -type f -name '*.sprx' | wc -l | tr -d ' ')"
+if [[ "$PACKAGED_SPRX_COUNT" != 1 ]]; then
+	echo "The RPCS3 package must contain exactly one SPRX (the fake-signed test module)" >&2
+	exit 1
+fi
 if [[ -z "$PACKAGED_SPRX" ]] || ! cmp -s \
 	"$RESIDENT_BUILD_DIR/ps3-airplay-receiver.fake.sprx" "$PACKAGED_SPRX"; then
 	echo "The PKG does not embed the current fake-signed resident SPRX" >&2

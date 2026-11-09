@@ -10,7 +10,10 @@ typedef struct airps3_resident_diagnostics {
 	uint32_t stage;
 	int32_t error;
 	uint32_t events;
+	uint32_t flags;
 } airps3_resident_diagnostics;
+
+#define AIRPS3_DIAG_FLAG_SUPPRESS_TEST_TONE 0x01U
 
 #define AIRPS3_DIAG_EVENT_STARTED        0x01U
 #define AIRPS3_DIAG_EVENT_RECEIVER_READY 0x02U
@@ -22,5 +25,6 @@ typedef struct airps3_resident_diagnostics {
 #define AIRPS3_DIAG_EVENT_AUDIO_PCM_SUBMITTED 0x80U
 #define AIRPS3_DIAG_EVENT_TEST_TONE_QUEUED 0x100U
 #define AIRPS3_DIAG_EVENT_AUDIO_INIT_BORROWED 0x200U
+#define AIRPS3_DIAG_EVENT_AUDIO_DRAINED  0x400U
 
 #endif
