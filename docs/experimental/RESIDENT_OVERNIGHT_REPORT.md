@@ -1,6 +1,6 @@
 # AIR PS3 Resident Development Report
 
-**Updated:** 2026-11-08 19:22 EDT
+**Updated:** 2026-11-08 19:05 EDT
 **Branch:** `experimental/resident-airplay`
 **Source baseline:** `53e24116e8d9a26db80deeafd568be72bf8cf6d6`
 **Scope:** RPCS3 lifecycle and diagnostic harness; no physical PS3 was contacted.
@@ -98,15 +98,49 @@ resampling/gain, diagnostic tone, ASan/UBSan, and PPU component-object checks
 passed. The initial attempt had run against stale Lima copies and is excluded
 from the passing result.
 
-The RPCS3 UI remains inaccessible while the Mac reports locked. The latest
-atomic-publication candidate has not been run there, so the cycle-three fault
-and missing post-cycle module count remain unresolved. Hardware readiness stays
-NOT READY.
+At that checkpoint, the RPCS3 UI was inaccessible while the Mac reported
+locked. The next checkpoint records the subsequent unlock and emulator rerun.
 
-**Hardware readiness: NOT READY.** First isolate the RPCS3 thread-exit fault,
-restore three clean audio-enabled cycles with module count at baseline after
-each, then validate a synthetic RAOP stream through decode and PCM output.
-Only a later reviewed gate may propose a nonpersistent hardware test.
+## Audio worker stack correction and RPCS3 retest (2026-11-08 19:05 EDT)
+
+The prior crash investigation measured `sizeof(raop_pcm_ring)` at 65,864 bytes.
+The audio worker also held a 4,096-byte staging array and a 2,048-byte output
+array on its configured 65,536-byte stack, for at least 72,008 bytes of local
+buffers before ordinary call frames. The ring, staging, and output buffers are
+now static module storage owned by the single audio worker. This is a
+well-supported stack-overflow hypothesis, but the change alone does not prove
+the old fault's exact instruction.
+
+After the user unlocked the Mac, the rebuilt `RPRX90001` package was installed
+and run in RPCS3. Its embedded fake SPRX matched the intended build. The fresh
+`/dev_hdd0/tmp/ps3-airplay-resident-harness.log` contains three complete
+audio-enabled cycles: each cycle loaded and started the module, reached
+`RECEIVER_READY`, reported resident PCM submission and two active audio ports,
+then returned stop and unload results of zero and module count six, matching
+the initial baseline. The final event is `HARNESS_PASS value=3`. The app-level
+foreground probe submitted 940 blocks; the resident API submission event was
+also observed. This verifies concurrent API submissions and clean emulator
+module teardown for these three runs. It does not verify audible sound, RAOP
+packets reaching the PRX, real game mixing, or PS3/Cobra behavior.
+
+RPCS3's accumulated GUI log still contains a fatal audio-thread fault from an
+earlier run. The isolated latest harness log is complete and passes. Network
+startup continues to encounter RPCS3 `EADDRNOTAVAIL`, and the resident file
+logger remains unavailable; the harness diagnostics channel supplies lifecycle
+evidence. Current hardware readiness remains NOT READY.
+
+Current ignored artifact hashes: PRX
+`c5fd511eb4617aedd9ad7e1949ae25a562cb6f854ff2017180206163ae1fc8ed`, fake
+SPRX `5954cf7a340d3684ea205ce86bd7268ee7127fcf6e75d5be0c228b29f90b1bab`,
+harness ELF `abf4ff126450ab80ae891217194f2bc97200444ee9515fbf226ad789a2bb97ed`,
+SELF `750eb723a913eccde1f5f085d44b11d670dbac149301dfdc05dad71694a8ec3f`, and
+PKG `d5385a1b8c0acf1f21b7bbad1804486118ddbd02a510fe4871dce9ae77dfaf9d`.
+The installed fake SPRX hash was recomputed and matched the local artifact.
+
+**Hardware readiness: NOT READY.** The emulator lifecycle gate now passes.
+Next validate synthetic RAOP through resident decode and output, then obtain
+independent evidence of audible output before proposing a nonpersistent
+hardware test.
 
 ## Current result table
 
@@ -115,11 +149,10 @@ Only a later reviewed gate may propose a nonpersistent hardware test.
 | Resident bounded PCM path | PASS (structural/host) | Decoded PCM queue, existing resampler, prebuffer, and cellAudio output worker are implemented; host API mocks and a receive-to-render pipeline test pass. |
 | RPCS3 fake-SPRX load/start | PASS | The harness package loads and the PRX reaches ready state. The raw PRX is not accepted by this RPCS3 configuration. |
 | Audio submission in RPCS3 | PASS (API submission only) | Resident diagnostic PCM and foreground tone submissions succeeded through separate ports. Sound was not independently confirmed. |
-| Two-port coexistence | PASS (submission only) | Both ports accepted audio submissions during the test interval; this does not establish real mixing quality or game coexistence. |
-| Three-cycle audio teardown | FAIL | Cycles 1 and 2 passed; cycle 3 crashed in the resident audio thread at a null execution target. The reported module offset is not reliably mapped to a named PRX function. |
-| Cycle-3 module baseline | UNTESTED | Crash occurred before stop/unload completion and baseline query. |
-| Instrumented RPCS3 rerun | BLOCKED | Latest trace plus atomic-publication build is ready, but RPCS3 UI reported the Mac locked before package installation. |
-| Synthetic RAOP decode-to-output | PASS (host PCM render) / UNTESTED (RPCS3) | Lima socket test sends encrypted RTP through decrypt, ALAC, SPSC, PCM ring, and 44.1-to-48 kHz rendering without underflow. No PRX/RPCS3 receive-to-audio run or audible output is established. |
+| Three-cycle audio teardown | PASS | Rebuilt candidate completed three audio-enabled cycles; each stop and unload returned zero and each worker reported stopped. |
+| Module-list baseline | PASS | Harness log recorded initial count six and count six after each of three unloads. This is not a full socket or heap leak check. |
+| Two-port coexistence | PASS (submission only) | Harness submitted 940 foreground blocks while the resident reported PCM submission through its separate port. Acoustic mixing was not verified. |
+| Synthetic RAOP decode-to-output | PASS (host PCM render) / UNTESTED (RPCS3) | Lima socket test sends encrypted RTP through decrypt, ALAC, SPSC, PCM ring, and 44.1-to-48 kHz rendering without underflow. No PRX/RPCS3 receive-to-audio run is established. |
 | Physical console / Cobra / in-game audio | UNTESTED | No physical PS3 was contacted. |
 
 ## Earlier lifecycle-only checkpoint (superseded)
@@ -148,23 +181,23 @@ candidate on a physical console based on emulator lifecycle alone.
 | Area | Status | Observed result |
 |---|---|---|
 | Host protocol and crypto | PASS | Lima host suite passed RAOP crypto/session/discovery, persistent RTSP/RTP, encrypted receive/decode, ALAC bounds, PCM ring/resampling/gain, and sanitizer smoke tests. |
-| PPU PRX build and structure | PASS | PS3DK 0.27.0 emitted the PRX and both SPRX containers. `prx-gen check`: one load segment, 6,101 relocations, one management export, four import libraries. |
+| PPU PRX build and structure | PASS | Latest PS3DK 0.27.0 build emitted the PRX and both SPRX containers; structural check reports one load segment, 6,298 relocations, one management export, and five import libraries. |
 | Package payload identity | PASS | `RPRX90001` package extracted and its embedded `.fake.sprx` matched the current PRX build output byte for byte. |
 | Raw PRX load in RPCS3 | FAIL | `sys_prx_load_module` returned `0x80011148`, `CELL_PRX_ERROR_UNSUPPORTED_PRX_TYPE`; the loader reported “Failed to decrypt file.” |
 | Fake-SPRX module start | PASS | The `.fake.sprx` loaded, returned resident status, reached startup stage 7, created the worker, and published receiver-ready. |
-| Three RPCS3 lifecycle cycles | PASS | All three load/start/ready/stop/worker-exit/unload cycles completed. Stop and unload returned zero each time. |
+| Three RPCS3 lifecycle cycles | PASS | Latest audio-enabled rerun completed all three load/start/ready/stop/worker-exit/unload cycles. Stop and unload returned zero each time. |
 | Module-list baseline | PASS | RPCS3 reported six modules before the run and after each unload; no module entry accumulated. This does not measure all sockets or memory allocations. |
 | Resident file logger in RPCS3 | BLOCKED | Each run published `MODULE_LOG_UNAVAILABLE`; lifecycle diagnostics still worked through the harness-provided structure. The underlying filesystem/logger incompatibility remains unresolved. |
-| RPCS3 cellAudio port probe | PASS (app-level API) | `cellAudioInit`, port open/start, 940 stereo blocks at 48 kHz, stop/close, and `cellAudioQuit` all returned zero. The 5-second 440 Hz tone was submitted through RPCS3's audio path; acoustic audibility was not independently recorded, and the PRX did not submit this tone. |
+| RPCS3 cellAudio port probe | PASS (API submission) | App-level `cellAudioInit`, port open/start, 940 stereo blocks at 48 kHz, stop/close, and `cellAudioQuit` returned zero. The foreground probe submitted a 5-second 440 Hz tone; the PRX separately submitted seeded diagnostic PCM. Acoustic audibility was not independently recorded. |
 | Synthetic RAOP session in RPCS3 | UNTESTED | The harness does not yet drive a synthetic sender through the resident's RTSP/RTP path. |
 | Valid PCM from resident PRX | UNTESTED | Host decoder tests produce valid PCM, but the RPCS3 lifecycle run did not send audio packets. |
-| Resident audio output | UNTESTED at this earlier checkpoint | Later audio-backend work and the current RPCS3 failure are recorded above. |
-| Foreground/resident audio coexistence | UNTESTED at this earlier checkpoint | Later two-port submission work and the current RPCS3 failure are recorded above. |
+| Resident audio output | PASS (API submission only) | Resident diagnostic PCM reached `cellAudioAdd2chData`; RAOP-produced PCM in the PRX and acoustic output remain untested. |
+| Foreground/resident audio coexistence | PASS (API submission only) | Two ports accepted submissions in the same run. No foreground game or acoustic mixing validation was performed. |
 | Physical PS3 / Cobra compatibility | UNTESTED | No console or boot-plugin setting was accessed. |
 
 ## Verified RPCS3 evidence
 
-The final harness log reported for each cycle:
+The latest harness log reported for each cycle:
 
 ```text
 MODULE_COUNT_BASELINE value=6
@@ -192,9 +225,11 @@ successful run is the passing lifecycle result.
    heap usage, and every external resource were not independently measured.
 3. `sysThreadJoin` is called only after the worker signals cleanup completion,
    but the join itself has no timeout and was exercised only in RPCS3.
-4. The resident now has a bounded PCM queue and `cellAudio` output worker, but
-   RPCS3 audio-thread shutdown failed on cycle three. The exact fault remains
-   unknown; output submission is not proof of audible output.
+4. The former third-cycle audio-worker crash followed a local buffer footprint
+   larger than the configured worker stack. Moving those buffers to static
+   storage is followed by three clean emulator cycles, supporting (but not
+   proving) stack exhaustion as the cause. Output submission is not proof of
+   audible output.
 5. Host synthetic RAOP receive-to-PCM render is tested, but no synthetic RAOP
    packet flow has yet run through the resident PRX in RPCS3. No physical
    console was tested.
@@ -206,25 +241,21 @@ are not committed.
 
 | Artifact | SHA-256 |
 |---|---|
-| `ps3-airplay-receiver.prx` | `427445fa5313779af8344d9005906d5423662aee519022cf1754fa4ec6f50ef0` |
-| `ps3-airplay-receiver.sprx` | `20b5ea0827275a219b544d9ad00cea671445e3ae6c09c80f413ca3aaa52e39db` |
-| `ps3-airplay-receiver.fake.sprx` | `5f21acdd1e7111ba5ad42bfe76f6aef2180ffaa7d89291b4b701a925fb3b1786` |
+| `ps3-airplay-receiver.prx` | `c5fd511eb4617aedd9ad7e1949ae25a562cb6f854ff2017180206163ae1fc8ed` |
+| `ps3-airplay-receiver.fake.sprx` | `5954cf7a340d3684ea205ce86bd7268ee7127fcf6e75d5be0c228b29f90b1bab` |
 | `ps3-airplay-resident-harness.elf` | `abf4ff126450ab80ae891217194f2bc97200444ee9515fbf226ad789a2bb97ed` |
 | `ps3-airplay-resident-harness.self` | `750eb723a913eccde1f5f085d44b11d670dbac149301dfdc05dad71694a8ec3f` |
-| `ps3-airplay-resident-harness.pkg` | `50c2c7160d5d2c1679c96a56359477c599ec6806cbbe2e50911d2060192009a1` |
+| `ps3-airplay-resident-harness.pkg` | `d5385a1b8c0acf1f21b7bbad1804486118ddbd02a510fe4871dce9ae77dfaf9d` |
 
 ## Safe next steps
 
-1. Keep the hardware gate closed until a real resident audio-output path exists
-   and a controlled synthetic RAOP stream yields observable PCM/output evidence.
-2. Add a bounded PCM producer/consumer queue and a separately timed playback
-   worker using PS3 `cellAudio` APIs; retain 44.1-to-48 kHz conversion and
-   bounded buffering, and make audio-port startup/teardown retry-safe.
-3. First verify audio-port API behavior in RPCS3 with a controlled test tone;
-   then feed synthetic encrypted RAOP audio and measure queue depth,
-   underflows, and clean stop.
-4. Attempt foreground-source coexistence only after resident output works. A
-   successful pair of emulator streams would not prove game mixing on hardware.
-5. After a separate readiness review, propose a nonpersistent diagnostic PS3
-   run with recovery instructions. Do not enable automatic loading or edit
+1. Drive a controlled synthetic encrypted RAOP session through the resident
+   PRX in an environment with working networking; verify decoded PCM reaches
+   its bounded queue and `cellAudio` submission path.
+2. Capture or listen for the resident output independently. Do not treat API
+   submission events as acoustic evidence.
+3. Measure socket/heap cleanup and test repeated stop/restart under network
+   failures; module-list stability alone is not a full leak check.
+4. Only after those results, review a nonpersistent physical PS3 diagnostic
+   plan with recovery instructions. Do not enable automatic loading or edit
    Cobra configuration.

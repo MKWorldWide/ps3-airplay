@@ -884,3 +884,10 @@ The v0.1.31 fresh RPCS3 replay verifies the portable-arithmetic correction: the 
 - **Root Cause:** Protocol/decode correctness and output-buffer production were tested in separate units without an integration assertion joining them.
 - **Fix:** The host RAOP socket test now transfers exact decoded PCM through the bounded SPSC queue into the production PCM ring, renders 256 frames at 48 kHz, checks underflow and non-silence, and runs under ASan/UBSan.
 - **Prevention Rule:** Keep host receive/decode/render validation distinct from console audio submission and audible-output claims; each proves a separate stage.
+
+## Keep large audio buffers off the resident worker stack
+
+- **Problem:** The RPCS3 audio-enabled harness completed two worker cycles, then the third audio worker faulted at a null execution target before teardown.
+- **Root Cause:** The worker's local PCM ring, staging buffer, and output buffer totaled at least 72,008 bytes while its configured stack was 65,536 bytes, excluding call frames. This stack overrun is the leading explanation. Three cycles passed after moving those buffers to static, single-worker-owned module storage, though the precise old faulting instruction was not independently mapped.
+- **Fix:** Keep the large audio buffers outside the worker stack and retain one-worker-at-a-time lifecycle ownership. Rebuild the package and verify repeated stop/join/unload cycles plus the module-count baseline in RPCS3.
+- **Prevention Rule:** Measure aggregate local buffer size against configured thread stacks before runtime testing; include call-frame margin and rerun the complete repeated lifecycle when storage ownership changes.

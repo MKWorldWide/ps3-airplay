@@ -1,7 +1,7 @@
 # Current scratchpad
 
-- Task: qualify resident audio on `experimental/resident-airplay`; stable release and physical consoles remain out of scope.
-- Verified: full Lima crypto/protocol/build gate passes against hash-matched sources, including encrypted RAOP through SPSC and 44.1-to-48 kHz rendering (256 non-silent frames, no underflow). Prior host lifecycle mocks, SPSC concurrency, PPU PRX structure, and package identity checks pass.
-- Candidate: latest ignored RPCS3 package SHA-256 `d803bfd2daf94e6dbf7a61434330077f5e5b55418831d389a12ffbf0fb888a3c`; embedded fake SPRX matched the built output. `audio_thread_started` uses atomic publication/read semantics.
-- Blocker: previous audio-enabled RPCS3 run passed cycles 1–2 and crashed in the resident audio thread on cycle 3; exact call site and post-cycle module count are unknown. Latest instrumented package is not yet run because RPCS3 reports the Mac locked.
-- Next: after unlock, run latest RPRX90001 package, collect trace markers, and complete three audio-enabled stop/unload cycles with module count six each; then test synthetic RAOP through resident output. Hardware readiness remains NOT READY.
+- Task: continue resident AirPlay work on `experimental/resident-airplay`; no stable-release or physical-console changes.
+- Latest RPCS3 result: rebuilt `RPRX90001` completed three audio-enabled load/start/ready/stop/join/unload cycles. Module count returned to six each time; harness ended `HARNESS_PASS value=3`.
+- Likely fix: at least 72,008 bytes of audio-worker local buffers exceeded the 65,536-byte stack. Buffers now live in single-worker-owned static storage. This is the leading explanation for the earlier crash, not a proven exact faulting instruction.
+- Verified audio boundary: RPCS3 accepted seeded resident PCM and foreground tone submissions on separate ports. No acoustic output, real-game mixing, or resident RAOP packet-to-output run is verified. Network startup still reports `EADDRNOTAVAIL`.
+- Next: add or run an isolated synthetic RAOP-in-resident path with usable networking, measure non-module resources across repeat cycles, and gather independent output evidence. Hardware readiness remains NOT READY.

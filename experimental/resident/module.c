@@ -72,6 +72,10 @@ static volatile uint32_t pcm_generation;
 static volatile uint32_t pcm_input_rate;
 static volatile uint32_t pcm_input_channels;
 static raop_pcm_spsc decoded_pcm_queue;
+/* These single-worker-owned buffers exceed the 64 KiB worker stack. */
+static raop_pcm_ring audio_pcm_ring;
+static int16_t audio_staging[AUDIO_REFILL_FRAMES * 2U];
+static float audio_output[AUDIO_OUTPUT_FRAMES * 2U];
 static int net_module_loaded;
 static int net_initialized;
 static int netctl_module_loaded;
@@ -189,16 +193,13 @@ static void runtime_trace(const char *event, int value)
 
 static void audio_worker(void *argument)
 {
-	raop_pcm_ring pcm_ring;
-	int16_t staging[AUDIO_REFILL_FRAMES * 2U];
-	float output[AUDIO_OUTPUT_FRAMES * 2U];
 	uint32_t seen_generation = UINT32_MAX;
 	uint32_t input_rate = 44100;
 	uint32_t input_channels = 2;
 	int playback_active = 0;
 	int pcm_reported = 0;
 	(void)argument;
-	raop_pcm_ring_init(&pcm_ring, (uint8_t)input_channels);
+	raop_pcm_ring_init(&audio_pcm_ring, (uint8_t)input_channels);
 	while (!__atomic_load_n(&audio_stop_requested, __ATOMIC_ACQUIRE)) {
 		uint32_t current_generation = __atomic_load_n(&pcm_generation,
 			__ATOMIC_ACQUIRE);
@@ -207,37 +208,38 @@ static void audio_worker(void *argument)
 			input_rate = __atomic_load_n(&pcm_input_rate, __ATOMIC_ACQUIRE);
 			input_channels = __atomic_load_n(&pcm_input_channels,
 				__ATOMIC_ACQUIRE);
-			raop_pcm_ring_init(&pcm_ring, (uint8_t)input_channels);
+			raop_pcm_ring_init(&audio_pcm_ring, (uint8_t)input_channels);
 			playback_active = 0;
 			(void)log_event("AUDIO_SESSION_RESET", (int)input_rate,
 				input_channels);
 		}
-		while (pcm_ring.count < AUDIO_PREBUFFER_FRAMES &&
+		while (audio_pcm_ring.count < AUDIO_PREBUFFER_FRAMES &&
 			raop_pcm_spsc_count(&decoded_pcm_queue) != 0) {
-			size_t popped = raop_pcm_spsc_pop(&decoded_pcm_queue, staging,
+			size_t popped = raop_pcm_spsc_pop(&decoded_pcm_queue, audio_staging,
 				AUDIO_REFILL_FRAMES, seen_generation);
 			if (popped == 0)
 				break;
-			(void)raop_pcm_ring_push_native(&pcm_ring, staging, popped);
+			(void)raop_pcm_ring_push_native(&audio_pcm_ring, audio_staging,
+				popped);
 		}
-		if (!playback_active && pcm_ring.count >= AUDIO_PREBUFFER_FRAMES) {
+		if (!playback_active && audio_pcm_ring.count >= AUDIO_PREBUFFER_FRAMES) {
 			playback_active = 1;
-			(void)log_event("AUDIO_PLAYBACK_STARTED", (int)pcm_ring.count,
+			(void)log_event("AUDIO_PLAYBACK_STARTED", (int)audio_pcm_ring.count,
 				(int)input_rate);
 		}
 		if (playback_active) {
-			(void)raop_pcm_ring_render_float(&pcm_ring, input_rate, 48000,
-				output, AUDIO_OUTPUT_FRAMES);
-			if (pcm_ring.count == 0 &&
+			(void)raop_pcm_ring_render_float(&audio_pcm_ring, input_rate, 48000,
+				audio_output, AUDIO_OUTPUT_FRAMES);
+			if (audio_pcm_ring.count == 0 &&
 				raop_pcm_spsc_count(&decoded_pcm_queue) == 0) {
 				playback_active = 0;
 				(void)log_event("AUDIO_BUFFER_UNDERRUN", 1, 0);
 			}
 		} else {
-			raop_pcm_ring_render_silence(output, AUDIO_OUTPUT_FRAMES);
+			raop_pcm_ring_render_silence(audio_output, AUDIO_OUTPUT_FRAMES);
 		}
 		{
-			int result = cellAudioAdd2chData(audio_port, output,
+			int result = cellAudioAdd2chData(audio_port, audio_output,
 				AUDIO_OUTPUT_FRAMES, 1.0f);
 			if (result != 0) {
 				(void)log_event("AUDIO_SUBMIT_FAILED", result, 0);
