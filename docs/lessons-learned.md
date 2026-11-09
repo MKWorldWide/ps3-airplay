@@ -1,10 +1,17 @@
 # Lessons learned
 
+## SELF key revision by itself is not a loader fix
+
+- **Problem:** The no-import and SDK-layout probes signed with SELF attribute/key revision `0x000A` still failed `sys_prx_load_module` with `0x80010007` on all three 00.04 attempts.
+- **Root Cause:** Still unknown. The experiment changed the SELF attribute but did not reproduce the reference’s complete Sony CELL SDK link and signing pipeline or its VSH/Cobra loader context.
+- **Fix:** No product-code change. Record that `0x000A` alone is insufficient and keep the candidate blocked while isolating the complete loader contract.
+- **Prevention Rule:** Change one verified build dimension at a time, but treat signing metadata as a set of fields and pipeline inputs; do not promote one matching header field into a root-cause claim.
+
 ## Separate PRX signing metadata from raw module layout
 
 - **Problem:** A minimal PRX and an SDK-macro reference both returned `ENOEXEC` on hardware, but both had been produced by the same custom PS3DK `make_sprx` route. Their failure could not distinguish signing from raw PRX structure.
 - **Root Cause:** The comparison varied imports and source declarations but held the signing toolchain and custom PRX layout constant. It was not an independent loader-format reference.
-- **Fix:** Compare against a released CFW plugin. The observed reference uses SELF flags/key revision `0x000A` and two `PT_LOAD` segments, while PS3DK output used `0x0001` and one RWX segment. Built a separate `00.04` candidate with only the probes re-signed via the public scetool settings; the resident stayed unchanged. Hardware validation is pending because the console was unreachable.
+- **Fix:** Compare against a released CFW plugin. The observed reference uses SELF flags/key revision `0x000A` while PS3DK output used `0x0001`. The 00.04 hardware run then showed both no-import and SDK-layout probes re-signed at `0x000A` still fail three times with `0x80010007`; the resident stayed unchanged. This rules out the revision alone as a sufficient fix, while leaving the root cause unresolved.
 - **Prevention Rule:** Make each loader diagnostic vary one axis at a time. Label artifact inspection as evidence of a difference, not proof of causality, and do not change resident signing/layout until the isolated hardware result identifies the failing axis.
 
 ## AIR PS3 v0.2.8 engineering lessons (2026-11-08)

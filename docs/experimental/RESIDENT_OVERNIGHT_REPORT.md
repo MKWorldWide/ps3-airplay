@@ -1,69 +1,34 @@
 # AIR PS3 Resident Development Report
 
-**Updated:** 2026-11-09 00:07 EDT
+**Updated:** 2026-11-09 01:17 EST
 **Branch:** `experimental/resident-airplay`
-**Source baseline:** `86781f5`
-**Scope:** Hardware diagnostic harness package build/install; no Cobra settings changed.
+**Scope:** Isolated 00.04 hardware diagnostic run and offline public SPRX reference analysis. No PS3 source behavior, Cobra settings, or persistent plugin settings were changed.
 
-## Independent signing and module-format comparison (2026-11-09 00:07 EDT)
+## Latest hardware run and public SPRX reference (2026-11-09 01:13 EST)
 
-The `00.03` package launched on the development PS3. Both generated comparison
-modules returned `0x80010007` (`ENOEXEC`) from `sys_prx_load_module` before
-`module_start`. The minimal probe had no imports; the SDK-layout reference had
-the standard module info and export record. The reported module count remained
-11 after each failed load (the baseline was 11), and all harness-held modules
-were released back to the application baseline of 9. The `00.03` run stopped
-on the first failed attempt for each candidate, so no start/stop/unload cycle
-was observed.
+Uploaded, installed, and launched diagnostic package `RPRX90002` SFO `00.04`. The installed resident and probes matched the local package. The fresh console log was retrieved read-only and is retained only under ignored `build/resident-hardware/`. It records three attempts for each of two probes: the no-import probe and the SDK-layout reference each returned `0x80010007` (`ENOEXEC`) all three times. The module count remained 11 after each failed attempt. The harness cleaned up its audio and network modules and returned the count to the application baseline of 9.
 
-The two probes were not an independent signing comparison: both used the same
-PS3DK `make_sprx` route as the resident. To separate the signed-container
-metadata from the raw module, compared a released webMAN MOD 1.47.50 plugin and
-its public build command with the resident build. The released module and
-current PS3DK SPRXs share auth ID, vendor ID, program type and SCE version, but
-the SELF flags differ: the known-good-style scetool output uses key revision /
-flags `0x000A`, while the current `make_sprx` output uses `0x0001`. Separately,
-the extracted reference plugin has two load segments plus `PT_SCE_PPURELA`;
-PS3DK's current `prx-gen` candidate has one RWX `PT_LOAD` plus that relocation
-segment. These are concrete comparison differences, not yet a proven cause of
-the hardware rejection. The reference source uses scetool with key revision
-`0A` and the same public CEX module identity.
+The configured harness cycle count is 50, but no resident lifecycle cycles ran: the harness exits at the failed loader-probe gate. Audio initialization/open/start and stop/close/quit returned zero, but it submitted no tone blocks. No resident reached `module_start`; RAOP, resident PCM, and audible output remain untested.
 
-Built a `00.04` diagnostic package with two minimal/reference probes signed by
-scetool using the public CEX plugin settings, while preserving the resident's
-current SPRX unchanged. The harness now makes all three configured failed-load
-attempts for each probe and records module count after each rejection. Extracted
-package SFO reports `RPRX90002`, `APP_VER=00.04`, and `VERSION=00.04`; the PKG
-contains the unchanged resident plus the two independently signed probes. The
-two probe SELF headers are flags/type `0x000A/0x0001`. The hardware package and
-probe hashes are below. The console could not be reached from the development
-host when preparing this follow-up, so `00.04` has **not** been uploaded,
-installed, or run. `00.03` remains the latest observed hardware run.
+The user-reported 10-second power-button shutdown remains important but is not explained by this run’s log. The 00.04 run itself records cleanup completion in 157 ms; the console later answered a read-only HTTP check.
+
+Offline comparison used webMAN MOD 1.47.50’s public GitHub release package. Its `webftp_server_full.sprx` has SELF attribute/key revision `0x000A` and category `0x0001`; AIR PS3’s resident candidate has attribute `0x0001` and category `0x0001`. Both 00.04 test probes were re-signed at revision `0x000A`, yet all attempts still failed. This falsifies “key revision alone fixes loading,” but does not isolate the cause. Upstream’s build uses the Sony CELL SDK, scetool, and VSH-facing imports, so its plugin loader context differs from this harness. Detailed hashes, source references, header fields, and limitations are in [the SPRX reference research note](RESIDENT_SPRX_REFERENCE_RESEARCH_2026-11-09.md).
 
 | Check | Status | Evidence |
 |---|---|---|
-| `00.03` minimal and SDK-layout probes | FAIL | Both load calls returned `0x80010007` before `module_start`. |
-| Module count after rejected loads | PASS | Count remained at 11 after each; final cleanup returned to app baseline 9. |
-| Independent known-good-style SELF comparison | PASS | webMAN MOD release plugin uses SELF flags/key revision `0x000A`; current `make_sprx` outputs use `0x0001`. |
-| Raw PRX layout comparison | PASS | Reference plugin: two `PT_LOAD` segments + `PT_SCE_PPURELA`; current PRX: one RWX `PT_LOAD` + relocation segment. |
-| `00.04` package, SFO and candidate signing | PASS | Package extracts; SFO and three module identities validate; probe metadata is `0x000A/0x0001`. |
-| `00.04` hardware installation and runtime | BLOCKED | Development console was unreachable from the host; no upload/install was attempted. |
-| Resident start/stop, RAOP, PCM or audible output | UNTESTED | The `00.03` resident and comparison probes never reached `module_start`; `00.04` was not run. |
+| 00.04 package install/launch and artifact match | PASS | SFO is `00.04`; installed SPRX artifacts match the package. |
+| Minimal probe load | FAIL | Three `sys_prx_load_module` attempts returned `0x80010007`; no module-count increase. |
+| SDK-layout reference probe load | FAIL | Three attempts returned `0x80010007`; no module-count increase. |
+| Cleanup | PASS | Audio/network teardown returned zero; module count returned from 11 to baseline 9. |
+| 50 resident lifecycle cycles | BLOCKED | Probe gate failed before cycle loop. |
+| Resident RAOP / PCM / audible output | UNTESTED | No resident reached `module_start`; no foreground tone blocks were submitted. |
+| webMAN binary install or runtime test | UNTESTED | Analysis was offline only; no binary was sent to a console. |
 
-`00.04` local ignored package SHA-256:
-`af75bf0150629064143117d44f38c184f754704336c62e19c30f68e9e5770e2e`.
-Probe SPRX SHA-256 values:
+00.04 package SHA-256: `af75bf0150629064143117d44f38c184f754704336c62e19c30f68e9e5770e2e`. The latest full candidate hashes and historical results remain below. Root cause and hardware readiness remain BLOCKED.
 
-| Artifact | SHA-256 |
-|---|---|
-| `resident-loader-minimal.sprx` (scetool, key revision `0x0A`) | `62d2f94a07dc41dc984e52381683fcd59c537b642cd20a2536e046eacdbff0b7` |
-| `resident-loader-reference.sprx` (scetool, key revision `0x0A`) | `d9c0579b80a199690089fd72732499a0d0d395b5282033cb10d158938d51a2b0` |
+## Prior independent signing and module-format comparison (2026-11-09 00:07 EDT)
 
-The next experiment is to install and run `00.04` on the dev PS3, compare each
-probe's load/start/stop/unload and module counts, then change only the dimension
-that the result isolates. Keep the receiver hardware gate BLOCKED until a
-production resident completes a clean lifecycle cycle. No raw console log,
-device address, key file, signing secret, or external package is tracked.
+The earlier 00.03 run tried each probe once before exiting. The subsequent 00.04 run repeated each candidate three times and confirmed the same loader error without count leakage. The source/layout differences and prior comparisons are preserved in the research note. The key-revision comparison is not a diagnosis.
 
 ## SFO 00.02 reinstall and repeat loader result (2026-11-08 23:20 EDT)
 

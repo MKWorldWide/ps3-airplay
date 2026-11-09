@@ -2,15 +2,10 @@
 
 ## Latest resident harness result (2026-11-09)
 
-- `RPRX90002` SFO `00.03` launched. Its minimal no-import probe and SDK-macro reference probe both failed to load with `0x80010007` (`ENOEXEC`) before `module_start`. Each failed load preserved the module count at 11; full harness cleanup returned to application baseline 9. Only one attempt per probe ran because the previous harness stopped at first load failure.
-- Comparison against a released webMAN MOD 1.47.50 SPRX and its public scetool build settings identified two concrete differences, not yet a proven root cause: SELF flags/key revision `0x000A` in that reference versus `0x0001` in PS3DK `make_sprx`, and a two-PT_LOAD layout versus the custom candidate's one RWX PT_LOAD. Shared auth ID, vendor, program type and SCE version were observed.
-- Built local-only `RPRX90002` SFO `00.04` package with minimal/reference raw PRXs re-signed through scetool at revision `0x0A`; the resident SPRX remains unchanged. Package SHA-256 `af75bf0150629064143117d44f38c184f754704336c62e19c30f68e9e5770e2e`. The package and probe SPRXs are under ignored `build/resident-hardware/`.
-- Harness now performs all three configured load attempts after rejection, recording module count after each. The `00.04` source/build passed locally, but the package was not installed or run because the development console could not be reached from the host. Do not infer hardware acceptance or module lifecycle success from packaging/signature checks.
-
-- Advanced the isolated `RPRX90002` harness SFO from `00.01` to `00.02`. The new package installed; independent inspection of the installed SFO confirms `APP_VER=00.02` and `VERSION=00.02`, and the app launches.
-- The harness now preloads `CELL_SYSMODULE_NET` and `CELL_SYSMODULE_NETCTL` before the resident load. Hardware logs show both loads and both corresponding unloads return zero, but the production SPRX still returns `0x80010007` (`ENOEXEC`) at cycle one.
-- Latest package SHA-256: `c96644d84c3e7b7b365f9a1a84342b624dd111c6557c9055ab49ed0a174431b1`. Latest console log SHA-256: `c74c095a9dd0dd3e8a7769ad0fa36168fe1cc8f74fdf37ffd04a9dbb6288f1f9`. Both artifacts and raw logs are local/ignored.
-- Missing network-module preloads were a harness defect but are not a sufficient cause of the loader rejection. Root cause is still unknown; do not report hardware readiness or resident audio. The module never reached `module_start`.
+- The installed `RPRX90002` SFO `00.04` run tried the minimal no-import and SDK-layout reference SPRXs three times each. Every `sys_prx_load_module` call returned `0x80010007` (`ENOEXEC`); module count stayed at 11 for every rejected load. Audio/network cleanup succeeded and the module count returned to the app baseline of 9. The configured 50-cycle loop did not execute because the probe gate failed. No module reached `module_start`, no audio blocks were submitted, and RAOP/PCM/audible output remain untested.
+- The user-reported 10-second power-button shutdown is recorded as an uncorrelated event: the captured 00.04 log shows cleanup by 157 ms and the console answered a later read-only HTTP check. Do not claim this log explains the shutdown.
+- Offline research captured the GitHub webMAN MOD 1.47.50 release’s full SPRX and build settings. Its SELF attribute/key revision is `0x000A`; the AIR PS3 resident is `0x0001`. However, the two 00.04 scetool probes at `0x000A` also failed, showing the revision alone is not sufficient. The reference uses the Sony CELL SDK/scetool build pipeline and VSH/Cobra-facing imports, so it is not equivalent to the harness load context. See `docs/experimental/RESIDENT_SPRX_REFERENCE_RESEARCH_2026-11-09.md` for package and SPRX hashes, source links, and boundaries.
+- Latest package SHA-256 remains `af75bf0150629064143117d44f38c184f754704336c62e19c30f68e9e5770e2e`. Loader root cause and resident hardware readiness remain BLOCKED.
 
 ## Hardware harness SFO version correction (2026-11-08)
 
