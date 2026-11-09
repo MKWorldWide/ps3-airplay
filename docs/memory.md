@@ -1,5 +1,13 @@
 # Project state
 
+## Resident hardware diagnostic package (2026-11-08)
+
+- Added a separately titled `RPRX90002` hardware diagnostic harness. It embeds only the production-compatible signed `ps3-airplay-receiver.sprx`, loads it from the title's USRDIR while the test application runs, defaults to 50 lifecycle cycles, and does not configure Cobra or automatic startup. The RPCS3 package remains separate and continues to use its fake SPRX.
+- The pinned PS3DK v0.27.0 source, official Windows SDK runtime files, Linux host tools, and Linux PPU compiler enabled a fresh signed build. `prx-gen check` reports one load segment, 6,300 relocations, one management export, and imports for `sys_net`, `cellSysmodule`, `cellNetCtl`, `cellAudio`, and `sysPrxForUser`. This is structural evidence only; hardware loader acceptance still depends on the console run.
+- Fresh candidate hashes: PRX `3b61d7739b371a4ebcb12b8723a0b11e7a29fbd96a248e650bd01a52570e7986`; signed SPRX `9fae9ed955c023aca2077654625510e80766f899c9eaa4998cad4af5f1588817`; harness SELF `013fda9e760b02172c478c5ffd0d2d5496930f211c53f02eb00d01165dd8bb52`; PKG `62403e6b11795c6fecf2d5b8a896d213dbf1df11905d771af43448a78c886f4f`. Local artifacts are ignored under `build/resident-hardware/`.
+- The package listing and independent extraction confirmed a single production SPRX byte-identical to the fresh signed build, under unique title ID `RPRX90002`. Host crypto, RTSP, RAOP, encrypted RTP, ALAC, PCM, resampling, and sanitizer checks passed. At this checkpoint installation and runtime execution on the development PS3 are pending.
+- CMake's regex engine did not accept `{9}` in the title-ID validator; a valid nine-character ID was rejected. The validator now checks uppercase alphanumeric characters and an exact string length separately.
+
 ## v0.2.0 / SFO 00.40 candidate update (2026-11-07)
 
 - The user requested that the app's startup diagnostic tone be removed and the next package label be `0.2.0`; SFO `APP_VER` advances from `00.39` to `00.40`.

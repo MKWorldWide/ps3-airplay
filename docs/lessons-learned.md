@@ -905,3 +905,17 @@ The v0.1.31 fresh RPCS3 replay verifies the portable-arithmetic correction: the 
 - **Root Cause:** The emulator's PRX filesystem behavior does not provide the resident's expected file-log path. The specific compatibility cause is still unknown, so the file logger cannot be treated as the sole evidence channel.
 - **Fix:** Copy internal structured events into a bounded, multi-producer journal in the harness-shared diagnostics structure. The application drains committed records to its own log and stdout, and reports record overflow and logger failures.
 - **Prevention Rule:** Keep a test-owned diagnostic channel independent of the PRX filesystem and logger; validate record publication, concurrency, ordering, and overflow separately from PS3 runtime logging.
+
+## Validate package identity and title IDs with the real build tools
+
+- **Problem:** The hardware harness rejected the valid nine-character title ID `RPRX90002` during CMake configuration.
+- **Root Cause:** This CMake regex implementation did not treat `{9}` as a repetition operator in the configured expression.
+- **Fix:** Validate the uppercase alphanumeric alphabet with a `+` expression, then check string length with CMake's `string(LENGTH)` and a numeric comparison. The subsequent build produced a signed SPRX and a package whose extracted payload matched it byte for byte.
+- **Prevention Rule:** Keep validators within the supported subset of the actual tool version, and exercise a known-valid and malformed value through configuration rather than relying on regex portability assumptions.
+
+## Restore the full pinned SDK before packaging hardware binaries
+
+- **Problem:** The Linux PPU compiler and host tools alone could not configure the hardware build; CMake stopped on missing installed SDK artifacts.
+- **Root Cause:** PS3DK's CMake checks require the installed headers, runtime libraries, version manifest, and Unix symlink aliases in addition to compiler and package tools.
+- **Fix:** Restore official v0.27.0 SDK runtime assets alongside the Linux PPU compiler and host tools, then validate the signed container and package payload before use. Keep the emulator fake SPRX out of the hardware package.
+- **Prevention Rule:** Verify the complete pinned installed SDK contract before building. Do not work around missing artifacts by substituting an older binary or an emulator-only SPRX.

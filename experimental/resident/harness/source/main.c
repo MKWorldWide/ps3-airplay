@@ -11,7 +11,11 @@
 #include "resident_diagnostics.h"
 
 #define APP_LOG_PATH "/dev_hdd0/tmp/ps3-airplay-resident-harness.log"
-#define MODULE_PATH "/dev_hdd0/game/RPRX90001/USRDIR/ps3-airplay-receiver.fake.sprx"
+#ifndef RESIDENT_MODULE_PATH
+#define RESIDENT_MODULE_PATH \
+	"/dev_hdd0/game/RPRX90001/USRDIR/ps3-airplay-receiver.fake.sprx"
+#endif
+#define MODULE_PATH RESIDENT_MODULE_PATH
 #ifndef TEST_CYCLES
 #define TEST_CYCLES 50U
 #endif

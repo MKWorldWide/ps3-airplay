@@ -5,6 +5,44 @@
 **Source baseline:** `53e24116e8d9a26db80deeafd568be72bf8cf6d6`
 **Scope:** RPCS3 lifecycle and diagnostic harness; no physical PS3 was contacted.
 
+## Fresh hardware package build (2026-11-08 22:49 EDT)
+
+The temporary Linux build environment was restored with the pinned PS3DK
+v0.27.0 Linux PPU compiler, Linux host tools, official v0.27.0 runtime
+artifacts, and the project's pinned Mbed TLS 3.6.7. The resident built as a
+signed production SPRX, not the RPCS3 fake. `prx-gen check` reports one load
+segment, 6,300 relocations, one management export, and five imports: `sys_net`,
+`cellSysmodule`, `cellNetCtl`, `cellAudio`, and `sysPrxForUser`.
+
+A new `RPRX90002` package embeds exactly one `.sprx`, byte-identical to the
+fresh signed SPRX. The package and payload were independently extracted and
+compared. The CMake title-ID check was adjusted after the real CMake version
+rejected `{9}` quantifier syntax for a valid nine-character ID.
+
+| Check | Status | Evidence |
+|---|---|---|
+| Host crypto/protocol/audio suite | PASS | RAOP crypto, RTSP/session, mDNS, encrypted RTP, ALAC, PCM/SPSC/resampling and sanitizer tests passed in Lima. |
+| Signed PRX/SPRX structure | PASS | `prx-gen check`; signed container type `0x00010001`; expected imports listed above. |
+| Harness build | PASS | PPU SELF built with 50-cycle configuration and unique title ID `RPRX90002`. |
+| PKG contents | PASS | PKG type 1; one production SPRX extracted and matched byte-for-byte. |
+| Hardware install and launch | UNTESTED at this checkpoint | Fresh package has not yet been installed or run on the development PS3. |
+| Resident RAOP-to-audio / audible output | UNTESTED | The package build does not provide runtime or listening evidence. |
+| Cobra/autoload and game coexistence | UNTESTED | No boot-plugin settings were changed. |
+
+SHA-256:
+
+| Artifact | SHA-256 |
+|---|---|
+| `ps3-airplay-receiver.prx` | `3b61d7739b371a4ebcb12b8723a0b11e7a29fbd96a248e650bd01a52570e7986` |
+| `ps3-airplay-receiver.sprx` | `9fae9ed955c023aca2077654625510e80766f899c9eaa4998cad4af5f1588817` |
+| `ps3-airplay-resident-harness.self` | `013fda9e760b02172c478c5ffd0d2d5496930f211c53f02eb00d01165dd8bb52` |
+| `ps3-airplay-resident-harness.pkg` | `62403e6b11795c6fecf2d5b8a896d213dbf1df11905d771af43448a78c886f4f` |
+
+Artifacts are in ignored `build/resident-hardware/`; no binaries, local paths,
+private network details, or raw device logs are added to Git. Installation and
+runtime findings will supersede the UNTESTED rows above when independently
+collected.
+
 ## Structured logging follow-up (2026-11-08 20:53 EDT)
 
 The resident diagnostics structure now carries a 128-record bounded journal.
