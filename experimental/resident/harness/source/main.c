@@ -20,6 +20,17 @@
 #ifndef TEST_CYCLES
 #define TEST_CYCLES 50U
 #endif
+#ifndef PROBE_CYCLES
+#define PROBE_CYCLES 3U
+#endif
+#ifndef MINIMAL_PROBE_PATH
+#define MINIMAL_PROBE_PATH \
+	"/dev_hdd0/game/RPRX90001/USRDIR/resident-loader-minimal.sprx"
+#endif
+#ifndef REFERENCE_PROBE_PATH
+#define REFERENCE_PROBE_PATH \
+	"/dev_hdd0/game/RPRX90001/USRDIR/resident-loader-reference.sprx"
+#endif
 #define EVENT_WAIT_POLLS 400U
 #define EVENT_POLL_US 25000U
 #define MODULE_LIST_CAPACITY 256U
@@ -42,12 +53,15 @@ static void event(const char *name, int value)
 {
 	uint64_t uptime_ms = (sys_time_get_system_time() - harness_start_us) / 1000U;
 	if (app_log != NULL) {
-		(void)fprintf(app_log, "uptime_ms=%llu event=%s value=%d\n",
-			(unsigned long long)uptime_ms, name, value);
+		(void)fprintf(app_log,
+			"uptime_ms=%llu event=%s value=%d value_hex=0x%08X\n",
+			(unsigned long long)uptime_ms, name, value,
+			(unsigned int)(uint32_t)value);
 		(void)fflush(app_log);
 	}
-	(void)printf("uptime_ms=%llu event=%s value=%d\n",
-		(unsigned long long)uptime_ms, name, value);
+	(void)printf("uptime_ms=%llu event=%s value=%d value_hex=0x%08X\n",
+		(unsigned long long)uptime_ms, name, value,
+		(unsigned int)(uint32_t)value);
 }
 
 static void drain_resident_log(const airps3_resident_diagnostics *diagnostics,
@@ -230,6 +244,120 @@ static void unload_network_sysmodules(void)
 	}
 }
 
+static int record_module_count(const char *label, const char *phase,
+	unsigned int expected)
+{
+	unsigned int module_count = 0;
+	char event_name[64];
+	int result = get_module_count(&module_count);
+	(void)snprintf(event_name, sizeof(event_name), "%s_%s_LIST_RESULT",
+		label, phase);
+	event(event_name, result);
+	if (result != 0)
+		return 0;
+	(void)snprintf(event_name, sizeof(event_name), "%s_%s_MODULE_COUNT",
+		label, phase);
+	event(event_name, (int)module_count);
+	(void)snprintf(event_name, sizeof(event_name), "%s_%s_BASELINE_%s",
+		label, phase, module_count == expected ? "OK" : "MISMATCH");
+	event(event_name, (int)module_count);
+	return module_count == expected;
+}
+
+static int run_loader_probe(const char *label, const char *module_path,
+	unsigned int expected_module_count)
+{
+	unsigned int cycle;
+	int all_cycles_ok = 1;
+	for (cycle = 1; cycle <= PROBE_CYCLES; ++cycle) {
+		sys_prx_id_t module_id;
+		int module_result = -1;
+		int start_result;
+		int stop_result;
+		int unload_result;
+		int cycle_ok = 1;
+		char event_name[64];
+
+		(void)snprintf(event_name, sizeof(event_name), "%s_CYCLE_BEGIN", label);
+		event(event_name, (int)cycle);
+		module_id = sys_prx_load_module(module_path, 0, NULL);
+		if (module_id < 0) {
+			(void)snprintf(event_name, sizeof(event_name), "%s_LOAD_FAILED",
+				label);
+			event(event_name, module_id);
+			if (!record_module_count(label, "AFTER_LOAD_FAILURE",
+				expected_module_count))
+				return 0;
+			all_cycles_ok = 0;
+			(void)snprintf(event_name, sizeof(event_name), "%s_CYCLE_REJECTED",
+				label);
+			event(event_name, (int)cycle);
+			continue;
+		}
+		(void)snprintf(event_name, sizeof(event_name), "%s_LOAD_OK", label);
+		event(event_name, module_id);
+
+		start_result = sys_prx_start_module(module_id, 0, NULL,
+			&module_result, 0, NULL);
+		(void)snprintf(event_name, sizeof(event_name), "%s_START_RESULT",
+			label);
+		event(event_name, start_result);
+		(void)snprintf(event_name, sizeof(event_name), "%s_START_MODULE_RESULT",
+			label);
+		event(event_name, module_result);
+		if (start_result != 0 || module_result != SYS_PRX_RESIDENT)
+			cycle_ok = 0;
+
+		if (start_result == 0 && module_result == SYS_PRX_RESIDENT) {
+			module_result = -1;
+			stop_result = sys_prx_stop_module(module_id, 0, NULL,
+				&module_result, 0, NULL);
+			(void)snprintf(event_name, sizeof(event_name), "%s_STOP_RESULT",
+				label);
+			event(event_name, stop_result);
+			(void)snprintf(event_name, sizeof(event_name),
+				"%s_STOP_MODULE_RESULT", label);
+			event(event_name, module_result);
+			if (stop_result != 0 || module_result != SYS_PRX_STOP_OK)
+				cycle_ok = 0;
+		} else if (module_result == SYS_PRX_NO_RESIDENT) {
+			/* Start rejected residency and the loader removed the module. */
+			if (!record_module_count(label, "AFTER_NONRESIDENT_START",
+				expected_module_count))
+				return 0;
+			return 0;
+		}
+
+		unload_result = sys_prx_unload_module(module_id, 0, NULL);
+		(void)snprintf(event_name, sizeof(event_name), "%s_UNLOAD_RESULT",
+			label);
+		event(event_name, unload_result);
+		if (unload_result != 0)
+			cycle_ok = 0;
+		if (!record_module_count(label, "AFTER_UNLOAD", expected_module_count))
+			cycle_ok = 0;
+		(void)snprintf(event_name, sizeof(event_name), "%s_CYCLE_%s",
+			label, cycle_ok ? "PASS" : "FAIL");
+		event(event_name, (int)cycle);
+		if (!cycle_ok)
+			return 0;
+	}
+	return all_cycles_ok;
+}
+
+static int finish_harness(int result, unsigned int app_module_count)
+{
+	int final_result = result;
+	stop_audio_probe();
+	unload_network_sysmodules();
+	if (!record_module_count("HARNESS", "AFTER_ALL_CLEANUP",
+		app_module_count))
+		final_result = 1;
+	if (app_log != NULL)
+		(void)fclose(app_log);
+	return final_result;
+}
+
 static int stop_and_unload(sys_prx_id_t module_id,
 	const airps3_resident_diagnostics *diagnostics,
 	unsigned int baseline_module_count, unsigned int cycle,
@@ -306,6 +434,9 @@ static int run_cycle(unsigned int cycle, unsigned int baseline_module_count)
 	module_id = sys_prx_load_module(MODULE_PATH, 0, NULL);
 	if (module_id < 0) {
 		event("LOAD_FAILED", module_id);
+		if (!record_module_count("RESIDENT", "AFTER_LOAD_FAILURE",
+			baseline_module_count))
+			event("RESIDENT_MODULE_COUNT_LEAK_AFTER_LOAD_FAILURE", 1);
 		return 0;
 	}
 	event("LOAD_OK", module_id);
@@ -416,8 +547,11 @@ static int run_cycle(unsigned int cycle, unsigned int baseline_module_count)
 int main(int argc, const char **argv)
 {
 	unsigned int cycle;
+	unsigned int app_module_count;
 	unsigned int baseline_module_count;
 	int result;
+	int minimal_probe_ok;
+	int reference_probe_ok;
 	(void)argc;
 	(void)argv;
 	harness_start_us = sys_time_get_system_time();
@@ -428,44 +562,45 @@ int main(int argc, const char **argv)
 	event("RESIDENT_TEST_TONE_HZ", 440);
 	event("FOREGROUND_TONE_HZ", (int)AUDIO_PROBE_FREQUENCY_HZ);
 	(void)printf("AIR PS3 resident audio stress harness; synthetic RAOP is not sent.\n");
+	result = get_module_count(&app_module_count);
+	if (result != 0) {
+		event("MODULE_LIST_FAILED_AT_APP_START", result);
+		return finish_harness(1, 0);
+	}
+	event("APP_MODULE_COUNT_BASELINE", (int)app_module_count);
 	if (!load_network_sysmodules()) {
 		event("HARNESS_NETWORK_MODULE_PRELOAD_FAILED", 1);
-		unload_network_sysmodules();
-		if (app_log != NULL)
-			(void)fclose(app_log);
-		return 1;
+		return finish_harness(1, app_module_count);
+	}
+	if (!start_audio_probe()) {
+		event("FOREGROUND_AUDIO_START_FAILED", 1);
+		return finish_harness(1, app_module_count);
 	}
 	result = get_module_count(&baseline_module_count);
 	if (result != 0) {
 		event("MODULE_LIST_FAILED_AT_START", result);
-		unload_network_sysmodules();
-		if (app_log != NULL)
-			(void)fclose(app_log);
-		return 1;
+		return finish_harness(1, app_module_count);
 	}
 	event("MODULE_COUNT_BASELINE", (int)baseline_module_count);
-	if (!start_audio_probe()) {
-		event("FOREGROUND_AUDIO_START_FAILED", 1);
-		stop_audio_probe();
-		unload_network_sysmodules();
-		if (app_log != NULL)
-			(void)fclose(app_log);
-		return 1;
+	event("PROBE_CYCLE_COUNT", (int)PROBE_CYCLES);
+	minimal_probe_ok = run_loader_probe("MINIMAL_PROBE", MINIMAL_PROBE_PATH,
+		baseline_module_count);
+	reference_probe_ok = run_loader_probe("REFERENCE_PROBE",
+		REFERENCE_PROBE_PATH, baseline_module_count);
+	if (!minimal_probe_ok)
+		event("MINIMAL_PROBE_MATRIX_FAILED", 1);
+	if (!reference_probe_ok)
+		event("REFERENCE_PROBE_MATRIX_FAILED", 1);
+	if (!minimal_probe_ok || !reference_probe_ok) {
+		event("DIAGNOSTIC_PROBES_FAILED", 1);
+		return finish_harness(1, app_module_count);
 	}
 	for (cycle = 1; cycle <= TEST_CYCLES; ++cycle) {
 		if (!run_cycle(cycle, baseline_module_count)) {
 			event("HARNESS_FAIL", (int)cycle);
-			stop_audio_probe();
-			unload_network_sysmodules();
-			if (app_log != NULL)
-				(void)fclose(app_log);
-			return 1;
+			return finish_harness(1, app_module_count);
 		}
 	}
 	event("HARNESS_PASS", (int)TEST_CYCLES);
-	stop_audio_probe();
-	unload_network_sysmodules();
-	if (app_log != NULL)
-		(void)fclose(app_log);
-	return 0;
+	return finish_harness(0, app_module_count);
 }

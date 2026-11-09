@@ -1,5 +1,12 @@
 # Lessons learned
 
+## Separate PRX signing metadata from raw module layout
+
+- **Problem:** A minimal PRX and an SDK-macro reference both returned `ENOEXEC` on hardware, but both had been produced by the same custom PS3DK `make_sprx` route. Their failure could not distinguish signing from raw PRX structure.
+- **Root Cause:** The comparison varied imports and source declarations but held the signing toolchain and custom PRX layout constant. It was not an independent loader-format reference.
+- **Fix:** Compare against a released CFW plugin. The observed reference uses SELF flags/key revision `0x000A` and two `PT_LOAD` segments, while PS3DK output used `0x0001` and one RWX segment. Built a separate `00.04` candidate with only the probes re-signed via the public scetool settings; the resident stayed unchanged. Hardware validation is pending because the console was unreachable.
+- **Prevention Rule:** Make each loader diagnostic vary one axis at a time. Label artifact inspection as evidence of a difference, not proof of causality, and do not change resident signing/layout until the isolated hardware result identifies the failing axis.
+
 ## AIR PS3 v0.2.8 engineering lessons (2026-11-08)
 
 - **Problem:** A long control-path stall can leave the fixed RTP queue full of stale audio; the application then continues with obsolete sequence expectations.

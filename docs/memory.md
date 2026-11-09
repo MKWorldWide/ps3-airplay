@@ -1,6 +1,11 @@
 # Project state
 
-## Latest resident harness result (2026-11-08)
+## Latest resident harness result (2026-11-09)
+
+- `RPRX90002` SFO `00.03` launched. Its minimal no-import probe and SDK-macro reference probe both failed to load with `0x80010007` (`ENOEXEC`) before `module_start`. Each failed load preserved the module count at 11; full harness cleanup returned to application baseline 9. Only one attempt per probe ran because the previous harness stopped at first load failure.
+- Comparison against a released webMAN MOD 1.47.50 SPRX and its public scetool build settings identified two concrete differences, not yet a proven root cause: SELF flags/key revision `0x000A` in that reference versus `0x0001` in PS3DK `make_sprx`, and a two-PT_LOAD layout versus the custom candidate's one RWX PT_LOAD. Shared auth ID, vendor, program type and SCE version were observed.
+- Built local-only `RPRX90002` SFO `00.04` package with minimal/reference raw PRXs re-signed through scetool at revision `0x0A`; the resident SPRX remains unchanged. Package SHA-256 `af75bf0150629064143117d44f38c184f754704336c62e19c30f68e9e5770e2e`. The package and probe SPRXs are under ignored `build/resident-hardware/`.
+- Harness now performs all three configured load attempts after rejection, recording module count after each. The `00.04` source/build passed locally, but the package was not installed or run because the development console could not be reached from the host. Do not infer hardware acceptance or module lifecycle success from packaging/signature checks.
 
 - Advanced the isolated `RPRX90002` harness SFO from `00.01` to `00.02`. The new package installed; independent inspection of the installed SFO confirms `APP_VER=00.02` and `VERSION=00.02`, and the app launches.
 - The harness now preloads `CELL_SYSMODULE_NET` and `CELL_SYSMODULE_NETCTL` before the resident load. Hardware logs show both loads and both corresponding unloads return zero, but the production SPRX still returns `0x80010007` (`ENOEXEC`) at cycle one.

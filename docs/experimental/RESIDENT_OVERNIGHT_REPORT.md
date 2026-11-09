@@ -1,9 +1,69 @@
 # AIR PS3 Resident Development Report
 
-**Updated:** 2026-11-08 23:31 EDT
+**Updated:** 2026-11-09 00:07 EDT
 **Branch:** `experimental/resident-airplay`
 **Source baseline:** `86781f5`
 **Scope:** Hardware diagnostic harness package build/install; no Cobra settings changed.
+
+## Independent signing and module-format comparison (2026-11-09 00:07 EDT)
+
+The `00.03` package launched on the development PS3. Both generated comparison
+modules returned `0x80010007` (`ENOEXEC`) from `sys_prx_load_module` before
+`module_start`. The minimal probe had no imports; the SDK-layout reference had
+the standard module info and export record. The reported module count remained
+11 after each failed load (the baseline was 11), and all harness-held modules
+were released back to the application baseline of 9. The `00.03` run stopped
+on the first failed attempt for each candidate, so no start/stop/unload cycle
+was observed.
+
+The two probes were not an independent signing comparison: both used the same
+PS3DK `make_sprx` route as the resident. To separate the signed-container
+metadata from the raw module, compared a released webMAN MOD 1.47.50 plugin and
+its public build command with the resident build. The released module and
+current PS3DK SPRXs share auth ID, vendor ID, program type and SCE version, but
+the SELF flags differ: the known-good-style scetool output uses key revision /
+flags `0x000A`, while the current `make_sprx` output uses `0x0001`. Separately,
+the extracted reference plugin has two load segments plus `PT_SCE_PPURELA`;
+PS3DK's current `prx-gen` candidate has one RWX `PT_LOAD` plus that relocation
+segment. These are concrete comparison differences, not yet a proven cause of
+the hardware rejection. The reference source uses scetool with key revision
+`0A` and the same public CEX module identity.
+
+Built a `00.04` diagnostic package with two minimal/reference probes signed by
+scetool using the public CEX plugin settings, while preserving the resident's
+current SPRX unchanged. The harness now makes all three configured failed-load
+attempts for each probe and records module count after each rejection. Extracted
+package SFO reports `RPRX90002`, `APP_VER=00.04`, and `VERSION=00.04`; the PKG
+contains the unchanged resident plus the two independently signed probes. The
+two probe SELF headers are flags/type `0x000A/0x0001`. The hardware package and
+probe hashes are below. The console could not be reached from the development
+host when preparing this follow-up, so `00.04` has **not** been uploaded,
+installed, or run. `00.03` remains the latest observed hardware run.
+
+| Check | Status | Evidence |
+|---|---|---|
+| `00.03` minimal and SDK-layout probes | FAIL | Both load calls returned `0x80010007` before `module_start`. |
+| Module count after rejected loads | PASS | Count remained at 11 after each; final cleanup returned to app baseline 9. |
+| Independent known-good-style SELF comparison | PASS | webMAN MOD release plugin uses SELF flags/key revision `0x000A`; current `make_sprx` outputs use `0x0001`. |
+| Raw PRX layout comparison | PASS | Reference plugin: two `PT_LOAD` segments + `PT_SCE_PPURELA`; current PRX: one RWX `PT_LOAD` + relocation segment. |
+| `00.04` package, SFO and candidate signing | PASS | Package extracts; SFO and three module identities validate; probe metadata is `0x000A/0x0001`. |
+| `00.04` hardware installation and runtime | BLOCKED | Development console was unreachable from the host; no upload/install was attempted. |
+| Resident start/stop, RAOP, PCM or audible output | UNTESTED | The `00.03` resident and comparison probes never reached `module_start`; `00.04` was not run. |
+
+`00.04` local ignored package SHA-256:
+`af75bf0150629064143117d44f38c184f754704336c62e19c30f68e9e5770e2e`.
+Probe SPRX SHA-256 values:
+
+| Artifact | SHA-256 |
+|---|---|
+| `resident-loader-minimal.sprx` (scetool, key revision `0x0A`) | `62d2f94a07dc41dc984e52381683fcd59c537b642cd20a2536e046eacdbff0b7` |
+| `resident-loader-reference.sprx` (scetool, key revision `0x0A`) | `d9c0579b80a199690089fd72732499a0d0d395b5282033cb10d158938d51a2b0` |
+
+The next experiment is to install and run `00.04` on the dev PS3, compare each
+probe's load/start/stop/unload and module counts, then change only the dimension
+that the result isolates. Keep the receiver hardware gate BLOCKED until a
+production resident completes a clean lifecycle cycle. No raw console log,
+device address, key file, signing secret, or external package is tracked.
 
 ## SFO 00.02 reinstall and repeat loader result (2026-11-08 23:20 EDT)
 
