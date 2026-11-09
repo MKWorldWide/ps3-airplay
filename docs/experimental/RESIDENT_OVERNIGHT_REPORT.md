@@ -2,7 +2,7 @@
 
 **Updated:** 2026-11-08 23:00 EDT
 **Branch:** `experimental/resident-airplay`
-**Source baseline:** `c381802` plus the SFO correction pending commit
+**Source baseline:** `b1d35c2`
 **Scope:** Hardware diagnostic harness package build/install; no Cobra settings changed.
 
 ## Hardware harness SFO version correction (2026-11-08 23:00 EDT)
