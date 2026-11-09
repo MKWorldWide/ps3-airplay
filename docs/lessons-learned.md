@@ -940,3 +940,10 @@ The v0.1.31 fresh RPCS3 replay verifies the portable-arithmetic correction: the 
 - **Root Cause:** The installed package's SFO is accepted; the independent first `sys_prx_load_module` call still returns `0x80010007` (`ENOEXEC`). The exact PRX loader subcause remains unknown.
 - **Fix:** Preserve the `00.02` SFO and installed package, record the fresh failure, and continue diagnosis at the SELF/PRX loader boundary. No unverified signing or relocation change is claimed.
 - **Prevention Rule:** Treat title launch and module loading as separate gates. A successful SFO correction cannot be used as evidence that a resident SPRX is loadable.
+
+## Load PRX import dependencies before the PRX
+
+- **Problem:** The harness initially attempted to load a resident with `sys_net` and `cellNetCtl` imports before explicitly loading those system modules.
+- **Root Cause:** The resident's `module_start` loads network modules only after the loader has already resolved the resident's imported symbols.
+- **Fix:** The harness now preloads `CELL_SYSMODULE_NET` and `CELL_SYSMODULE_NETCTL` before PRX load and unloads its references on each harness exit. Both calls succeeded on hardware, but the resident still returned `ENOEXEC`; this was a real harness defect but not the remaining loader cause.
+- **Prevention Rule:** Enumerate and load a test module's import libraries before `sys_prx_load_module`; then verify the target log confirms preload success before interpreting the PRX load result.

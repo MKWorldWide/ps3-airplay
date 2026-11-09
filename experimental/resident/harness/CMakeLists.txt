@@ -44,7 +44,7 @@ target_compile_definitions(ps3-airplay-resident-harness PRIVATE
 	TEST_CYCLES=${HARNESS_TEST_CYCLES}
 	RESIDENT_MODULE_PATH=\"${HARNESS_RESIDENT_MODULE_PATH}\")
 target_link_libraries(ps3-airplay-resident-harness PRIVATE lv2)
-target_link_libraries(ps3-airplay-resident-harness PRIVATE audio m)
+target_link_libraries(ps3-airplay-resident-harness PRIVATE audio sysmodule m)
 
 ps3_add_self(ps3-airplay-resident-harness)
 file(READ "${CMAKE_CURRENT_SOURCE_DIR}/sfo.xml" HARNESS_SFO_XML)

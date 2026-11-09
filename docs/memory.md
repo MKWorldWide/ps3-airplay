@@ -3,9 +3,9 @@
 ## Latest resident harness result (2026-11-08)
 
 - Advanced the isolated `RPRX90002` harness SFO from `00.01` to `00.02`. The new package installed; independent inspection of the installed SFO confirms `APP_VER=00.02` and `VERSION=00.02`, and the app launches.
-- The fresh harness run still gets `0x80010007` (`ENOEXEC`) from its first production-SPRX load. The installed SPRX hash matches the package payload. It stops at cycle one and closes the foreground audio resources cleanly. This separates the corrected app version from the unresolved module-loader rejection.
-- New package SHA-256: `c070380805764adfef94d10ede277c240e84db6379bfd8c81ccbcbb92370fa94`. Fresh console log SHA-256: `8501b5c10846ac2a12ee2a9d97621682dae59ff5c57c85a6d651e7f5e985784f`. Both artifacts and raw logs are local/ignored.
-- No source-level PRX fix is established. Do not report hardware readiness or resident audio; the module never reached `module_start`.
+- The harness now preloads `CELL_SYSMODULE_NET` and `CELL_SYSMODULE_NETCTL` before the resident load. Hardware logs show both loads and both corresponding unloads return zero, but the production SPRX still returns `0x80010007` (`ENOEXEC`) at cycle one.
+- Latest package SHA-256: `c96644d84c3e7b7b365f9a1a84342b624dd111c6557c9055ab49ed0a174431b1`. Latest console log SHA-256: `c74c095a9dd0dd3e8a7769ad0fa36168fe1cc8f74fdf37ffd04a9dbb6288f1f9`. Both artifacts and raw logs are local/ignored.
+- Missing network-module preloads were a harness defect but are not a sufficient cause of the loader rejection. Root cause is still unknown; do not report hardware readiness or resident audio. The module never reached `module_start`.
 
 ## Hardware harness SFO version correction (2026-11-08)
 

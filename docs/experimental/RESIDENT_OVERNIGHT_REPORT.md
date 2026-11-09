@@ -1,8 +1,8 @@
 # AIR PS3 Resident Development Report
 
-**Updated:** 2026-11-08 23:20 EDT
+**Updated:** 2026-11-08 23:31 EDT
 **Branch:** `experimental/resident-airplay`
-**Source baseline:** `7ef5884`
+**Source baseline:** `86781f5`
 **Scope:** Hardware diagnostic harness package build/install; no Cobra settings changed.
 
 ## SFO 00.02 reinstall and repeat loader result (2026-11-08 23:20 EDT)
@@ -34,6 +34,37 @@ Local ignored package SHA-256:
 Console log SHA-256:
 `8501b5c10846ac2a12ee2a9d97621682dae59ff5c57c85a6d651e7f5e985784f`.
 Raw logs and package binaries remain ignored in `build/resident-hardware/`.
+
+## Preload resident import libraries before PRX load (2026-11-08 23:31 EDT)
+
+The first `00.02` run showed the harness attempted to load the resident before
+loading the `sys_net` and `cellNetCtl` system modules it imports. Updated the
+test harness to load both modules before `sys_prx_load_module` and release its
+own module references at every harness exit. The resident itself still retains
+its own network initialization and cleanup behavior.
+
+The rebuilt `00.02` package installed. The console log confirms both preload
+calls returned zero and both matching unload calls returned zero. Despite that,
+the resident load again returned `0x80010007` (`ENOEXEC`) on cycle one. This
+eliminates missing `sys_net`/`cellNetCtl` module preload as a sufficient cause;
+it does not identify the remaining loader issue. The audio port and harness
+preload references were closed after failure. No resident worker, receiver, PCM,
+or sound was exercised.
+
+| Check | Status | Evidence |
+|---|---|---|
+| Host and PPU build suite | PASS | Build script completed host protocol/audio/sanitizer tests and rebuilt PPU outputs. |
+| Package SFO and SPRX contents | PASS | `RPRX90002`, both versions `00.02`; embedded production SPRX hash matches. |
+| Installed EBOOT identity | PASS | Installed EBOOT hash matches package-extracted EBOOT. |
+| Network module preloads | PASS | `CELL_SYSMODULE_NET` and `CELL_SYSMODULE_NETCTL` load results are zero. |
+| Resident SPRX load | FAIL | `0x80010007` (`ENOEXEC`) persists at cycle one. |
+| Harness network-module cleanup | PASS | Both module unload results are zero after load failure. |
+| Resident lifecycle/audio | UNTESTED | Resident module never reaches `module_start`. |
+
+Updated package SHA-256:
+`c96644d84c3e7b7b365f9a1a84342b624dd111c6557c9055ab49ed0a174431b1`.
+Fresh log SHA-256:
+`c74c095a9dd0dd3e8a7769ad0fa36168fe1cc8f74fdf37ffd04a9dbb6288f1f9`.
 
 ## Hardware harness SFO version correction (2026-11-08 23:00 EDT)
 

@@ -1,6 +1,7 @@
 #include <sys/prx.h>
 #include <sys/sys_time.h>
 #include <cell/audio.h>
+#include <cell/sysmodule.h>
 
 #include <math.h>
 #include <stdint.h>
@@ -33,6 +34,8 @@ static float foreground_audio_phase;
 static int foreground_audio_initialized;
 static int foreground_audio_opened;
 static int foreground_audio_started;
+static int net_module_loaded;
+static int netctl_module_loaded;
 static uint64_t harness_start_us;
 
 static void event(const char *name, int value)
@@ -193,6 +196,37 @@ static void stop_audio_probe(void)
 	if (foreground_audio_initialized) {
 		result = cellAudioQuit();
 		event("AUDIO_QUIT_RESULT", result);
+	}
+}
+
+static int load_network_sysmodules(void)
+{
+	int result = cellSysmoduleLoadModule(CELL_SYSMODULE_NET);
+	event("HARNESS_NET_MODULE_LOAD_RESULT", result);
+	if (result != 0)
+		return 0;
+	net_module_loaded = 1;
+
+	result = cellSysmoduleLoadModule(CELL_SYSMODULE_NETCTL);
+	event("HARNESS_NETCTL_MODULE_LOAD_RESULT", result);
+	if (result != 0)
+		return 0;
+	netctl_module_loaded = 1;
+	return 1;
+}
+
+static void unload_network_sysmodules(void)
+{
+	int result;
+	if (netctl_module_loaded) {
+		result = cellSysmoduleUnloadModule(CELL_SYSMODULE_NETCTL);
+		event("HARNESS_NETCTL_MODULE_UNLOAD_RESULT", result);
+		netctl_module_loaded = 0;
+	}
+	if (net_module_loaded) {
+		result = cellSysmoduleUnloadModule(CELL_SYSMODULE_NET);
+		event("HARNESS_NET_MODULE_UNLOAD_RESULT", result);
+		net_module_loaded = 0;
 	}
 }
 
@@ -394,9 +428,17 @@ int main(int argc, const char **argv)
 	event("RESIDENT_TEST_TONE_HZ", 440);
 	event("FOREGROUND_TONE_HZ", (int)AUDIO_PROBE_FREQUENCY_HZ);
 	(void)printf("AIR PS3 resident audio stress harness; synthetic RAOP is not sent.\n");
+	if (!load_network_sysmodules()) {
+		event("HARNESS_NETWORK_MODULE_PRELOAD_FAILED", 1);
+		unload_network_sysmodules();
+		if (app_log != NULL)
+			(void)fclose(app_log);
+		return 1;
+	}
 	result = get_module_count(&baseline_module_count);
 	if (result != 0) {
 		event("MODULE_LIST_FAILED_AT_START", result);
+		unload_network_sysmodules();
 		if (app_log != NULL)
 			(void)fclose(app_log);
 		return 1;
@@ -405,6 +447,7 @@ int main(int argc, const char **argv)
 	if (!start_audio_probe()) {
 		event("FOREGROUND_AUDIO_START_FAILED", 1);
 		stop_audio_probe();
+		unload_network_sysmodules();
 		if (app_log != NULL)
 			(void)fclose(app_log);
 		return 1;
@@ -413,6 +456,7 @@ int main(int argc, const char **argv)
 		if (!run_cycle(cycle, baseline_module_count)) {
 			event("HARNESS_FAIL", (int)cycle);
 			stop_audio_probe();
+			unload_network_sysmodules();
 			if (app_log != NULL)
 				(void)fclose(app_log);
 			return 1;
@@ -420,6 +464,7 @@ int main(int argc, const char **argv)
 	}
 	event("HARNESS_PASS", (int)TEST_CYCLES);
 	stop_audio_probe();
+	unload_network_sysmodules();
 	if (app_log != NULL)
 		(void)fclose(app_log);
 	return 0;
