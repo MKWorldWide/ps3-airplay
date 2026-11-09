@@ -14,6 +14,13 @@
 - **Fix:** Compare against a released CFW plugin. The observed reference uses SELF flags/key revision `0x000A` while PS3DK output used `0x0001`. The 00.04 hardware run then showed both no-import and SDK-layout probes re-signed at `0x000A` still fail three times with `0x80010007`; the resident stayed unchanged. This rules out the revision alone as a sufficient fix, while leaving the root cause unresolved.
 - **Prevention Rule:** Make each loader diagnostic vary one axis at a time. Label artifact inspection as evidence of a difference, not proof of causality, and do not change resident signing/layout until the isolated hardware result identifies the failing axis.
 
+## Released SPRX context checks
+
+- **Problem:** Public SPRX references were easy to overstate as generally loadable modules.
+- **Root Cause:** A published VSH plugin's loader context and imports differ from an app calling `sys_prx_load_module`, even when both artifacts share the same outer SELF flags word.
+- **Fix:** Inspect OpenPS3FTP v5.4's source and release SPRX offline. Record it as a PS3DK-built VSH plugin, not a tested app-context reference; reject PS3 Presence because it requires Cobra startup integration and its own README limits its hardware evidence.
+- **Prevention Rule:** Before treating a released SPRX as a loader reference, verify its host process, load mechanism, imports, source build recipe, and observed test evidence separately.
+
 ## AIR PS3 v0.2.8 engineering lessons (2026-11-08)
 
 - **Problem:** A long control-path stall can leave the fixed RTP queue full of stale audio; the application then continues with obsolete sequence expectations.

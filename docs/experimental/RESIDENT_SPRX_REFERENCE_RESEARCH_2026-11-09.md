@@ -42,3 +42,24 @@ The `0x80010007` and baseline counts are from the installed 00.04 diagnostic run
 ## Recommended next experiment
 
 Keep the failing resident unchanged. Build a tiny no-import module with the same Sony CELL SDK PRX link and scetool signing pipeline as the reference, package it under the existing isolated diagnostic title, then use the same manual harness load path. If that candidate loads, compare its inner ELF program headers and module metadata with the PS3DK probes before incrementally adding dependencies. If the exact-pipeline no-import module also fails, investigate SELF authentication/loader-context differences rather than changing AirPlay code. This next hardware experiment was not performed in this pass.
+
+## Additional public reference: OpenPS3FTP v5.4
+
+**Research update:** 2026-11-09 01:40 EST. This was a read-only source and release-artifact inspection. The SPRX was downloaded into ignored `build/reference/`; it was not installed, executed, or sent to a console.
+
+- Repository: https://github.com/jjolano/openps3ftp
+- Release: https://github.com/jjolano/openps3ftp/releases/tag/v5.4
+- Release asset: https://github.com/jjolano/openps3ftp/releases/download/v5.4/openps3ftp.sprx
+- Artifact: 125,296 bytes; SHA-256 `4010de387cf97b2559d5d29ca702db1f558ede033603866642608a9a7a352d92`.
+- The release calls this a VSH plugin. Its `plugin/CMakeLists.txt` uses PS3DK's `ps3_add_sprx` post-build flow and links `lv2-sprx.o`; `plugin/main.c` uses `SYS_MODULE_INFO`, `SYS_MODULE_START`, `SYS_MODULE_STOP`, and a VSH notification resolver. Its start routine creates a server and returns resident; its stop routine tears down the server. The project documents loading it in the XMB/VSH context under CFW/HEN plugin management.
+- The downloaded artifact starts with `SCE\0`; the flags word at header offset `0x08` is `0x00010001`, matching the production resident SPRX's outer flags word. The full SELF metadata and encrypted module body were not authenticated or decrypted in this inspection.
+- This is a stronger public source-and-artifact reference than a bare plugin skeleton, and demonstrates a documented open PS3DK path for producing a VSH SPRX. It is **not** evidence that the artifact can be loaded by AIR PS3's app-context `sys_prx_load_module`: it uses VSH-facing imports and a different plugin loader context. The shared outer flags word shows only that the word itself is not a sufficient compatibility test. The release's RPCS3 harness note concerns the FTP application and does not claim that RPCS3 exercised the VSH SPRX.
+
+Other leads checked in this pass:
+
+- [PS3 Presence](https://github.com/Nyxnix/ps3-presence) publishes a 0.4.0 development binary archive and source, but its README requires CFW+Cobra+webMAN, documents adding a `boot_plugins.txt` entry and restarting to activate, and explicitly says hardware testing is limited and long-session stability remains to be tested. It is not suitable for a loader experiment under the current no-persistent-plugin boundary.
+- [sky-hook](https://github.com/Battleboy96/sky-hook) says PSL1GHT can build its SPRX, but its README describes an unfinished skeleton with placeholder hooks. It is not a known-working module.
+
+### Decision update
+
+Use OpenPS3FTP v5.4 as an **offline structure/source comparison only**. Do not install it or change the resident harness to load a VSH plugin. The next discriminating experiment remains an app-context no-import reference from a documented toolchain, with loader-context and signing differences kept explicit. Preserve the existing resident and physical-console state until that candidate is ready for a separately controlled manual diagnostic.
