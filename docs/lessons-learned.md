@@ -919,3 +919,10 @@ The v0.1.31 fresh RPCS3 replay verifies the portable-arithmetic correction: the 
 - **Root Cause:** PS3DK's CMake checks require the installed headers, runtime libraries, version manifest, and Unix symlink aliases in addition to compiler and package tools.
 - **Fix:** Restore official v0.27.0 SDK runtime assets alongside the Linux PPU compiler and host tools, then validate the signed container and package payload before use. Keep the emulator fake SPRX out of the hardware package.
 - **Prevention Rule:** Verify the complete pinned installed SDK contract before building. Do not work around missing artifacts by substituting an older binary or an emulator-only SPRX.
+
+## Use the PS3 SFO version format for the harness
+
+- **Problem:** The first installed hardware diagnostic title produced the same launch error the user had seen with a prior invalid version string.
+- **Root Cause:** Its SFO `APP_VER` and `VERSION` fields were `0.1.0`, while the user identified the required PS3 value as `00.01`.
+- **Fix:** Set both harness SFO fields to `00.01`, rebuild, extract, and parse the package SFO to verify `TITLE_ID`, `APP_VER`, and `VERSION` before reinstalling.
+- **Prevention Rule:** Validate PS3 SFO values in the generated package and match the established fixed-width version format before installation; an XML source edit alone is not sufficient evidence.

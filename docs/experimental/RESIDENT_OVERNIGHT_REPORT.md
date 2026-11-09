@@ -1,9 +1,34 @@
 # AIR PS3 Resident Development Report
 
-**Updated:** 2026-11-08 19:31 EDT
+**Updated:** 2026-11-08 23:00 EDT
 **Branch:** `experimental/resident-airplay`
-**Source baseline:** `53e24116e8d9a26db80deeafd568be72bf8cf6d6`
-**Scope:** RPCS3 lifecycle and diagnostic harness; no physical PS3 was contacted.
+**Source baseline:** `c381802` plus the SFO correction pending commit
+**Scope:** Hardware diagnostic harness package build/install; no Cobra settings changed.
+
+## Hardware harness SFO version correction (2026-11-08 23:00 EDT)
+
+The first `RPRX90002` package installed, and its console-side SPRX matched the
+fresh signed build hash. The user reported the same launch error as the prior
+invalid-version case. The installed SFO used `APP_VER=0.1.0` and
+`VERSION=0.1.0`, so both source values are now `00.01` per the user's
+instruction.
+
+The corrected package was rebuilt and its extracted `PARAM.SFO` parsed
+independently: `TITLE_ID=RPRX90002`, `APP_VER=00.01`, and `VERSION=00.01`.
+Corrected PKG SHA-256:
+`54d5d299c6831a18e7c0474aac3577a8a02de443a7a3b98e03f64d242b9010b9`.
+
+| Check | Status | Evidence |
+|---|---|---|
+| Corrected SFO fields | PASS | Extracted SFO reports title ID `RPRX90002` and both version fields `00.01`. |
+| Initial package install | PASS | Console title directory appeared; installed SPRX SHA-256 matched the signed build. |
+| Initial launch | FAIL (user-reported) | User observed the same launch error previously associated with the bad version string; no harness log was retrieved. |
+| Corrected package install/launch | UNTESTED | Corrected PKG is built; installation and runtime log retrieval are pending. |
+| Network receive, audible output, Cobra/autoload | UNTESTED | No RAOP session, sound check, or boot-plugin change was performed. |
+
+The earlier hardware-package section is a checkpoint for the first package and
+its hashes. This correction supersedes its SFO and PKG hash; the PRX, SPRX, and
+harness SELF are unchanged.
 
 ## Fresh hardware package build (2026-11-08 22:49 EDT)
 

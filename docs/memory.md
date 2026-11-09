@@ -1,5 +1,11 @@
 # Project state
 
+## Hardware harness SFO version correction (2026-11-08)
+
+- The first installed `RPRX90002` hardware harness used SFO `APP_VER=0.1.0` and `VERSION=0.1.0`. The user reported the same launch error previously associated with an invalid version string and directed that both SFO values be `00.01`.
+- Updated the harness source SFO values to `00.01`, rebuilt the package, and parsed the extracted SFO independently: `TITLE_ID=RPRX90002`, `APP_VER=00.01`, `VERSION=00.01`. Corrected package SHA-256: `54d5d299c6831a18e7c0474aac3577a8a02de443a7a3b98e03f64d242b9010b9`.
+- The initial package installation was observed on the console by its title directory and matching production SPRX hash. The first launch attempt yielded no harness log before the SFO issue was reported. The corrected package still needs to be installed and launched; do not claim runtime success until its verbose log is retrieved.
+
 ## Resident hardware diagnostic package (2026-11-08)
 
 - Added a separately titled `RPRX90002` hardware diagnostic harness. It embeds only the production-compatible signed `ps3-airplay-receiver.sprx`, loads it from the title's USRDIR while the test application runs, defaults to 50 lifecycle cycles, and does not configure Cobra or automatic startup. The RPCS3 package remains separate and continues to use its fake SPRX.
