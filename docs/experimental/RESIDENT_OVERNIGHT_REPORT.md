@@ -5,6 +5,31 @@
 **Source baseline:** `53e24116e8d9a26db80deeafd568be72bf8cf6d6`
 **Scope:** RPCS3 lifecycle and diagnostic harness; no physical PS3 was contacted.
 
+## Structured logging follow-up (2026-11-08 20:53 EDT)
+
+The resident diagnostics structure now carries a 128-record bounded journal.
+Each record has an atomic commit sequence, system monotonic microseconds,
+internal event name, result/value fields, and byte count. Existing resident
+events are copied into the journal independently of the PRX file logger;
+logger-open/write failures, audio submission, and PCM drain are recorded.
+The RPCS3 harness drains records while polling lifecycle events and before
+unload, and records its own events with elapsed milliseconds. It reports the
+number of dropped resident records. Records intentionally omit packet data,
+RAOP credentials, device/peer identifiers, and stream metadata.
+
+Validation: `scripts/test-resident-diagnostics.sh` passes with ASan/UBSan,
+including 128 concurrent records, per-slot commit ordering/integrity, and
+overflow accounting. The harness compiles in host syntax-only mode against
+mock API declarations; the four SELF-container tests pass; the harness build
+script passes `bash -n`; and `git diff --check` is clean. The PS3DK PPU
+compiler and resident Lima environment are unavailable in this session. The
+new shared ABI has not been built or run in RPCS3, and no fresh package was
+installed. The previous three-cycle result does not test this logger.
+
+Status: **PASS** for the host journal test and source checks;
+**BLOCKED** for fresh PPU build and RPCS3 log-delivery verification. Physical
+hardware remains untouched and NOT READY.
+
 ## Pre-hardware test-gate implementation (2026-11-08 19:31 EDT)
 
 The harness source now defaults to 50 audio-enabled load/start/stop/unload

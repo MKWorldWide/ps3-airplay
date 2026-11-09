@@ -54,12 +54,29 @@ separate homebrew test package with title ID `RPRX90001`. RPCS3 rejected the raw
 `.prx` with `0x80011148` (`CELL_PRX_ERROR_UNSUPPORTED_PRX_TYPE`), so the
 emulator harness embeds PS3DK's `.fake.sprx` container. This container is for
 the local emulator test only and is not evidence of Cobra or hardware
-compatibility. The app uses ports 5001/6100 and runs three load/start/stop/
-unload cycles. It checks diagnostic events and compares the module-list count
-with its pre-test baseline after every unload. It fails if the 256-entry list
+compatibility. The app uses ports 5001/6100 and defaults to 50 load/start/stop/
+unload cycles; the last completed RPCS3 run used three. It checks diagnostic
+events and compares the module-list count with its pre-test baseline after
+every unload. It fails if the 256-entry list
 capacity is reached, so a truncated count cannot pass as leak-free. Each
 package build is extracted and its embedded SPRX is compared byte for byte
 with the current build output, guarding against stale SDK overlays.
+
+For runtime analysis, the module also copies its internal event records into a
+bounded, 128-entry multi-producer journal in the harness-provided diagnostics
+structure. The harness drains committed records while waiting for lifecycle
+events and again before unload. Each line includes a sequence, system-time
+microseconds, internal event name, numeric result/value, and byte count. Queue
+overflow and file-log write failure are reported. Event names and fields are
+internal and deliberately exclude packet contents, RAOP credentials, peer
+addresses, MAC addresses, and stream metadata. The harness log adds elapsed
+milliseconds to its own events and remains at
+`/dev_hdd0/tmp/ps3-airplay-resident-harness.log`.
+
+Run `scripts/test-resident-diagnostics.sh` for the host concurrency, commit
+ordering, and overflow-accounting test. It uses ASan/UBSan and writes its
+binary only under ignored `build/`. This validates the shared journal code, not
+the PPU ABI or RPCS3 runtime behavior; a fresh package run is still required.
 
 The last completed 2026-11-08 RPCS3 run completed three clean audio-enabled
 load/start/stop/unload cycles.

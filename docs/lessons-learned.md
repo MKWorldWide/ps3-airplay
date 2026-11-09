@@ -898,3 +898,10 @@ The v0.1.31 fresh RPCS3 replay verifies the portable-arithmetic correction: the 
 - **Root Cause:** API return values show accepted submissions, not audible mixing, and both PS3DK containers share an SCE SELF header despite different type fields.
 - **Fix:** Use distinct generated frequencies for any future audio capture and validate signed SPRX (`0x00010001`) separately from RPCS3 fake SPRX (`0x80000001`). Report loader/key-table compatibility as unknown until the target loader accepts the exact production artifact.
 - **Prevention Rule:** Design generated audio probes so their sources can be distinguished in captured output; label each binary by container type and never infer hardware compatibility from the emulator-only package.
+
+## Preserve resident diagnostics when its file logger is unavailable
+
+- **Problem:** RPCS3 could run the resident lifecycle harness, but the PRX could not open its configured log path, leaving only coarse shared event flags and the application log.
+- **Root Cause:** The emulator's PRX filesystem behavior does not provide the resident's expected file-log path. The specific compatibility cause is still unknown, so the file logger cannot be treated as the sole evidence channel.
+- **Fix:** Copy internal structured events into a bounded, multi-producer journal in the harness-shared diagnostics structure. The application drains committed records to its own log and stdout, and reports record overflow and logger failures.
+- **Prevention Rule:** Keep a test-owned diagnostic channel independent of the PRX filesystem and logger; validate record publication, concurrency, ordering, and overflow separately from PS3 runtime logging.

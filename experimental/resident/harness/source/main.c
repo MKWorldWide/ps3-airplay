@@ -1,4 +1,5 @@
 #include <sys/prx.h>
+#include <sys/sys_time.h>
 #include <cell/audio.h>
 
 #include <math.h>
@@ -28,21 +29,58 @@ static float foreground_audio_phase;
 static int foreground_audio_initialized;
 static int foreground_audio_opened;
 static int foreground_audio_started;
+static uint64_t harness_start_us;
 
 static void event(const char *name, int value)
 {
+	uint64_t uptime_ms = (sys_time_get_system_time() - harness_start_us) / 1000U;
 	if (app_log != NULL) {
-		(void)fprintf(app_log, "event=%s value=%d\n", name, value);
+		(void)fprintf(app_log, "uptime_ms=%llu event=%s value=%d\n",
+			(unsigned long long)uptime_ms, name, value);
 		(void)fflush(app_log);
 	}
-	(void)printf("event=%s value=%d\n", name, value);
+	(void)printf("uptime_ms=%llu event=%s value=%d\n",
+		(unsigned long long)uptime_ms, name, value);
+}
+
+static void drain_resident_log(const airps3_resident_diagnostics *diagnostics,
+	uint32_t *read_index)
+{
+	uint32_t write_index = __atomic_load_n(&diagnostics->log_write_index,
+		__ATOMIC_ACQUIRE);
+	if (write_index > AIRPS3_DIAG_LOG_CAPACITY)
+		write_index = AIRPS3_DIAG_LOG_CAPACITY;
+	while (*read_index < write_index) {
+		const airps3_resident_log_record *record =
+			&diagnostics->log[*read_index];
+		uint32_t expected = *read_index + 1U;
+		if (__atomic_load_n(&record->committed_sequence,
+			__ATOMIC_ACQUIRE) != expected)
+			break;
+		if (app_log != NULL) {
+			(void)fprintf(app_log,
+				"resident_seq=%u resident_us=%llu event=%s result=%d value=%u bytes=%u\n",
+				expected, (unsigned long long)record->monotonic_us,
+				record->event, record->result, record->value,
+				record->byte_count);
+			(void)fflush(app_log);
+		}
+		(void)printf(
+			"resident_seq=%u resident_us=%llu event=%s result=%d value=%u bytes=%u\n",
+			expected, (unsigned long long)record->monotonic_us,
+			record->event, record->result, record->value,
+			record->byte_count);
+		++*read_index;
+	}
 }
 
 static int wait_for_diagnostic_event(
-	const airps3_resident_diagnostics *diagnostics, uint32_t event_mask)
+	const airps3_resident_diagnostics *diagnostics, uint32_t event_mask,
+	uint32_t *log_read_index)
 {
 	unsigned int poll;
 	for (poll = 0; poll < EVENT_WAIT_POLLS; ++poll) {
+		drain_resident_log(diagnostics, log_read_index);
 		if ((__atomic_load_n(&diagnostics->events, __ATOMIC_ACQUIRE) &
 			event_mask) != 0)
 			return 1;
@@ -51,10 +89,12 @@ static int wait_for_diagnostic_event(
 	return 0;
 }
 
-static int wait_for_audio_pcm(const airps3_resident_diagnostics *diagnostics)
+static int wait_for_audio_pcm(const airps3_resident_diagnostics *diagnostics,
+	uint32_t *log_read_index)
 {
 	unsigned int poll;
 	for (poll = 0; poll < EVENT_WAIT_POLLS; ++poll) {
+		drain_resident_log(diagnostics, log_read_index);
 		uint32_t events = __atomic_load_n(&diagnostics->events,
 			__ATOMIC_ACQUIRE);
 		if ((events & AIRPS3_DIAG_EVENT_AUDIO_PCM_SUBMITTED) != 0U)
@@ -154,7 +194,8 @@ static void stop_audio_probe(void)
 
 static int stop_and_unload(sys_prx_id_t module_id,
 	const airps3_resident_diagnostics *diagnostics,
-	unsigned int baseline_module_count, unsigned int cycle)
+	unsigned int baseline_module_count, unsigned int cycle,
+	uint32_t *log_read_index)
 {
 	unsigned int module_count;
 	int module_result = 0;
@@ -162,17 +203,18 @@ static int stop_and_unload(sys_prx_id_t module_id,
 	int events_ok = 1;
 	result = sys_prx_stop_module(module_id, 0, NULL, &module_result, 0, NULL);
 	event("STOP_RESULT", result);
+	drain_resident_log(diagnostics, log_read_index);
 	if (result != 0)
 		return 0;
 	if (!wait_for_diagnostic_event(diagnostics,
-		AIRPS3_DIAG_EVENT_WORKER_STOPPED)) {
+		AIRPS3_DIAG_EVENT_WORKER_STOPPED, log_read_index)) {
 		event("WORKER_STOP_EVENT_MISSING", (int)cycle);
 		events_ok = 0;
 	} else {
 		event("WORKER_STOPPED", (int)cycle);
 	}
 	if (!wait_for_diagnostic_event(diagnostics,
-		AIRPS3_DIAG_EVENT_MODULE_STOP)) {
+		AIRPS3_DIAG_EVENT_MODULE_STOP, log_read_index)) {
 		event("MODULE_STOP_EVENT_MISSING", (int)cycle);
 		events_ok = 0;
 	}
@@ -180,6 +222,9 @@ static int stop_and_unload(sys_prx_id_t module_id,
 	event("UNLOAD_RESULT", result);
 	if (result != 0)
 		return 0;
+	drain_resident_log(diagnostics, log_read_index);
+	event("RESIDENT_LOG_DROPPED", (int)__atomic_load_n(
+		&diagnostics->log_dropped, __ATOMIC_ACQUIRE));
 	result = get_module_count(&module_count);
 	if (result != 0) {
 		event("MODULE_LIST_FAILED_AFTER_CYCLE", result);
@@ -202,12 +247,13 @@ static int run_cycle(unsigned int cycle, unsigned int baseline_module_count)
 	int module_result = 0;
 	int result;
 	uint32_t diagnostic_events;
+	uint32_t log_read_index = 0;
 	unsigned int mode = cycle % 4U;
-	airps3_resident_diagnostics diagnostics = {
-		AIRPS3_RESIDENT_DIAGNOSTICS_MAGIC, 0U, 0, 0U,
-		mode == 0U ? AIRPS3_DIAG_FLAG_SUPPRESS_TEST_TONE : 0U
-	};
+	airps3_resident_diagnostics diagnostics;
 	char name[32];
+	memset(&diagnostics, 0, sizeof(diagnostics));
+	diagnostics.magic = AIRPS3_RESIDENT_DIAGNOSTICS_MAGIC;
+	diagnostics.flags = mode == 0U ? AIRPS3_DIAG_FLAG_SUPPRESS_TEST_TONE : 0U;
 	(void)snprintf(name, sizeof(name), "CYCLE_%u_BEGIN", cycle);
 	event(name, (int)cycle);
 	if (mode == 0U)
@@ -234,6 +280,7 @@ static int run_cycle(unsigned int cycle, unsigned int baseline_module_count)
 		return 0;
 	}
 	event("START_OK", module_result);
+	drain_resident_log(&diagnostics, &log_read_index);
 	event("MODULE_START_STAGE", (int)diagnostics.stage);
 	event("MODULE_START_ERROR", diagnostics.error);
 	if (module_result != SYS_PRX_RESIDENT) {
@@ -275,32 +322,32 @@ static int run_cycle(unsigned int cycle, unsigned int baseline_module_count)
 	if ((diagnostic_events & AIRPS3_DIAG_EVENT_STARTED) == 0U) {
 		event("MODULE_START_EVENT_MISSING", (int)cycle);
 		(void)stop_and_unload(module_id, &diagnostics,
-			baseline_module_count, cycle);
+			baseline_module_count, cycle, &log_read_index);
 		return 0;
 	}
 	if (!wait_for_diagnostic_event(&diagnostics,
-		AIRPS3_DIAG_EVENT_RECEIVER_READY)) {
+		AIRPS3_DIAG_EVENT_RECEIVER_READY, &log_read_index)) {
 		event("RECEIVER_READY_TIMEOUT", (int)cycle);
 		(void)stop_and_unload(module_id, &diagnostics,
-			baseline_module_count, cycle);
+			baseline_module_count, cycle, &log_read_index);
 		return 0;
 	}
 	event("RECEIVER_READY", (int)cycle);
 	if (mode != 0U) {
-		if (!wait_for_audio_pcm(&diagnostics)) {
+		if (!wait_for_audio_pcm(&diagnostics, &log_read_index)) {
 			event("RESIDENT_PCM_SUBMISSION_MISSING", (int)cycle);
 			(void)stop_and_unload(module_id, &diagnostics,
-				baseline_module_count, cycle);
+				baseline_module_count, cycle, &log_read_index);
 			return 0;
 		}
 		event("RESIDENT_PCM_SUBMITTED_TO_MIXER", (int)cycle);
 	}
 	if (mode == 2U) {
 		if (!wait_for_diagnostic_event(&diagnostics,
-			AIRPS3_DIAG_EVENT_AUDIO_DRAINED)) {
+			AIRPS3_DIAG_EVENT_AUDIO_DRAINED, &log_read_index)) {
 			event("RESIDENT_PCM_DRAIN_TIMEOUT", (int)cycle);
 			(void)stop_and_unload(module_id, &diagnostics,
-				baseline_module_count, cycle);
+				baseline_module_count, cycle, &log_read_index);
 			return 0;
 		}
 		event("RESIDENT_PCM_DRAINED", (int)cycle);
@@ -309,20 +356,20 @@ static int run_cycle(unsigned int cycle, unsigned int baseline_module_count)
 		event("FOREGROUND_TONE_HZ", (int)AUDIO_PROBE_FREQUENCY_HZ);
 		if (!submit_foreground_audio_probe(AUDIO_PROBE_BLOCKS)) {
 			(void)stop_and_unload(module_id, &diagnostics,
-				baseline_module_count, cycle);
+				baseline_module_count, cycle, &log_read_index);
 			return 0;
 		}
 	} else if (mode == 0U) {
 		event("FOREGROUND_TONE_HZ", (int)AUDIO_PROBE_FREQUENCY_HZ);
 		if (!submit_foreground_audio_probe(AUDIO_PROBE_SHORT_BLOCKS)) {
 			(void)stop_and_unload(module_id, &diagnostics,
-				baseline_module_count, cycle);
+				baseline_module_count, cycle, &log_read_index);
 			return 0;
 		}
 	}
 
 	if (!stop_and_unload(module_id, &diagnostics,
-		baseline_module_count, cycle))
+		baseline_module_count, cycle, &log_read_index))
 		return 0;
 	event("CYCLE_PASS", (int)cycle);
 	return 1;
@@ -335,7 +382,9 @@ int main(int argc, const char **argv)
 	int result;
 	(void)argc;
 	(void)argv;
+	harness_start_us = sys_time_get_system_time();
 	app_log = fopen(APP_LOG_PATH, "wb");
+	event("HARNESS_RUN_ID", (int)(harness_start_us & 0x7fffffffU));
 	event(app_log != NULL ? "HARNESS_START" : "HARNESS_LOG_OPEN_FAILED", 0);
 	event("HARNESS_CYCLE_COUNT", (int)TEST_CYCLES);
 	event("RESIDENT_TEST_TONE_HZ", 440);

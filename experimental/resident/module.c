@@ -103,6 +103,8 @@ static void publish_start_diagnostic(size_t args, void *argp,
 		active_diagnostics = diagnostics;
 		diagnostics->stage = stage;
 		diagnostics->error = result;
+		airps3_diag_log(diagnostics, sys_time_get_system_time(),
+			"MODULE_START_STAGE", result, stage, 0);
 	}
 }
 
@@ -155,6 +157,10 @@ static int log_event(const char *event, int value, size_t bytes)
 	int acquired = 0;
 	int attempt;
 	int logged;
+	if (active_diagnostics != NULL)
+		airps3_diag_log(active_diagnostics, sys_time_get_system_time(), event,
+			(int32_t)value, 0U,
+			bytes > UINT32_MAX ? UINT32_MAX : (uint32_t)bytes);
 	for (attempt = 0; attempt < 1000; ++attempt) {
 		if (__atomic_exchange_n(&receiver_log_lock, 1, __ATOMIC_ACQUIRE) == 0) {
 			acquired = 1;
@@ -171,6 +177,9 @@ static int log_event(const char *event, int value, size_t bytes)
 	timestamp_utc(timestamp);
 	logged = receiver_log_file_event(&receiver_log, timestamp, event, value,
 		bytes);
+	if (!logged && active_diagnostics != NULL)
+		airps3_diag_log(active_diagnostics, sys_time_get_system_time(),
+			"LOG_WRITE_FAILED", -1, 0, 0);
 	__atomic_store_n(&receiver_log_lock, 0, __ATOMIC_RELEASE);
 	return logged;
 }
@@ -234,6 +243,7 @@ static void audio_worker(void *argument)
 				raop_pcm_spsc_count(&decoded_pcm_queue) == 0) {
 				playback_active = 0;
 				(void)log_event("AUDIO_BUFFER_UNDERRUN", 1, 0);
+				(void)log_event("AUDIO_PCM_DRAINED", 0, 0);
 				publish_diagnostic_event(AIRPS3_DIAG_EVENT_AUDIO_DRAINED);
 			}
 		} else {
@@ -249,6 +259,8 @@ static void audio_worker(void *argument)
 			}
 			if (playback_active && !pcm_reported) {
 				pcm_reported = 1;
+				(void)log_event("AUDIO_PCM_SUBMITTED", AUDIO_OUTPUT_FRAMES,
+					sizeof(audio_output));
 				publish_diagnostic_event(
 					AIRPS3_DIAG_EVENT_AUDIO_PCM_SUBMITTED);
 			}
@@ -621,6 +633,8 @@ int module_start(size_t args, void *argp)
 			goto fail_runtime;
 		}
 		publish_diagnostic_event(AIRPS3_DIAG_EVENT_LOG_UNAVAILABLE);
+		airps3_diag_log(active_diagnostics, sys_time_get_system_time(),
+			"MODULE_LOG_UNAVAILABLE", -1, 0, 0);
 	}
 	publish_start_diagnostic(args, argp, 3U, 0);
 	if (!log_event("MODULE_START", 0, 0)) {
