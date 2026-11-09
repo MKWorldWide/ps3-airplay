@@ -933,3 +933,10 @@ The v0.1.31 fresh RPCS3 replay verifies the portable-arithmetic correction: the 
 - **Root Cause:** Not yet established. The installed file hash matches the freshly built SPRX and the package SFO is correct, so the failure occurs after title launch but before resident `module_start`.
 - **Fix:** No PRX format change is claimed. The harness stops after the first failed load, and its foreground audio port shuts down cleanly. Preserve the exact signed artifact and log while reviewing module format, signing and target-loader expectations.
 - **Prevention Rule:** Verify the installed module hash, report syscall errors in hexadecimal and symbolic form, and stop before repeated lifecycle tests when the first loader call rejects the module. Never infer hardware compatibility from a successful package install or SELF structural check.
+
+## Separate SFO acceptance from resident SPRX loading
+
+- **Problem:** The corrected harness app launched after its SFO version was advanced from `00.01` to `00.02`, but the resident load still failed.
+- **Root Cause:** The installed package's SFO is accepted; the independent first `sys_prx_load_module` call still returns `0x80010007` (`ENOEXEC`). The exact PRX loader subcause remains unknown.
+- **Fix:** Preserve the `00.02` SFO and installed package, record the fresh failure, and continue diagnosis at the SELF/PRX loader boundary. No unverified signing or relocation change is claimed.
+- **Prevention Rule:** Treat title launch and module loading as separate gates. A successful SFO correction cannot be used as evidence that a resident SPRX is loadable.

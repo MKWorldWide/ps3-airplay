@@ -1,9 +1,39 @@
 # AIR PS3 Resident Development Report
 
-**Updated:** 2026-11-08 23:09 EDT
+**Updated:** 2026-11-08 23:20 EDT
 **Branch:** `experimental/resident-airplay`
-**Source baseline:** `b1d35c2`
+**Source baseline:** `7ef5884`
 **Scope:** Hardware diagnostic harness package build/install; no Cobra settings changed.
+
+## SFO 00.02 reinstall and repeat loader result (2026-11-08 23:20 EDT)
+
+Advanced both harness SFO fields to `00.02`, rebuilt the package, and
+independently inspected its extracted SFO. The installed title now reports
+`TITLE_ID=RPRX90002`, `APP_VER=00.02`, and `VERSION=00.02`. The installed
+resident SPRX hash is `9fae9ed955c023aca2077654625510e80766f899c9eaa4998cad4af5f1588817`,
+matching the production signed SPRX embedded in the package.
+
+The `00.02` harness launched and wrote a fresh run ID. Its first resident load
+again returned `0x80010007` (`ENOEXEC`); it stopped after cycle one and closed
+the foreground audio port. This confirms the SFO version is accepted for the
+app, while the resident module loader failure remains unresolved. No
+`module_start`, resident worker, RAOP input, resident PCM, or audible output
+was observed. Hardware readiness remains BLOCKED.
+
+| Check | Status | Evidence |
+|---|---|---|
+| Package SFO | PASS | Extracted SFO reports title `RPRX90002`, `APP_VER=00.02`, `VERSION=00.02`. |
+| Install and app launch | PASS | Installed SFO verified over FTP; fresh harness run ID recorded. |
+| Installed SPRX identity | PASS | Installed SPRX SHA-256 matches the signed package payload. |
+| Resident loader | FAIL | Fresh run returns `0x80010007` (`ENOEXEC`) at cycle one. |
+| Audio cleanup after rejected load | PASS | Audio port stop, close and quit return zero. |
+| Resident networking/audio/lifecycle | UNTESTED | Module never reached `module_start`. |
+
+Local ignored package SHA-256:
+`c070380805764adfef94d10ede277c240e84db6379bfd8c81ccbcbb92370fa94`.
+Console log SHA-256:
+`8501b5c10846ac2a12ee2a9d97621682dae59ff5c57c85a6d651e7f5e985784f`.
+Raw logs and package binaries remain ignored in `build/resident-hardware/`.
 
 ## Hardware harness SFO version correction (2026-11-08 23:00 EDT)
 

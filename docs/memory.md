@@ -1,5 +1,12 @@
 # Project state
 
+## Latest resident harness result (2026-11-08)
+
+- Advanced the isolated `RPRX90002` harness SFO from `00.01` to `00.02`. The new package installed; independent inspection of the installed SFO confirms `APP_VER=00.02` and `VERSION=00.02`, and the app launches.
+- The fresh harness run still gets `0x80010007` (`ENOEXEC`) from its first production-SPRX load. The installed SPRX hash matches the package payload. It stops at cycle one and closes the foreground audio resources cleanly. This separates the corrected app version from the unresolved module-loader rejection.
+- New package SHA-256: `c070380805764adfef94d10ede277c240e84db6379bfd8c81ccbcbb92370fa94`. Fresh console log SHA-256: `8501b5c10846ac2a12ee2a9d97621682dae59ff5c57c85a6d651e7f5e985784f`. Both artifacts and raw logs are local/ignored.
+- No source-level PRX fix is established. Do not report hardware readiness or resident audio; the module never reached `module_start`.
+
 ## Hardware harness SFO version correction (2026-11-08)
 
 - The first installed `RPRX90002` hardware harness used SFO `APP_VER=0.1.0` and `VERSION=0.1.0`. The user reported the same launch error previously associated with an invalid version string and directed that both SFO values be `00.01`.
