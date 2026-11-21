@@ -63,3 +63,17 @@ Other leads checked in this pass:
 ### Decision update
 
 Use OpenPS3FTP v5.4 as an **offline structure/source comparison only**. Do not install it or change the resident harness to load a VSH plugin. The next discriminating experiment remains an app-context no-import reference from a documented toolchain, with loader-context and signing differences kept explicit. Preserve the existing resident and physical-console state until that candidate is ready for a separately controlled manual diagnostic.
+
+## App-context control from the pinned PS3DK release
+
+**Research update:** 2026-11-21 02:28 EST. This follow-up was a source and existing-artifact inspection only; no console or RPCS3 install/run occurred.
+
+- The repository pins PS3DK v0.27.0. That exact tag documents the `hello-sprx-export` / `hello-sprx-import` pair. The importer calls `sysPrxLoadModule`, `sysPrxStartModule`, checks a start-time handoff and calls the exported function, then stops and unloads the PRX. The docs distinguish the loadable container: fake SELF with `.fake.sprx`, real SELF with `.sprx`, or raw ELF with `.prx` in the described RPCS3 setup.
+- The PS3DK `ps3_add_prx(... SIGN)` build chain emits both real and fake module containers from the same `.prx`. The v0.27.0 CMake comments explicitly say the parent executable and loaded module containers must match. The package builder makes `USRDIR/EBOOT.BIN` with `make_self_npdrm` from the app ELF; the extracted hardware package EBOOT has outer flags word `0x00010001`.
+- The exact production resident SPRX embedded in that package also has outer flags word `0x00010001`. Thus the tested package's parent EBOOT and resident module match on this outer container-class field. This does not establish that the rest of their metadata/signing is compatible, but it makes a simple fake-vs-real container mismatch unlikely.
+- Crucially, the pinned v0.27.0 `ps3-self.cmake` comments say RPCS3 rejects the then-current `make_sprx` output with `CELL_PRX_ERROR_UNSUPPORTED_PRX_TYPE` before parsing the ELF, while real-hardware acceptance is untested. This is an upstream limitation statement, not a confirmed explanation for our hardware `ENOEXEC`; our error is from the PS3, while that note concerns RPCS3.
+- Existing `scripts/build-lima-smoke.sh` only builds an export-side smoke module with `prx-gen build/check`; it does not build the official importer pair, matching signed container, or test the actual import/handoff cycle. The prior 00.04 `0x000A` probes were scetool-signed diagnostic candidates, not the official sample's full importer pair.
+
+### Updated assessment and next test
+
+The best public app-context reference is now the pinned PS3DK hello-SPRX pair, rather than a third-party released VSH plugin. The immediate useful control is to build the exact v0.27.0 importer/exporter sample with its matching real-signed `.sprx` and `make_self_npdrm` EBOOT, validate package contents and headers, and run it in the same manual hardware harness. A pass would validate the basic loader path and exercise the required export/import call; a fail would isolate the toolchain/container path from AIR's imports and worker lifecycle. The sample has not yet been built as a paired package or run on hardware. The current host has the PS3DK source and `prx-gen`, but no PPU compiler on `PATH` or configured PS3 Lima guest, so the paired build could not be performed in this pass.

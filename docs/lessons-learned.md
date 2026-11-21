@@ -21,6 +21,13 @@
 - **Fix:** Inspect OpenPS3FTP v5.4's source and release SPRX offline. Record it as a PS3DK-built VSH plugin, not a tested app-context reference; reject PS3 Presence because it requires Cobra startup integration and its own README limits its hardware evidence.
 - **Prevention Rule:** Before treating a released SPRX as a loader reference, verify its host process, load mechanism, imports, source build recipe, and observed test evidence separately.
 
+## Match PRX and executable containers
+
+- **Problem:** A loaded PS3 module may fail before its entry point if its signed/fake container does not match the parent executable's context.
+- **Root Cause:** PS3DK's pinned v0.27.0 documentation states that `.self` pairs with `.sprx`, `.fake.self` pairs with `.fake.sprx`, and its RPCS3 raw-ELF route uses `.prx`. A filename extension alone does not show the pairing.
+- **Fix:** Inspect the extracted diagnostic EBOOT and production SPRX headers; both use outer flags word `0x00010001`, so this specific field matches. Keep the remaining SELF/signature compatibility question open.
+- **Prevention Rule:** Validate the executable/module container pairing and full metadata before attributing `ENOEXEC` to imports, PRX layout, or resident code.
+
 ## AIR PS3 v0.2.8 engineering lessons (2026-11-08)
 
 - **Problem:** A long control-path stall can leave the fixed RTP queue full of stale audio; the application then continues with obsolete sequence expectations.
